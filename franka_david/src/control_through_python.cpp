@@ -472,11 +472,11 @@ void CartesianPythonController::runControl(math::Transform3D* trajectory, int N)
 {
     // Compliance parameters
     // 2000 - smoother than 3000
-    const double translational_stiffness{150.0}; //original 2000. 200 for 20fps
+    const double translational_stiffness{115.0}; //original 2000. 150 works nice for 1000fps Franka3. 115 Franka2.
 //     100 shakes too much, 50 not that good, 10- too soft
     // 70 might be fine - shakes a bit, 
     // 68 shakes close to the robot, doesn't when far but orientation is really good
-    const double rotational_stiffness{40.0}; //original 68. 10 for 20 fps
+    const double rotational_stiffness{40.0}; //original 68. 40 works nice for 1000fps Franka3 and Franka2.
     Eigen::MatrixXd stiffness(6, 6), damping(6, 6);
     stiffness.setZero();
     stiffness.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);

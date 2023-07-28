@@ -463,7 +463,7 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
         double end_pose_x = trajectory_x.at(N-1);
         
         double end_pose_y = trajectory_y.at(N-1);
-        if (this->_franka3)
+        if (!this->_franka3)
         {
             end_pose_y = -trajectory_y.at(N-1);
         }
@@ -480,20 +480,20 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
 		transform = Eigen::Matrix4d::Map(robot_state.O_T_EE.data());
 		pos = transform.translation();
 		ori = transform.linear();
-		Eigen::Map<const Eigen::Matrix<double, 7, 1>> joint_angles(robot_state.q.data());
+		//Eigen::Map<const Eigen::Matrix<double, 7, 1>> joint_angles(robot_state.q.data());
 		Eigen::Matrix3d R = transform.rotation();
 
-        if (this->_franka3)
+        if (!this->_franka3)
         {
-            T0(1, 1) = 0.0;    T0(1, 2) = -0.996194;    T0(1, 3) = 0.08715574;    T0(1, 4) = pos[0];
-            T0(2, 1) = - 0.996194698;    T0(2, 2) = 0.0075961234;    T0(2, 3) = -0.08682408;    T0(2, 4) = pos[1];
-            T0(3, 1) = 0.08715574;    T0(3, 2) = -0.08682408;    T0(3, 3) = -0.99240387;    T0(3, 4) = pos[2];
+            T0(1, 1) = 1.0;    T0(1, 2) = -0.0;    T0(1, 3) = 0.0;    T0(1, 4) = pos[0];
+            T0(2, 1) = -0.0;    T0(2, 2) = -1.0;    T0(2, 3) = -0.0;    T0(2, 4) = pos[1];
+            T0(3, 1) = 0.0;    T0(3, 2) = -0.0;    T0(3, 3) = -1.0;    T0(3, 4) = pos[2];
         }
         else
         {
-            T0(1, 1) = 0.0;    T0(1, 2) = 0.996194;    T0(1, 3) = 0.08715574;    T0(1, 4) = pos[0];
-            T0(2, 1) = 0.996194698;    T0(2, 2) = 0.0075961234;    T0(2, 3) = 0.08682408;    T0(2, 4) = pos[1];
-            T0(3, 1) = 0.08715574;    T0(3, 2) = 0.08682408;    T0(3, 3) = -0.99240387;    T0(3, 4) = pos[2];
+            T0(1, 1) = 1.0;    T0(1, 2) = -0.0;    T0(1, 3) = 0.0;    T0(1, 4) = pos[0];
+            T0(2, 1) = -0.0;    T0(2, 2) = -1.0;    T0(2, 3) = -0.0;    T0(2, 4) = pos[1];
+            T0(3, 1) = 0.0;    T0(3, 2) = -0.0;    T0(3, 3) = -1.0;    T0(3, 4) = pos[2];
         }
 
 		Tend = T0;
@@ -512,7 +512,7 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
 	    for (int k=0; k<(int)N; k++)
 	    {   
             Ti[k](1, 4) = trajectory_x.at(k);
-            if (this->_franka3)
+            if (!this->_franka3)
             {
                 Ti[k](2, 4) = -trajectory_y.at(k);
             }
@@ -527,10 +527,11 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
             Ti[k](1, 1) = rot(0, 0); Ti[k](1, 2) = rot(0, 1); Ti[k](1, 3) = rot(0, 2); 
             Ti[k](2, 1) = rot(1, 0); Ti[k](2, 2) = rot(1, 1); Ti[k](2, 3) = rot(1, 2); 
             Ti[k](3, 1) = rot(2, 0); Ti[k](3, 2) = rot(2, 1); Ti[k](3, 3) = rot(2, 2);
-            if (this->_franka3)
+            if (! this->_franka3)
             {
                 Ti[k](1, 2) = -rot(0, 1);
-                Ti[k](2, 1) = -rot(1, 0);  Ti[k](2, 3) = -rot(1, 2); 
+                Ti[k](2, 1) = -rot(1, 0);
+                Ti[k](2, 3) = -rot(1, 2); 
                 Ti[k](3, 2) = -rot(2, 1);
             }
             
@@ -546,12 +547,21 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 {
     // Compliance parameters
     // 2000 - smoother than 3000
-    const double translational_stiffness{2000.0};
+    if (!this->_franka3)
+    {
+        const double translational_stiffness{115.0};
+        const double rotational_stiffness{40.0};  
+    }
+    else
+    {
+        const double translational_stiffness{150.0};
+        const double rotational_stiffness{40.0};  
+    }
 //     100 shakes too much, 50 not that good, 10- too soft
     // 70 might be fine - shakes a bit, 
     // 68 shakes close to the robot, doesn't when far but orientation is really good
     // 50
-    const double rotational_stiffness{40.0};  
+    
     Eigen::MatrixXd stiffness(6, 6), damping(6, 6);
     stiffness.setZero();
     stiffness.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
