@@ -10,3 +10,5 @@ For runnning single robot:
 
 For running dual robots:
 - rosrun franka_david remotefranka
+
+- git add ".gitignore" and push it after editing ignore rules, but before they take effect
