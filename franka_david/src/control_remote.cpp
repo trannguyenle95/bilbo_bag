@@ -547,16 +547,21 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 {
     // Compliance parameters
     // 2000 - smoother than 3000
+    double translational_stiffness{100.0};
+    double rotational_stiffness{20.0};
     if (!this->_franka3)
     {
-        const double translational_stiffness{115.0};
-        const double rotational_stiffness{40.0};  
+        translational_stiffness = 115.0;
+        rotational_stiffness = 40.0;  
     }
     else
     {
-        const double translational_stiffness{150.0};
-        const double rotational_stiffness{40.0};  
+        translational_stiffness = 150.0;
+        rotational_stiffness = 40.0;   
     }
+
+    std::cout << "Translational stifness: " << translational_stiffness << " , rotational: " << rotational_stiffness << std::endl;
+
 //     100 shakes too much, 50 not that good, 10- too soft
     // 70 might be fine - shakes a bit, 
     // 68 shakes close to the robot, doesn't when far but orientation is really good
