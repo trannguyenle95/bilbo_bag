@@ -403,6 +403,10 @@ void CartesianPythonController::motionOriCallback(const franka_david::MotionPyPt
         std::cout << "Trajectory duration " << duration << std::endl;
         double end_pose_x = trajectory_x.at(N-1);
         double end_pose_y = trajectory_y.at(N-1);
+        if (!this->_franka3)
+        {
+            end_pose_y = -trajectory_y.at(N-1);
+        }
         double end_pose_z = trajectory_z.at(N-1);
         
         
@@ -422,9 +426,18 @@ void CartesianPythonController::motionOriCallback(const franka_david::MotionPyPt
 //         T0(1, 1) = 0.9981;    T0(1, 2) = -0.0315;    T0(1, 3) = 0.0531;    T0(1, 4) = pos[0];
 // 		T0(2, 1) = -0.0315;    T0(2, 2) = -0.9995;    T0(2, 3) = -0.0002;    T0(2, 4) = pos[1];
 // 		T0(3, 1) = 0.0531;    T0(3, 2) = -0.0015;    T0(3, 3) = -0.9986;    T0(3, 4) = pos[2];
-        T0(1, 1) = 1.0;    T0(1, 2) = -0.0;    T0(1, 3) = 0.0;    T0(1, 4) = pos[0];
-		T0(2, 1) = -0.0;    T0(2, 2) = -1.0;    T0(2, 3) = -0.0;    T0(2, 4) = pos[1];
-		T0(3, 1) = 0.0;    T0(3, 2) = -0.0;    T0(3, 3) = -1.0;    T0(3, 4) = pos[2];
+        if (!this->_franka3)
+        {
+            T0(1, 1) = 1.0;    T0(1, 2) = -0.0;    T0(1, 3) = 0.0;    T0(1, 4) = pos[0];
+            T0(2, 1) = -0.0;    T0(2, 2) = -1.0;    T0(2, 3) = -0.0;    T0(2, 4) = pos[1];
+            T0(3, 1) = 0.0;    T0(3, 2) = -0.0;    T0(3, 3) = -1.0;    T0(3, 4) = pos[2];
+        }
+        else
+        {
+            T0(1, 1) = 1.0;    T0(1, 2) = -0.0;    T0(1, 3) = 0.0;    T0(1, 4) = pos[0];
+            T0(2, 1) = -0.0;    T0(2, 2) = -1.0;    T0(2, 3) = -0.0;    T0(2, 4) = pos[1];
+            T0(3, 1) = 0.0;    T0(3, 2) = -0.0;    T0(3, 3) = -1.0;    T0(3, 4) = pos[2];
+        }
 
 		Tend = T0;
 		Tend(1, 4) = end_pose_x;
@@ -443,15 +456,29 @@ void CartesianPythonController::motionOriCallback(const franka_david::MotionPyPt
 	    for (int k=0; k<(int)N; k++)
 	    {   
             Ti[k](1, 4) = trajectory_x.at(k);
-            Ti[k](2, 4) = trajectory_y.at(k);
+            if (!this->_franka3)
+            {
+                Ti[k](2, 4) = -trajectory_y.at(k);
+            }
+            else
+            {
+                Ti[k](2, 4) = trajectory_y.at(k);
+            }
             Ti[k](3, 4) = trajectory_z.at(k);
 // 	        std::cout << "X=" << trajectory_x.at(k) << ", Y=" << trajectory_y.at(k) << ", Z=" << trajectory_z.at(k) << std::endl;
 	        Eigen::Matrix3d rot = trajectory_quat.at(k).normalized().toRotationMatrix();
             Ti[k](1, 1) = rot(0, 0); Ti[k](1, 2) = rot(0, 1); Ti[k](1, 3) = rot(0, 2); 
             Ti[k](2, 1) = rot(1, 0); Ti[k](2, 2) = rot(1, 1); Ti[k](2, 3) = rot(1, 2); 
             Ti[k](3, 1) = rot(2, 0); Ti[k](3, 2) = rot(2, 1); Ti[k](3, 3) = rot(2, 2);
+
+            if (! this->_franka3)
+            {
+                Ti[k](1, 2) = -rot(0, 1);
+                Ti[k](2, 1) = -rot(1, 0);
+                Ti[k](2, 3) = -rot(1, 2); 
+                Ti[k](3, 2) = -rot(2, 1);
+            }
         }
-	    
 	    
 	    this->runControl(Ti, N);
     }
@@ -472,7 +499,7 @@ void CartesianPythonController::runControl(math::Transform3D* trajectory, int N)
 {
     // Compliance parameters
     // 2000 - smoother than 3000
-    const double translational_stiffness{115.0}; //original 2000. 150 works nice for 1000fps Franka3. 115 Franka2.
+    const double translational_stiffness{105.0}; //original 2000. 150 works nice for 1000fps Franka3. 108 Franka2.
 //     100 shakes too much, 50 not that good, 10- too soft
     // 70 might be fine - shakes a bit, 
     // 68 shakes close to the robot, doesn't when far but orientation is really good

@@ -551,7 +551,7 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
     double rotational_stiffness{20.0};
     if (!this->_franka3)
     {
-        translational_stiffness = 115.0;
+        translational_stiffness = 105.0;
         rotational_stiffness = 40.0;  
     }
     else
