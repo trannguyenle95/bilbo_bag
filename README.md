@@ -12,3 +12,8 @@ For running dual robots:
 - rosrun franka_david remotefranka
 
 - git add ".gitignore" and push it after editing ignore rules, but before they take effect
+
+For OpiTrack capture:
+- put two markers close enough and they can be seen as a single point visible from both the inside and outisde of the rim (helps with occlusions)
+    - usually seen as a single point in OptiTrack, but do additional filtering to combine monitored points that are captured too close together so that they will not
+    -   cause convex hull calculation to fail!
