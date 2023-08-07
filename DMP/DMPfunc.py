@@ -40,8 +40,8 @@ def DMPfunc(filename, main_axis, inFPS = 120, outFPS=120, plot=False, save=True)
     
     max_h = np.max(data[:,7])
     scale = 1
-    if max_h > 0.8:
-        scale = 0.8/max_h
+    if max_h > 0.6:
+        scale = 0.6/max_h
 
     data[:,6:9] *= scale
 
@@ -141,4 +141,4 @@ def DMPfunc(filename, main_axis, inFPS = 120, outFPS=120, plot=False, save=True)
 
 
 if __name__ == '__main__':
-    DMPfunc("BagFlip.csv", "x", inFPS = 120, outFPS=1000, plot=True, save=True)
+    DMPfunc("BagFlip.csv", "x", inFPS = 120, outFPS=2000, plot=True, save=True)
