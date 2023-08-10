@@ -96,7 +96,9 @@ if __name__ == '__main__':
    #franka.movedynamic_ori(quintic_traj=quintic_traj, tf=tf)
    #franka.movedynamic_ori(quintic_traj=traj, tf=tf)
    if os.path.exists("real_traj/output.csv"):
-      os.remove("real_traj/output.csv") 
+      os.remove("real_traj/output.csv")
+   else:
+      print("no existing output file")
 
    input("Perform dynamic primitive")
 

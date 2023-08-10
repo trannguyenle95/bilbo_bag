@@ -46,7 +46,12 @@ if __name__ == '__main__':
    franka.rate.sleep()
 
    input("Move robots to origin")
-   franka.move(move_type='j', params=joint_ori, traj_duration=3.0)
+   
+   #pose = np.array([0.57474, -0.04, 0.20, 0.99882, -0.039110, 0.010790, 0.026625]).reshape(1,7)
+   #pose = np.array([0.57474, -0.04, 0.20, 1, 0, 0, 0]).reshape(1,7)
+   #print("pose x:", pose[0])
+   #franka.move(move_type='l', params=pose, traj_duration=3.0) #for linear movement to origin
+   franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
 
    # Defined as X, Y, Z
    #euler_init = [-177.31653135,   -4.27029547,   -4.35228107]  # Before = [-179.24297822, -2.93434324, 42.65659799]
