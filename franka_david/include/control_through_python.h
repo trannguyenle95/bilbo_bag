@@ -75,5 +75,5 @@ public:
 // private:
     franka::Robot* _robot;
     franka::Gripper* _gripper;
-    bool _franka3 = true;  
+    bool _franka3 = true; //change to either 2 or 3 to match the robot
 };
