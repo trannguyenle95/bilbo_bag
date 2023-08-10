@@ -9,6 +9,9 @@ For runnning single robot:
 
 
 For running dual robots:
+- from franka2: roscore, "rosrun franka_david remotefranka"
+- enable lines in .bashrc in franka3, then "rosrun franka_david remotefranka"
+- then "python script eric_test_dual_franka.py" in franka2
 - rosrun franka_david remotefranka
 
 - git add ".gitignore" and push it after editing ignore rules, but before they take effect
