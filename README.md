@@ -6,6 +6,7 @@
 
 For runnning single robot:
 - rosrun franka_david frankapy
+- uses control_through_python.cpp
 
 
 For running dual robots:
@@ -13,8 +14,10 @@ For running dual robots:
 - enable lines in .bashrc in franka3, then "rosrun franka_david remotefranka"
 - then "python script eric_test_dual_franka.py" in franka2
 - rosrun franka_david remotefranka
+- uses control_remote.cpp
 
-- git add ".gitignore" and push it after editing ignore rules, but before they take effect
+
+Note: git add ".gitignore" and push it after editing ignore rules, but before they take effect
 
 For OpiTrack capture:
 - put two markers close enough and they can be seen as a single point visible from both the inside and outisde of the rim (helps with occlusions)
