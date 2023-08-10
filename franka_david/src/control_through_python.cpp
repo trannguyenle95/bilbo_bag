@@ -499,7 +499,7 @@ void CartesianPythonController::runControl(math::Transform3D* trajectory, int N)
 {
     // Compliance parameters
     // 2000 - smoother than 3000
-    const double translational_stiffness{105.0}; //original 2000. 150 works nice for 1000fps Franka3. 108 Franka2.
+    const double translational_stiffness{450.0}; //original 2000. 150 works nice for 1000fps Franka3. 108 Franka2.
 //     100 shakes too much, 50 not that good, 10- too soft
     // 70 might be fine - shakes a bit, 
     // 68 shakes close to the robot, doesn't when far but orientation is really good
@@ -581,7 +581,7 @@ void CartesianPythonController::runControl(math::Transform3D* trajectory, int N)
 
             //ADDED TO PRINT FOLLOWED TRAJ TO FILE
             std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
-            std::ofstream out_file(HOME + "/catkin_ws/src/franka_david/scripts/real_traj/output.csv", ios::app);
+            std::ofstream out_file(HOME + "/catkin_ws/src/Data/executed_trajectory.csv", ios::app);
             // if (!out_file)
             // {
             //     cout << "Error in creating file!!!" << endl; //TURNS OUT THAT FILE CREATION FAILS > why?

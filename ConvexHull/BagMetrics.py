@@ -100,6 +100,6 @@ def BagMetrics(filename, max_area, width, plot = False):
     return area_ratio, elongation
 
 if __name__ == '__main__':
-    A_CH, E_CH = BagMetrics("output.csv", 0.085, 0.4, plot=True)
+    A_CH, E_CH = BagMetrics("tracked_markers.csv", 0.085, 0.4, plot=True)
     #print("Convex Hull area: ", A_CH)
     #print("Convex Hull elongation: ", E_CH)

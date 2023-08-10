@@ -641,7 +641,18 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
             franka::Torques tau_d_array = {{tau_d(0), tau_d(1), tau_d(2), tau_d(3), tau_d(4), tau_d(5), tau_d(6)}};
             //std::array<double, 7> tau_d_array{};
             //Eigen::VectorXd::Map(&tau_d_array[0], 7) = tau_d;
-                
+
+            //ADDED TO PRINT FOLLOWED TRAJ TO FILE
+            std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+            std::ofstream out_file(HOME + "/catkin_ws/src/Data/executed_trajectory.csv", ios::app);
+            // if (!out_file)
+            // {
+            //     cout << "Error in creating file!!!" << endl; //TURNS OUT THAT FILE CREATION FAILS > why?
+            // }
+            out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << "," << std::endl;
+
+
+
             loop_iter++;
             time += dt;
             if(loop_iter > N - 1) {

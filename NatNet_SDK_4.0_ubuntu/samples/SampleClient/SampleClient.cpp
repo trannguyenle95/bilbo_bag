@@ -269,7 +269,7 @@ void NATNET_CALLCONV DataHandler(sFrameOfMocapData* data, void* pUserData)
 
     //OWN ADDITION to write most recent (overwrite each time) values to csv:
     std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
-    std::ofstream out_file(HOME + "/catkin_ws/src/Data/output.csv", std::ios::trunc); //use ios::trunc to OVERWRITE
+    std::ofstream out_file(HOME + "/catkin_ws/src/Data/tracked_markers.csv", std::ios::trunc); //use ios::trunc to OVERWRITE
     if (!out_file)
     {
         std::cout << "Error in creating file!!!" << std::endl; //does file creation fail?

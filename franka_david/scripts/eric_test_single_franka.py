@@ -64,7 +64,7 @@ if __name__ == '__main__':
    #Import traj and duration from CSV
 
 
-   traj = np.genfromtxt("1000fps_DMP_BagFlip.csv", delimiter=',') #NOTE: set name here!
+   traj = np.genfromtxt("06_10s_DMP_BagFlip.csv", delimiter=',') #NOTE: set name here!
    #NOTE: 10 FPS seems too few points so it is too jumpy!
 
    #traj = traj[0,:].reshape(1, 7)
@@ -102,8 +102,11 @@ if __name__ == '__main__':
 
    #franka.movedynamic_ori(quintic_traj=quintic_traj, tf=tf)
    #franka.movedynamic_ori(quintic_traj=traj, tf=tf)
-   if os.path.exists("real_traj/output.csv"):
-      os.remove("real_traj/output.csv") 
+
+   filepath = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data','executed_trajectory.csv')
+
+   if os.path.exists(filepath):
+      os.remove(filepath) 
 
    input("Perform dynamic primitive")
 
@@ -179,7 +182,7 @@ if __name__ == '__main__':
    #franka.movel(traj, traj_duration=dt)
    franka.move(move_type='o',params=traj, traj_duration=tf)
 
-   real_traj = np.genfromtxt("real_traj/output.csv", delimiter=',') #NOTE: set name here!
+   real_traj = np.genfromtxt(filepath, delimiter=',') #NOTE: set name here!
 
 
    plt.figure(1)
