@@ -2,7 +2,7 @@
 - In addition to David’s comments: change to remote_franka3 in both header files of Franka 3
 
 - Enable commments in .bashrc when running dual franka to get command from franka2
-
+- Comment line 677 or 678 of control_remote.cpp to set name in main() function to either "remote_franka2" or "remote_franka3"
 
 For runnning single robot:
 - rosrun franka_david frankapy
