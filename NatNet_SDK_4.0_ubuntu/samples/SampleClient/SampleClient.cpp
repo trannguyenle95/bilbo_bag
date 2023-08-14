@@ -55,6 +55,7 @@ int STOP = 0;
 
 int main( int argc, char* argv[] )
 {
+    sleep(10); //sleep 10s to give time for setting bag position
 
     // Install logging callback
     NatNet_SetLogCallback( MessageHandler );
@@ -133,7 +134,6 @@ int main( int argc, char* argv[] )
     {
         printf("Client initialized and ready.\n");
     }
-	
     
 	// Ready to receive marker stream!
 	printf("\nClient is connected to server and listening for data...\n");

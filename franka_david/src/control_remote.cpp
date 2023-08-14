@@ -547,16 +547,16 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 {
     // Compliance parameters
     // 2000 - smoother than 3000
-    double translational_stiffness{100.0};
+    double translational_stiffness{450.0};
     double rotational_stiffness{20.0};
     if (!this->_franka3)
     {
-        translational_stiffness = 105.0;
+        translational_stiffness = 450.0;
         rotational_stiffness = 40.0;  
     }
     else
     {
-        translational_stiffness = 150.0;
+        translational_stiffness = 450.0;
         rotational_stiffness = 40.0;   
     }
 

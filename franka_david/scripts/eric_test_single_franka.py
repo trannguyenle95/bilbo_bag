@@ -69,7 +69,7 @@ if __name__ == '__main__':
    #Import traj and duration from CSV
 
 
-   traj = np.genfromtxt(datafolder+"/"+"06_10s_DMP_BagFlip.csv", delimiter=',') #NOTE: set name here!
+   traj = np.genfromtxt(datafolder+"/DMP/"+"DMP_sack_from_bag2.csv", delimiter=',') #NOTE: set name here!
    #NOTE: 10 FPS seems too few points so it is too jumpy!
 
    #traj = traj[0,:].reshape(1, 7)

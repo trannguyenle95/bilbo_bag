@@ -18,6 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 import numpy as np
 import matplotlib.pyplot as plt
 import pandas as pd
+import os
 
 #If using unedited
 #import pydmps
@@ -137,8 +138,9 @@ def DMPfunc(filename, main_axis, inFPS = 120, outFPS=120, plot=False, save=True)
         plt.show()
 
     #save DMP to file
-    np.savetxt("Output/""DMP_"+filename, reorder, delimiter=",")
+    path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'DMP', 'DMP_'+filename)
+    np.savetxt(path, reorder, delimiter=",")
 
 
 if __name__ == '__main__':
-    DMPfunc("BagFlip.csv", "x", inFPS = 120, outFPS=2000, plot=True, save=True)
+    DMPfunc("sack_from_bag2.csv", "x", inFPS = 120, outFPS=1000, plot=True, save=True) #1000 Hz playback times factor to slow it down by
