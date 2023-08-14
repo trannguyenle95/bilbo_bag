@@ -143,4 +143,4 @@ def DMPfunc(filename, main_axis, inFPS = 120, outFPS=120, plot=False, save=True)
 
 
 if __name__ == '__main__':
-    DMPfunc("sack_from_bag2.csv", "x", inFPS = 120, outFPS=1000, plot=True, save=True) #1000 Hz playback times factor to slow it down by
+    DMPfunc("sack_from_bag2.csv", "x", inFPS = 120, outFPS=1000*1.5, plot=True, save=True) #1000 Hz playback times factor to slow it down by
