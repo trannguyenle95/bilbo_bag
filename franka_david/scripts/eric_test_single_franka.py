@@ -35,9 +35,12 @@ if __name__ == '__main__':
    #For getting joint states:
    #roslaunch franka_visualization franka_visualization.launch robot_ip:=172.16.0.2 load_gripper:=True
    #Then run:
-   #roslaunch franka_visualization franka_visualization.launch robot_ip:=172.16.0.2 load_gripper:=True
+   #rostopic echo joint_states
    
-   joint_ori = [-0.06153707569372121, 0.23268072162435294, -0.003733379824253959, -2.120620626949313, -0.07440938119840552, 2.374850448676014, 0.851590066155449] #hori x align
+   #joint_ori = [-0.06153707569372121, 0.23268072162435294, -0.003733379824253959, -2.120620626949313, -0.07440938119840552, 2.374850448676014, 0.851590066155449] #hori x align
+   #^above used when initial ee grip is not rotated
+   joint_ori = [-0.06033718608193325, 0.1957925676774354, 0.1446464792309258, -2.1242161722067974, -0.12300981136857973, 2.3759525292393855, -0.6157846782301644] #rotated ee grip
+   
    #joint_ori = [-0.4086566598369908, 0.06066233018972612, 0.4103449780140034, -2.305708428782938, -0.14869967789150004, 2.406735659296419, -0.6797833158672728] #y aligned with base x
    #joint_ori = [-0.31192760009611187, 0.018771605972182755, 0.4549330232667995, -2.3624764677273156, 0.06496027958723219, 2.431859529764697, -0.7104102848795065]
    
@@ -48,13 +51,13 @@ if __name__ == '__main__':
    input("Move robots to origin")
    
    #pose = np.array([0.57474, -0.04, 0.20, 0.99882, -0.039110, 0.010790, 0.026625]).reshape(1,7)
-   pose = np.array([0.60, 0, 0.20, 1, 0, 0, 0]).reshape(1,7)
+   #pose = np.array([0.60, 0, 0.20, 1, 0, 0, 0]).reshape(1,7)
    #print("pose x:", pose[0])
    
    #first apply joint movement if it is far from desired location (large motion not doable in single linear motion)
    franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
    #then apply linear motion to get to correct distance to other robot depending on bag weight
-   franka.move(move_type='l', params=pose, traj_duration=3.0) #for linear movement to origin
+   #franka.move(move_type='l', params=pose, traj_duration=3.0) #for linear movement to origin
 
    # Defined as X, Y, Z
    #euler_init = [-177.31653135,   -4.27029547,   -4.35228107]  # Before = [-179.24297822, -2.93434324, 42.65659799]

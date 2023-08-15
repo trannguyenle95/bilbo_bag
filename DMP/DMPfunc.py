@@ -47,7 +47,6 @@ def DMPfunc(filename, main_axis, inFPS = 120, outFPS=120, plot=False, save=True)
     data[:,6:9] *= scale
 
     run_time = data[-1, 1]
-    main_axis = 'x' #main rotation axis
     if main_axis == 'x':
         axis = 2
         data[:,2+4] = 0 #set linear movement in this axis to zero
@@ -107,6 +106,53 @@ def DMPfunc(filename, main_axis, inFPS = 120, outFPS=120, plot=False, save=True)
     #make qw always be positive
     #qw_sign = np.sign(reorder[:,6])
     #reorder[:,3:7] = reorder[:,3:7] * qw_sign.reshape(-1, 1)
+
+    #-------------- Change ee rotation -------------
+    def q_rotate(qs,angle):
+        #Use quaternion product here to rotate quaternions
+        #https://en.wikipedia.org/wiki/Quaternion
+        #first rotation q2 followed by rotation q1
+        
+        qw2 = np.cos(angle/2)
+        qx2 = 0
+        qy2 = 0
+        qz2 = np.sin(angle/2) #rotate around z axis
+
+        qx1, qy1, qz1, qw1 = np.split(qs, 4, axis=1) #NOTE: change order here if needed
+
+        qw = qw1 * qw2 - qx1 * qx2 - qy1 * qy2 - qz1 * qz2
+        qx = qw1 * qx2 + qx1 * qw2 + qy1 * qz2 - qz1 * qy2
+        qy = qw1 * qy2 - qx1 * qz2 + qy1 * qw2 + qz1 * qx2
+        qz = qw1 * qz2 + qx1 * qy2 - qy1 * qx2 + qz1 * qw2
+
+
+        rotated_q = np.hstack((qx, qy, qz, qw)) #NOTE: change order here if needed!
+
+        #print("q new:", rotated_q)
+
+        #size = np.linalg.norm(rotated_q, axis=1)
+        #print("size:", size)
+
+        rotated_q = rotated_q[:,0:4] / np.linalg.norm(rotated_q[:,0:4], axis = 1, keepdims = True)
+
+        #size = np.linalg.norm(rotated_q, axis=1)
+        #print("size:", size)
+
+        return rotated_q
+
+
+    new_quat = q_rotate(reorder[:, 3:7], -np.pi/2)
+
+    print("init:", new_quat[0])
+    print("sample:", new_quat[2600])
+
+    reorder[:, 3:7] = new_quat
+
+    # --- end of ee rotation code
+
+
+
+
 
     #add offsets
     reorder[:,0] += 0.575
