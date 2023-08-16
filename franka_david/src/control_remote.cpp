@@ -81,11 +81,11 @@ CartesianRemoteController::CartesianRemoteController()
     
     //ADDED 16.08
     this->_sub_gripper_move = control_py_node.subscribe(
-        "/frankapy/gripper_move", 20, &CartesianRemoteController::gripperMoveCallback, this,
+        "/franka/gripper_move", 20, &CartesianRemoteController::gripperMoveCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
     
     this->_sub_gripper_grasp = control_py_node.subscribe(
-        "/frankapy/gripper_grasp", 20, &CartesianRemoteController::gripperGraspCallback, this,
+        "/franka/gripper_grasp", 20, &CartesianRemoteController::gripperGraspCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
 
     
@@ -734,8 +734,8 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "remote_franka2");
-    //ros::init(argc, argv, "remote_franka3");
+    //ros::init(argc, argv, "remote_franka2");
+    ros::init(argc, argv, "remote_franka3");
     CartesianRemoteController controller;
 
     ros::spin();
