@@ -46,7 +46,7 @@ if __name__ == '__main__':
 
    input("Move robots to origin")
    franka.move(move_type='j', params=joint_ori, traj_duration=3.0)
-
+   franka.close_grippers() #NEW
    # Defined as X, Y, Z
    #euler_init = [-177.31653135,   -4.27029547,   -4.35228107]  # Before = [-179.24297822, -2.93434324, 42.65659799]
 
@@ -202,4 +202,5 @@ if __name__ == '__main__':
 
    plt.show()
 
-    #franka.move(move_type='d',params=traj, traj_duration=4.0)
+   franka.release_grippers() #NEW
+   #franka.move(move_type='d',params=traj, traj_duration=4.0)

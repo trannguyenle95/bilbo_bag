@@ -56,6 +56,8 @@ if __name__ == '__main__':
    
    #first apply joint movement if it is far from desired location (large motion not doable in single linear motion)
    franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
+   franka.close_grippers() #NEW
+   
    #then apply linear motion to get to correct distance to other robot depending on bag weight
    #franka.move(move_type='l', params=pose, traj_duration=3.0) #for linear movement to origin
 
@@ -217,4 +219,5 @@ if __name__ == '__main__':
 
    plt.show()
 
-    #franka.move(move_type='d',params=traj, traj_duration=4.0)
+   franka.release_grippers() #NEW
+   #franka.move(move_type='d',params=traj, traj_duration=4.0)
