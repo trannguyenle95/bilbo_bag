@@ -175,7 +175,8 @@ void CartesianRemoteController::jointMotionCallback(const franka_david::JointMot
     double joint6 = msg->joint6;
     if (this->_franka3)
     {
-        joint6 = -msg->joint6 + M_PI/2;
+        //joint6 = -msg->joint6 + M_PI/2; //old initial ee orientation
+        joint6 = msg->joint6; //new initial ee orientation
     }
     bool enable = msg->enable;
         
@@ -684,8 +685,8 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "remote_franka2");
-    //ros::init(argc, argv, "remote_franka3");
+    //ros::init(argc, argv, "remote_franka2");
+    ros::init(argc, argv, "remote_franka3");
     CartesianRemoteController controller;
 
     ros::spin();
