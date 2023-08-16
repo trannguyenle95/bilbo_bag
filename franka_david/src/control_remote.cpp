@@ -79,6 +79,15 @@ CartesianRemoteController::CartesianRemoteController()
         "/franka/jointmotion", 20, &CartesianRemoteController::jointMotionCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
     
+    //ADDED 16.08
+    this->_sub_gripper_move = control_py_node.subscribe(
+        "/frankapy/gripper_move", 20, &CartesianRemoteController::gripperMoveCallback, this,
+        ros::TransportHints().reliable().tcpNoDelay());
+    
+    this->_sub_gripper_grasp = control_py_node.subscribe(
+        "/frankapy/gripper_grasp", 20, &CartesianRemoteController::gripperGraspCallback, this,
+        ros::TransportHints().reliable().tcpNoDelay());
+
     
     // set collision behavior
     this->_robot->setCollisionBehavior(
@@ -89,6 +98,46 @@ CartesianRemoteController::CartesianRemoteController()
     this->_robot->setJointImpedance({{3000, 3000, 3000, 2500, 2500, 2000, 2000}});
     this->_robot->setCartesianImpedance({{3000, 3000, 3000, 300, 300, 300}});
 
+}
+
+//Gripper code added 16.08 from "control_through_python.cpp"
+void CartesianRemoteController::gripperMoveCallback(const franka_david::GripperPyPtr& msg)
+{
+    double width = msg->width;
+    double speed = msg->speed;
+    bool enable = msg->enable;
+    
+    if (enable)
+    {
+    	std::cout << "Moving the gripper at speed " << speed << " and to width " << width << std::endl;
+        this->_gripper->move(width, speed);
+    }
+    
+}
+
+void CartesianRemoteController::gripperGraspCallback(const franka_david::GripperGraspPyPtr& msg)
+{
+    double distance = msg->distance;
+    double speed = msg->speed;
+    double force = msg->force;
+    bool release = msg->release;
+    bool enable = msg->enable;
+    
+    if (enable)
+    {
+    	
+        if (release)
+        {
+            std::cout << "Releasing gripper" <<std::endl;
+            this->_gripper->stop();
+        }
+        else
+        {
+            std::cout << "Grasping with force " << force << "N and distance" << distance << std::endl;
+            this->_gripper->grasp(distance, speed, force);
+        }
+    }
+    
 }
 
 
@@ -685,8 +734,8 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 
 int main(int argc, char **argv)
 {
-    //ros::init(argc, argv, "remote_franka2");
-    ros::init(argc, argv, "remote_franka3");
+    ros::init(argc, argv, "remote_franka2");
+    //ros::init(argc, argv, "remote_franka3");
     CartesianRemoteController controller;
 
     ros::spin();

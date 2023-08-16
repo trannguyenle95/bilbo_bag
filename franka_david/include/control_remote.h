@@ -46,6 +46,12 @@ public:
     // Subscriber for joint
     ros::Subscriber _sub_joint;
     
+    // Subscriber gripper
+    ros::Subscriber _sub_gripper_move;
+    // Subscriber gripper
+    ros::Subscriber _sub_gripper_grasp;
+    
+    
     // Publisher for reached state
     ros::Publisher _pub_reached;
     
@@ -71,6 +77,12 @@ public:
     
     // Method to execute joint motion
     void jointMotionCallback(const franka_david::JointMotionPyPtr& msg);
+    
+    // Method that subscribes to gripper
+    void gripperMoveCallback(const franka_david::GripperPyPtr& msg);
+    
+    // Method that subscribes to gripper
+    void gripperGraspCallback(const franka_david::GripperGraspPyPtr& msg);
     
     
     CartesianRemoteController();
