@@ -527,12 +527,22 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
             Ti[k](1, 1) = rot(0, 0); Ti[k](1, 2) = rot(0, 1); Ti[k](1, 3) = rot(0, 2); 
             Ti[k](2, 1) = rot(1, 0); Ti[k](2, 2) = rot(1, 1); Ti[k](2, 3) = rot(1, 2); 
             Ti[k](3, 1) = rot(2, 0); Ti[k](3, 2) = rot(2, 1); Ti[k](3, 3) = rot(2, 2);
-            if (! this->_franka3)
+
+            //if (! this->_franka3) //OLD
+            if (this->_franka3)
             {
-                Ti[k](1, 2) = -rot(0, 1);
-                Ti[k](2, 1) = -rot(1, 0);
-                Ti[k](2, 3) = -rot(1, 2); 
+                //From OLD code for other inital ee rotation
+                // Ti[k](1, 2) = -rot(0, 1);
+                // Ti[k](2, 1) = -rot(1, 0);
+                // Ti[k](2, 3) = -rot(1, 2); 
+                // Ti[k](3, 2) = -rot(2, 1);
+
+                //For NEW ee initial rotation
+                Ti[k](3, 1) = -rot(2, 0);
                 Ti[k](3, 2) = -rot(2, 1);
+                Ti[k](1, 3) = -rot(0, 2); 
+                Ti[k](2, 3) = -rot(1, 2);
+                
             }
             
 	    }
