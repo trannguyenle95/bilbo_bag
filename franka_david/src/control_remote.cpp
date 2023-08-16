@@ -54,7 +54,7 @@ CartesianRemoteController::CartesianRemoteController()
     ros::NodeHandle control_py_node(franka_name);
 
     this->_robot = new franka::Robot("172.16.0.2");
-    //this->_gripper = new franka::Gripper("172.16.0.2");
+    this->_gripper = new franka::Gripper("172.16.0.2");
     
     
     // TODO Modify delay
