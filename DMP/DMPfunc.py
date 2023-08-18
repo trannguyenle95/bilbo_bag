@@ -181,6 +181,17 @@ def DMPfunc(filename, main_axis, inFPS = 120, outFPS=120, plot=False, save=True)
         plt.plot(data[:, 2], label="q_w in")
         plt.legend()
 
+        plt.figure(3)
+        plt.plot(dy_track[:, 4], label="x")
+        plt.plot(dy_track[:, 6], label="y") * -1 
+        plt.plot(dy_track[:, 5], label="z")
+        #plt.plot(dy_track[:, 1], label="qx")
+        #plt.plot(dy_track[:, 3], label="qy")
+        #plt.plot(dy_track[:, 2], label="qz")
+        #plt.plot(dy_track[:, 0], label="qw")
+        plt.title("Velocity")
+        plt.legend()
+
         plt.show()
 
     #save DMP to file
@@ -189,4 +200,4 @@ def DMPfunc(filename, main_axis, inFPS = 120, outFPS=120, plot=False, save=True)
 
 
 if __name__ == '__main__':
-    DMPfunc("sack_from_bag2.csv", "x", inFPS = 120, outFPS=1000*1.5, plot=True, save=True) #1000 Hz playback times factor to slow it down by
+    DMPfunc("sack_from_bag2.csv", "x", inFPS = 120, outFPS=1000*1, plot=True, save=True) #1000 Hz playback times factor to slow it down by
