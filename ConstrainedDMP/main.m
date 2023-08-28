@@ -7,9 +7,11 @@ close all
 
 %D = readmatrix(strcat('demos/','BagFlip_q.csv'))';
 
-filename = 'BagFlip.csv';
 
-D = preprocess(filename, false);
+%filename = 'BagFlip.csv';
+%D = preprocess_1hand(filename, false);
+filename = 'BagFlip_2hand.csv';
+D = preprocess(filename, false, 1);
 q = InverseKinematics(D)';
 
 demo_traj = generateDemo(q, 1/120);
@@ -88,5 +90,5 @@ poseDMP = ForwardKinematics(res{1}.ref_pos');
 plot_result
 
 %save joint angles to file
-writematrix(res{1}.ref_pos',strcat('trajectories/joint_',filename))
-writematrix(poseDMP,strcat('trajectories/pose_',filename))
+writematrix(res{1}.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
+writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))

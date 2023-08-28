@@ -1,11 +1,9 @@
-function D = preprocess(filename, displayplot, gripper_ori)
+function D = preprocess_1hand(filename, displayplot)
 
 %D = readmatrix(filename)';
 D = csvread(strcat('demos/',filename), 7); %offset 7 rows to skip header info
 
 D = fillmissing(fillmissing(D, 'next'), 'previous'); %copy values if there are gaps, so quaternions should still be valid
-
-x_dist = abs(D(:,7) - D(:,14)); %offset between both hands
 
 %normalize around (0,0,0) add offset later
 D(:,7) = D(:,7) - D(1,7); %x
@@ -59,48 +57,33 @@ reordered(:,6) = D(:, 3); %qz = old qy
 reordered(:,7) = D(:, 1); %qw
 D = reordered;
 
-if gripper_ori == 1
-    %Now use quaternion rotation to rotate end-effector by -pi/2 around robot z-axis
-    %to match grip orientation.
-    %Use quaternion product here to rotate quaternions
-    %https://en.wikipedia.org/wiki/Quaternion
-    %first rotation q2 followed by rotation q1.
-    angle = -pi/2;
-    %q_rot = [cos(angle) 0 0 sin(angle)];
-    %new_quat = quatmultiply(D(4:7),q_rot);
-    qw2 = cos(angle/2);
-    qx2 = 0;
-    qy2 = 0;
-    qz2 = sin(angle/2); %rotate around z axis
-    
-    qx1 = D(:,4);
-    qy1 = D(:,5);
-    qz1 = D(:,6);
-    qw1 = D(:,7);
-    
-    D(:,4) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2;
-    D(:,5) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
-    D(:,6) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
-    D(:,7) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2;
-    
-    D(:,4:7) = D(:,4:7) ./ sqrt(sum(D(:,4:7).^2,2)); %Make sure quaternion is still unit
-end
+%Now use quaternion rotation to rotate end-effector by -pi/2 around robot z-axis
+%to match grip orientation.
+%Use quaternion product here to rotate quaternions
+%https://en.wikipedia.org/wiki/Quaternion
+%first rotation q2 followed by rotation q1.
+angle = -pi/2;
+%q_rot = [cos(angle) 0 0 sin(angle)];
+%new_quat = quatmultiply(D(4:7),q_rot);
+qw2 = cos(angle/2);
+qx2 = 0;
+qy2 = 0;
+qz2 = sin(angle/2); %rotate around z axis
 
+qx1 = D(:,4);
+qy1 = D(:,5);
+qz1 = D(:,6);
+qw1 = D(:,7);
+
+D(:,4) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2;
+D(:,5) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
+D(:,6) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
+D(:,7) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2;
+
+D(:,4:7) = D(:,4:7) ./ sqrt(sum(D(:,4:7).^2,2)); %Make sure quaternion is still unit
 
 %add offsets
-%robots are 1.5m apart, so for total distance "x_dist" the distance from the
-%middle point (0.75m) to either robot should be "x_dist"/2.
-if gripper_ori == 1
-    %remember wide side ~20cm
-    %Gripper with wide side towards eachother = smaller max distance 
-    %min distance between grippers is (0.75-0.575)*2 - 0.20 = 0.15 between outer parts of grippers.
-    D(:,1) = min(0.75 - (x_dist/2), 0.575); %x
-else
-    %short side of grippers ~10cm
-    %Gripper with short side towards eachother = larger max distance 
-    %min distance between grippers is (0.75-0.625)*2 - 0.10 = 0.15 between outer parts of grippers.
-    D(:,1) = min(0.75 - (x_dist/2), 0.625); %x
-end
+D(:,1) = D(:,1) + 0.575; %x
 D(:,2); %y
 D(:,3) = D(:,3) + 0.20; %z
 

@@ -54,12 +54,10 @@ hold off
 
 subplot(2,1,2)
 hold on
-%multiply quaternion by -1 to get same representation as in DMP for
-%comparison
-plot(0:1/120:1/120*(length(D)-1), -D(:,4),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_{qx}')
-plot(0:1/120:1/120*(length(D)-1), -D(:,5),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_{qy}')
-plot(0:1/120:1/120*(length(D)-1), -D(:,6),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_{qz}')
-plot(0:1/120:1/120*(length(D)-1), -D(:,7),'color','#7A364F','LineWidth',2.5, 'DisplayName','demo_{qw}')
+plot(0:1/120:1/120*(length(D)-1), D(:,4),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_{qx}')
+plot(0:1/120:1/120*(length(D)-1), D(:,5),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_{qy}')
+plot(0:1/120:1/120*(length(D)-1), D(:,6),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_{qz}')
+plot(0:1/120:1/120*(length(D)-1), D(:,7),'color','#7A364F','LineWidth',2.5, 'DisplayName','demo_{qw}')
 
 plot(res{1}.t,poseDMP(:,4),'color','#2016E9','LineWidth',1.5, 'DisplayName','DMP_{qx}')
 plot(res{1}.t,poseDMP(:,5),'color','#FF00E4','LineWidth',1.5, 'DisplayName','DMP_{qy}')
