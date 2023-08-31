@@ -7,6 +7,7 @@ from copy import deepcopy
 from franka_david.msg import MovetoPy
 from franka_david.msg import MotionPy
 from franka_david.msg import JointMotionPy
+from franka_david.msg import JointTrajPy #ADDED 29.08
 from franka_david.msg import GripperPy
 from franka_david.msg import GripperGraspPy
 from franka_david.msg import RemoteMotionPy
@@ -89,6 +90,8 @@ class Franka:
                                                     queue_size=10)
         self.ros_joint_pub = rospy.Publisher(topic+'jointmotion', JointMotionPy,
                                              queue_size=10)
+        self.ros_jointTraj_pub = rospy.Publisher(topic+'joint_trajectory', JointTrajPy,
+                                             queue_size=10) #ADDED 29.08
         self.ros_gripper_move_pub = rospy.Publisher(topic+'gripper_move', GripperPy,
                                                     queue_size=10)
         self.ros_gripper_grasp_pub = rospy.Publisher(topic+'gripper_grasp', GripperGraspPy,
@@ -374,6 +377,25 @@ class Franka:
             rospy.sleep(0.1)
             self.ros_motion_ori_pub.publish(pose_msg)
             sleep(traj_duration)
+
+        elif move_type == 'jt': #ADDED 29.08
+            assert traj_duration != 0.0
+            pose_msg = JointTrajPy()
+            pose_msg.duration = traj_duration
+            pose_msg.enable = True
+            for i in range(params.shape[0]):
+                pose_msg.joint0.append(params[i,0])
+                pose_msg.joint1.append(params[i,1])
+                pose_msg.joint2.append(params[i,2])
+                pose_msg.joint3.append(params[i,3])
+                pose_msg.joint4.append(params[i,4])
+                pose_msg.joint5.append(params[i,5])
+                pose_msg.joint6.append(params[i,6])
+
+            print("Sending new joint trajectory")
+            rospy.sleep(0.5)
+            self.ros_jointTraj_pub.publish(pose_msg)
+            sleep(2)
 
         elif move_type == 'j':
             pose_msg = JointMotionPy()

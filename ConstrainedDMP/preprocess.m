@@ -5,12 +5,18 @@ D = csvread(strcat('demos/',filename), 7); %offset 7 rows to skip header info
 
 D = fillmissing(fillmissing(D, 'next'), 'previous'); %copy values if there are gaps, so quaternions should still be valid
 
-x_dist = abs(D(:,7) - D(:,14)); %offset between both hands
+if size(D, 2) == 9
+    demoType = 'single'; %single hand tracked
+else
+    demoType = 'dual'; %two hands tracked
+    x_dist = abs(D(:,7) - D(:,14)); %offset between both hands
+end
 
 %normalize around (0,0,0) add offset later
 D(:,7) = D(:,7) - D(1,7); %x
 D(:,8) = D(:,8) - D(1,8); %y
 D(:,9) = D(:,9) - D(1,9); %y
+
 
 %scale trajectory so height is within robot reach
 max_h = max(D(:,8));
@@ -37,7 +43,7 @@ theta = 2*atan2(sqrt(qx.^2),qw); %calculate theta from new qx and qw
 %rotations to be with relation to the starting orientation where the
 %gripper points straight downwards
 qx = sin((theta - pi)/2);
-qw = cos((theta - pi)/2);
+qw = cos((theta - pi)/2); %-1 to change rotation direction towards camera in lab
 
 %insert new quaternion rotation, and also change order to q = [qw qx qy qz]
 %notation from q = [qx qy qz qw] in OptiTrack
@@ -86,21 +92,31 @@ if gripper_ori == 1
     D(:,4:7) = D(:,4:7) ./ sqrt(sum(D(:,4:7).^2,2)); %Make sure quaternion is still unit
 end
 
-
-%add offsets
-%robots are 1.5m apart, so for total distance "x_dist" the distance from the
-%middle point (0.75m) to either robot should be "x_dist"/2.
-if gripper_ori == 1
-    %remember wide side ~20cm
-    %Gripper with wide side towards eachother = smaller max distance 
-    %min distance between grippers is (0.75-0.575)*2 - 0.20 = 0.15 between outer parts of grippers.
-    D(:,1) = min(0.75 - (x_dist/2), 0.575); %x
+if strcmp(demoType,'dual')
+    %add offsets
+    %robots are 1.5m apart, so for total distance "x_dist" the distance from the
+    %middle point (0.75m) to either robot should be "x_dist"/2.
+    if gripper_ori == 1
+        %remember wide side ~20cm
+        %Gripper with wide side towards eachother = smaller max distance 
+        %min distance between grippers is (0.75-0.575)*2 - 0.20 = 0.15 between outer parts of grippers.
+        %Set maximum distance between grippers to (0.75 - 0.50)*2 = 0.50.
+        D(:,1) = max(min(0.75 - (x_dist/2), 0.575),0.50); %x
+    else
+        %short side of grippers ~10cm
+        %Gripper with short side towards eachother = larger max distance 
+        %min distance between grippers is (0.75-0.625)*2 - 0.10 = 0.15 between outer parts of grippers.
+        %Set maximum distance between grippers to (0.75 - 0.50)*2 = 0.50.
+        D(:,1) = max(min(0.75 - (x_dist/2), 0.625),0.50); %x
+    end
 else
-    %short side of grippers ~10cm
-    %Gripper with short side towards eachother = larger max distance 
-    %min distance between grippers is (0.75-0.625)*2 - 0.10 = 0.15 between outer parts of grippers.
-    D(:,1) = min(0.75 - (x_dist/2), 0.625); %x
+    if gripper_ori == 1
+        D(:,1) = 0.575; %x
+    else
+        D(:,1) = 0.625; %x
+    end
 end
+
 D(:,2); %y
 D(:,3) = D(:,3) + 0.20; %z
 

@@ -607,17 +607,17 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 {
     // Compliance parameters
     // 2000 - smoother than 3000
-    double translational_stiffness{450.0};
-    double rotational_stiffness{40.0};
+    double translational_stiffness{1400.0}; //At full speed playback 450 and 60 works for Research 3, but Panda can only have 200 and 40
+    double rotational_stiffness{53.0};
     if (!this->_franka3)
     {
-        translational_stiffness = 450.0; //105.0 previous, use with full speed
-        rotational_stiffness = 40.0;  
+        translational_stiffness = 1400.0; //105.0 previous, use with full speed
+        rotational_stiffness =53.0;  
     }
     else
     {
-        translational_stiffness = 450.0; //150.0 previous, with full speed
-        rotational_stiffness = 40.0;   
+        translational_stiffness = 1400.0; //150.0 previous, with full speed
+        rotational_stiffness = 53.0;   
     }
 
     std::cout << "Translational stifness: " << translational_stiffness << " , rotational: " << rotational_stiffness << std::endl;

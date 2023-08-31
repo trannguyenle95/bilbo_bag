@@ -24,6 +24,7 @@
 #include <franka_david/GripperPy.h>
 #include <franka_david/GripperGraspPy.h>
 #include <franka_david/JointMotionPy.h>
+#include <franka_david/JointTrajPy.h>
 
 class CartesianPythonController
 {
@@ -36,6 +37,8 @@ public:
     ros::Subscriber _sub_moveto;
     // Subscriber joint motion
     ros::Subscriber _sub_joint;
+    // Subscriber joint trajectory
+    ros::Subscriber _sub_joint_traj;
     // Subscriber gripper
     ros::Subscriber _sub_gripper_move;
     // Subscriber gripper
@@ -54,6 +57,9 @@ public:
     
     // Method that subscribes to a joint motion
     void jointMotionCallback(const franka_david::JointMotionPyPtr& msg);
+    
+    // Method that subscribes to a joint trajectory, ADDED 29.08
+    void jointTrajectoryCallback(const franka_david::JointTrajPyPtr& msg);
     
     // Method that subscribes to motion
     void motionCallback(const franka_david::MotionPyPtr& msg);
@@ -75,5 +81,5 @@ public:
 // private:
     franka::Robot* _robot;
     franka::Gripper* _gripper;
-    bool _franka3 = false; //change to either 2 or 3 to match the robot
+    bool _franka3 = true; //change to either 2 or 3 to match the robot
 };
