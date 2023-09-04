@@ -46,11 +46,16 @@ if __name__ == '__main__':
    #joint_ori = [-0.0689248124066240, 0.242700503048464, 0.131427626426893, -2.08512240051222, -0.359692141974038, 2.27848131322344, -1.27023685738111] #First setpoint in BagFlip csv (wihtout -1)
    #joint_ori = [-0.447564825600187, 0.258926980573075, 0.403231110458737, -2.09391016585431, 0.188238139907825, 2.31048277296264, -1.75515831222447] #First setpoint in BagFlip csv (WITH -1)
 
-   joint_ori = [0.00987823605505126, 0.374127258697815, 0.0510372705978866, -1.88723720136350, -0.326075606836512, 2.22057041702639, 0.261161445783366] #First setpoint in BagFlip csv (without -1), ORIGINAL GRIP DIRECTION
+   #joint_ori = [0.00987823605505126, 0.374127258697815, 0.0510372705978866, -1.88723720136350, -0.326075606836512, 2.22057041702639, 0.261161445783366] #First setpoint in BagFlip csv (without -1), ORIGINAL GRIP DIRECTION
 
    #joint_ori = [-0.151392100200986, 0.374799255536351, 0.103110341127385, -1.89092065937875, 0.256956160347786, 2.23422794073271, -0.216915860033620] #First setpoint in BagFlip csv (WITH -1), ORIGINAL GRIP DIRECTION
    
+   #joint_ori = [0, 0.2837448589662732, 0, -2.0720574669683027, 0, 2.405712411822974, 0.7542077567525343] #NOTE: position [0.59,0,0.20] gripper in original orientation
 
+   #joint_ori = [0.0711714439885711, 0.373619455135678, -0.0160332506422611, -1.88868112924497, -0.296405612466853, 2.22703550315137, 0.241982022300288]
+   
+   #joint_ori = [-0.001637353693321636, -0.7838729663498644, 0.001332866853098354, -2.354591992496418, -0.004458093395537303, 1.5761728843787417, 0.775939115057535] #Init position before delta_t updates
+   
    #joint_ori = [-0.4086566598369908, 0.06066233018972612, 0.4103449780140034, -2.305708428782938, -0.14869967789150004, 2.406735659296419, -0.6797833158672728] #y aligned with base x
    #joint_ori = [-0.31192760009611187, 0.018771605972182755, 0.4549330232667995, -2.3624764677273156, 0.06496027958723219, 2.431859529764697, -0.7104102848795065]
    
@@ -58,42 +63,22 @@ if __name__ == '__main__':
    franka = Franka(init_node=True)
    franka.rate.sleep()
 
+   datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
+
+   #Import traj and duration from CSV
+   traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_BagFlip.csv", delimiter=',') #NOTE: set name here!
+   dt = 0.001 #1/30 #/ 120 #NOTE: modify this to match generated CSV or set this FPS when generating csv!
+   #NOTE: seems like I have to use higher dt than 1/FPS, even when there is a sleep in franka.py
+
    input("Move robots to origin")
    
-   #pose = np.array([0.57474, -0.04, 0.20, 0.99882, -0.039110, 0.010790, 0.026625]).reshape(1,7)
-   #pose = np.array([0.60, 0, 0.20, 1, 0, 0, 0]).reshape(1,7)
-   #pose = np.array([0.75, 0, 0.20, 0.70752, 0.70544, 0.00497, 0.04151]).reshape(1,7) #new ee orientation
-   #print("pose x:", pose[0])
-   
+   joint_ori = traj[0]
+
    #first apply joint movement if it is far from desired location (large motion not doable in single linear motion)
    franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
    franka.close_grippers() #NEW
    
-   #then apply linear motion to get to correct distance to other robot depending on bag weight
-   #franka.move(move_type='o', params=pose, traj_duration=1) #for linear movement to origin - didn't work with single point? Use DMP code to set offset?
-
-   # Defined as X, Y, Z
-   #euler_init = [-177.31653135,   -4.27029547,   -4.35228107]  # Before = [-179.24297822, -2.93434324, 42.65659799]
-
-
-   dt = 0.001 #1/30 #/ 120 #NOTE: modify this to match generated CSV or set this FPS when generating csv!
-   #NOTE: seems like I have to use higher dt than 1/FPS, even when there is a sleep in franka.py
-
-
-   datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
-
-   #Import traj and duration from CSV
-
-
-   traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_BagFlip.csv", delimiter=',') #NOTE: set name here!
-   #NOTE: 10 FPS seems too few points so it is too jumpy!
-
-   #traj = traj[0,:].reshape(1, 7)
-   #traj[:,2] += 0.15
-   #print("traj shape:", traj.shape)
-   #NOTE: robot handles quaternions (X,Y,Z,W) https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.as_quat.html 
-   # and traj should be (x,y,z,) >>> DMPfunc.py now generates in this order
-
+   
    '''
    #INTERPOLATION
    #https://stackoverflow.com/questions/16388110/double-the-length-of-a-python-numpy-array-with-interpolated-new-values
@@ -222,76 +207,7 @@ if __name__ == '__main__':
 
    input("Perform dynamic primitive")
 
-   #for i in range(2500, traj.shape[0]):
-   #   #print("shape:", traj[i,:].reshape(1,-1).shape)
-   #   print("i:", i)
-   #   franka.movel(traj[i,:].reshape(1,-1), traj_duration=dt)
 
-   # def quaternion_multiply(quaternion1, quaternion0):
-   #    x0, y0, z0, w0 = quaternion0
-   #    x1, y1, z1, w1 = quaternion1
-   #    return np.array([-x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0,
-   #                      x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
-   #                      -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
-   #                      x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0], dtype=np.float64)
-
-
-   #q_rot_y = [0, 1, 0, 0]
-   #q_rot_newx = [-0.3420201, 0, 0, 0.9396926]
-
-   #traj = traj[0,:].reshape(1, 7)
-   
-   #traj[:,3] *= -1
-   #traj[:,6] *= -1
-
-   #traj = np.array([[0.57548, -0.0978, 0.24847, 0.878821, -0.0368, -0.02587, 0.475]]) #easy case and latest with origin
-
-   #traj = np.array([[0.559, 0.088, 0.2536, 0.901, -0.0089, -0.0012, -0.4331]]) #hard case and latest with origin
-
-
-   #traj = np.array([[0.572, 0.023, 0.209, 0.6749, 0.6607, -0.23487, 0.22982]]) #tries to rotate all the way around
-
-   # r = R.from_quat([0.901, -0.0089, -0.0012, -0.4331])
-   # angles = r.as_euler('xyz', degrees=False)
-   # rot_x = angles[0]
-   # print("rot x:", rot_x)
-   # rot_y = angles[1]
-   # rot_z = angles[2]
-
-   # print("rot y:", rot_y)
-   # if rot_x < 0:
-   #       # if rot_y > 0:
-   #       #    rot_x = -3.14
-   #       #    quat = (R.from_euler('XYZ', [rot_x,rot_y,0], degrees=False).as_quat())
-   #       # else:
-   #          rot_y = -3.14
-   #          #rot_x = -3.14-rot_x
-   #          rot_x = rot_x+3.14
-
-   #          quat = (R.from_euler('XYZ', [rot_x,rot_y,rot_z], degrees=False).as_quat())
-   # else:
-   #    quat = (R.from_euler('XYZ', [rot_x,rot_y,rot_z], degrees=False).as_quat())
-
-   
-   # traj[:,3], traj[:,4], traj[:,5], traj[:,6] = quat[0], quat[1], quat[2], quat[3]
-
-   # print(rot_x, rot_y, " -- quat: ",quat)
-
-
-   #traj = np.array([[0.572, 0.023, 0.209, 0.6547, 0.63439, 0.28806, -0.29317]]) #
-
-   #traj[:,2] += 0.15
-   #traj[:,3] =  -0.3420201
-   #traj[:,4] =  0.940
-   #traj[:,6] =   0.342
-
-   #q_orig = [traj[:,3], traj[:,4], traj[:,5], traj[:,6]]
-   #q_new1 = quaternion_multiply(q_orig, q_rot_y)
-   #q_new2 = quaternion_multiply(q_new1, q_rot_newx)
-   #traj[:,3], traj[:,4], traj[:,5], traj[:,6] = q_new2[0], q_new2[1], q_new2[2], q_new2[3]
-   #print("q_new2:", q_new2)
-   
-   #franka.movel(traj, traj_duration=dt)
    franka.move(move_type='jt',params=traj, traj_duration=tf)
 
    time.sleep(tf) #let motion finish before plotting and closing grippers

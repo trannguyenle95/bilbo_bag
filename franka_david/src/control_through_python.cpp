@@ -237,8 +237,8 @@ void CartesianPythonController::jointTrajectoryCallback(const franka_david::Join
         //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
         
         time += period.toSec();
-        std::cout << "Time "<< double(period.toMSec()) << std::endl;
-        //loop_iter = int(time / this->_dt);
+        std::cout << "Time "<< double(time) << std::endl;
+        //loop_iter = int(time / this->_dt) + 1;
         loop_iter++;
 
         if (loop_iter > N-1) {
@@ -605,7 +605,7 @@ void CartesianPythonController::motionOriCallback(const franka_david::MotionPyPt
                 // Ti[k](2, 3) = -rot(1, 2); 
                 // Ti[k](3, 2) = -rot(2, 1);
 
-                //For NEW ee initial rotation
+                //For NEW ee initial rotation - NOTE 04.09: also seems to work for original ee orientation
                 Ti[k](3, 1) = -rot(2, 0);
                 Ti[k](3, 2) = -rot(2, 1);
                 Ti[k](1, 3) = -rot(0, 2); 
