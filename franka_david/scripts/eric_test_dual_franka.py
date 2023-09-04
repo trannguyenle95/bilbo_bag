@@ -58,7 +58,7 @@ if __name__ == '__main__':
    #Import traj and duration from CSV
    datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
 
-   traj = np.genfromtxt(datafolder+"/DMP/"+"DMP_sack_from_bag2.csv", delimiter=',') #NOTE: set name here!
+   traj = np.genfromtxt(datafolder+"/DMP/"+"pose_BagFlip.csv", delimiter=',') #NOTE: set name here!
    #NOTE: 10 FPS seems too few points so it is too jumpy!
 
    #traj = traj[0,:].reshape(1, 7)
@@ -201,6 +201,7 @@ if __name__ == '__main__':
    plt.legend()
 
    plt.show()
-
-   franka.release_grippers() #NEW
+   
+   franka.open_grippers()
+   #franka.release_grippers() #NEW
    #franka.move(move_type='d',params=traj, traj_duration=4.0)

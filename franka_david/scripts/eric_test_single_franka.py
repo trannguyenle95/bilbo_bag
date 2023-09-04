@@ -38,80 +38,50 @@ if __name__ == '__main__':
    #rostopic echo joint_states
    
    #joint_ori = [-0.06153707569372121, 0.23268072162435294, -0.003733379824253959, -2.120620626949313, -0.07440938119840552, 2.374850448676014, 0.851590066155449] #hori x align
+   #joint_ori = [-0.04978088093284428, 0.40831610082646835, -0.00016188993599345562, -2.0011876919882003, -0.0764803841657652, 2.430139631960127, 0.792066740804676] #~26cm distance
+
+   joint_ori = [0, 0.2837448589662732, 0, -2.0720574669683027, 0, 2.405712411822974, 0.7542077567525343] #NOTE: position [0.59,0,0.20] gripper in original orientation
+
    #^above used when initial ee grip is not rotated
-   joint_ori = [-0.06033718608193325, 0.1957925676774354, 0.1446464792309258, -2.1242161722067974, -0.12300981136857973, 2.3759525292393855, -0.6157846782301644] #rotated ee grip
+   #joint_ori = [-0.06033718608193325, 0.1957925676774354, 0.1446464792309258, -2.1242161722067974, -0.12300981136857973, 2.3759525292393855, -0.6157846782301644] #rotated ee grip
    
    #joint_ori = [-0.4086566598369908, 0.06066233018972612, 0.4103449780140034, -2.305708428782938, -0.14869967789150004, 2.406735659296419, -0.6797833158672728] #y aligned with base x
    #joint_ori = [-0.31192760009611187, 0.018771605972182755, 0.4549330232667995, -2.3624764677273156, 0.06496027958723219, 2.431859529764697, -0.7104102848795065]
    
    #franka = Franka(topic='/franka/', node_name='franka2_3_talker')
+
+
    franka = Franka(init_node=True)
    franka.rate.sleep()
 
+   #Import traj and duration from CSV
+   datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
+
+   traj = np.genfromtxt(datafolder+"/trajectories/"+"pose_BagFlip.csv", delimiter=',') #NOTE: set name here!
+   #NOTE: 10 FPS seems too few points so it is too jumpy!
+
+   
    input("Move robots to origin")
    
-   #pose = np.array([0.57474, -0.04, 0.20, 0.99882, -0.039110, 0.010790, 0.026625]).reshape(1,7)
-   #pose = np.array([0.60, 0, 0.20, 1, 0, 0, 0]).reshape(1,7)
-   #print("pose x:", pose[0])
-   
+   dt = 0.001 #1/30 #/ 120 #NOTE: modify this to match generated CSV or set this FPS when generating csv!
+   #NOTE: seems like I have to use higher dt than 1/FPS, even when there is a sleep in franka.py
+
+   tf = traj.shape[0] * dt
+   print('tf:', tf)
+
    #first apply joint movement if it is far from desired location (large motion not doable in single linear motion)
    franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
    franka.close_grippers() #NEW
    
-   #then apply linear motion to get to correct distance to other robot depending on bag weight
-   #franka.move(move_type='l', params=pose, traj_duration=3.0) #for linear movement to origin
-
-   # Defined as X, Y, Z
-   #euler_init = [-177.31653135,   -4.27029547,   -4.35228107]  # Before = [-179.24297822, -2.93434324, 42.65659799]
 
 
-   dt = 0.001 #1/30 #/ 120 #NOTE: modify this to match generated CSV or set this FPS when generating csv!
-   #NOTE: seems like I have to use higher dt than 1/FPS, even when there is a sleep in franka.py
 
-
-   datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
-
-   #Import traj and duration from CSV
-
-
-   traj = np.genfromtxt(datafolder+"/DMP/"+"DMP_sack_from_bag2.csv", delimiter=',') #NOTE: set name here!
-   #NOTE: 10 FPS seems too few points so it is too jumpy!
-
-   #traj = traj[0,:].reshape(1, 7)
-   #traj[:,2] += 0.15
-   #print("traj shape:", traj.shape)
-   #NOTE: robot handles quaternions (X,Y,Z,W) https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.transform.Rotation.as_quat.html 
-   # and traj should be (x,y,z,) >>> DMPfunc.py now generates in this order
-   tf = traj.shape[0] * dt
-
-   print('tf:', tf)
-
-   # plt.figure(1)
-   # plt.plot(traj[:, 0], label="pos_x")
-   # plt.plot(traj[:, 1], label="pos_y")
-   # plt.plot(traj[:, 2], label="pos_z")
-   # plt.title("Position components")
-   # plt.legend()
-
-   # plt.figure(2)
-   # plt.plot(traj[:, 3], label="qx")
-   # plt.plot(traj[:, 4], label="qy")
-   # plt.plot(traj[:, 5], label="qz")
-   # plt.plot(traj[:, 6], label="qw")
-   # plt.title("Quaternion components")
-   # plt.legend()
-
-   # plt.show()
 
 
    #TODO: make sure xyz axes of robots match with xyz axes from demo!
 
-   
-
    #TODO: remove sleep times etc
 
-   #franka.movedynamic_ori(quintic_traj=quintic_traj, tf=tf)
-   #franka.movedynamic_ori(quintic_traj=traj, tf=tf)
 
    filepath = os.path.join(datafolder+"/"+"executed_trajectory.csv")
 
@@ -120,76 +90,6 @@ if __name__ == '__main__':
 
    input("Perform dynamic primitive")
 
-   #for i in range(2500, traj.shape[0]):
-   #   #print("shape:", traj[i,:].reshape(1,-1).shape)
-   #   print("i:", i)
-   #   franka.movel(traj[i,:].reshape(1,-1), traj_duration=dt)
-
-   # def quaternion_multiply(quaternion1, quaternion0):
-   #    x0, y0, z0, w0 = quaternion0
-   #    x1, y1, z1, w1 = quaternion1
-   #    return np.array([-x1 * x0 - y1 * y0 - z1 * z0 + w1 * w0,
-   #                      x1 * w0 + y1 * z0 - z1 * y0 + w1 * x0,
-   #                      -x1 * z0 + y1 * w0 + z1 * x0 + w1 * y0,
-   #                      x1 * y0 - y1 * x0 + z1 * w0 + w1 * z0], dtype=np.float64)
-
-
-   #q_rot_y = [0, 1, 0, 0]
-   #q_rot_newx = [-0.3420201, 0, 0, 0.9396926]
-
-   #traj = traj[0,:].reshape(1, 7)
-   
-   #traj[:,3] *= -1
-   #traj[:,6] *= -1
-
-   #traj = np.array([[0.57548, -0.0978, 0.24847, 0.878821, -0.0368, -0.02587, 0.475]]) #easy case and latest with origin
-
-   #traj = np.array([[0.559, 0.088, 0.2536, 0.901, -0.0089, -0.0012, -0.4331]]) #hard case and latest with origin
-
-
-   #traj = np.array([[0.572, 0.023, 0.209, 0.6749, 0.6607, -0.23487, 0.22982]]) #tries to rotate all the way around
-
-   # r = R.from_quat([0.901, -0.0089, -0.0012, -0.4331])
-   # angles = r.as_euler('xyz', degrees=False)
-   # rot_x = angles[0]
-   # print("rot x:", rot_x)
-   # rot_y = angles[1]
-   # rot_z = angles[2]
-
-   # print("rot y:", rot_y)
-   # if rot_x < 0:
-   #       # if rot_y > 0:
-   #       #    rot_x = -3.14
-   #       #    quat = (R.from_euler('XYZ', [rot_x,rot_y,0], degrees=False).as_quat())
-   #       # else:
-   #          rot_y = -3.14
-   #          #rot_x = -3.14-rot_x
-   #          rot_x = rot_x+3.14
-
-   #          quat = (R.from_euler('XYZ', [rot_x,rot_y,rot_z], degrees=False).as_quat())
-   # else:
-   #    quat = (R.from_euler('XYZ', [rot_x,rot_y,rot_z], degrees=False).as_quat())
-
-   
-   # traj[:,3], traj[:,4], traj[:,5], traj[:,6] = quat[0], quat[1], quat[2], quat[3]
-
-   # print(rot_x, rot_y, " -- quat: ",quat)
-
-
-   #traj = np.array([[0.572, 0.023, 0.209, 0.6547, 0.63439, 0.28806, -0.29317]]) #
-
-   #traj[:,2] += 0.15
-   #traj[:,3] =  -0.3420201
-   #traj[:,4] =  0.940
-   #traj[:,6] =   0.342
-
-   #q_orig = [traj[:,3], traj[:,4], traj[:,5], traj[:,6]]
-   #q_new1 = quaternion_multiply(q_orig, q_rot_y)
-   #q_new2 = quaternion_multiply(q_new1, q_rot_newx)
-   #traj[:,3], traj[:,4], traj[:,5], traj[:,6] = q_new2[0], q_new2[1], q_new2[2], q_new2[3]
-   #print("q_new2:", q_new2)
-   
-   #franka.movel(traj, traj_duration=dt)
    franka.move(move_type='o',params=traj, traj_duration=tf)
 
    real_traj = np.genfromtxt(filepath, delimiter=',') #NOTE: set name here!
@@ -211,13 +111,14 @@ if __name__ == '__main__':
    plt.plot(traj[:, 5], 'b-', label="qz")
    plt.plot(traj[:, 6], 'm-', label="qw")
    plt.title("Quaternion components")
-   plt.plot(real_traj[:, 3], 'r--', label="qx")
-   plt.plot(real_traj[:, 4], 'g--', label="qy")
-   plt.plot(real_traj[:, 5], 'b--', label="qz")
-   plt.plot(real_traj[:, 6], 'm--', label="qw")
+   plt.plot(-real_traj[:, 3], 'r--', label="qx")
+   plt.plot(-real_traj[:, 4], 'g--', label="qy")
+   plt.plot(+real_traj[:, 5], 'b--', label="qz")
+   plt.plot(+real_traj[:, 6], 'm--', label="qw")
    plt.legend()
 
    plt.show()
 
-   franka.release_grippers() #NEW
+   franka.open_grippers()
+   #franka.release_grippers() #NEW
    #franka.move(move_type='d',params=traj, traj_duration=4.0)
