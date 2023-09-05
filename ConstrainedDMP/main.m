@@ -101,9 +101,16 @@ max_joint_acc = (max(res{1}.ref_acc, [], 2) > sim_params.a_max)'
 %Run Forward Kinematics for plotting and playback with cartesian control
 poseDMP = ForwardKinematics(res{1}.ref_pos');
 
+%q_franka3 = res{1}.ref_pos';
+%q_franka3(:,1) = -q_franka3(:,1);
+%q_franka3(:,3) = -q_franka3(:,3);
+%q_franka3(:,5) = -q_franka3(:,5);
+%q_franka3(:,7) = -q_franka3(:,7);
+
 % Plot result
 plot_result
 
 %save joint angles to file
 writematrix(res{1}.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
+%writematrix(q_franka3,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
 writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
