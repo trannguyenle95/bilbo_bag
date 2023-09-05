@@ -43,7 +43,7 @@ theta = 2*atan2(sqrt(qx.^2),qw); %calculate theta from new qx and qw
 %rotations to be with relation to the starting orientation where the
 %gripper points straight downwards
 qx = sin((theta - pi)/2);
-qw = cos((theta - pi)/2);
+qw = cos((theta - pi)/2); %-1 to change rotation direction
 
 %insert new quaternion rotation, and also change order to q = [qw qx qy qz]
 %notation from q = [qx qy qz qw] in OptiTrack
