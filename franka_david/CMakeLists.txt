@@ -37,6 +37,7 @@ MovetoPy.msg
 GripperPy.msg
 GripperGraspPy.msg
 JointMotionPy.msg
+JointTrajPy.msg
 RemoteMotionPy.msg
 )
 
