@@ -57,7 +57,8 @@ D = D(:,3:9); %skip index and time columns
 %to robot frame
 reordered = D * 0; %create empty array
 reordered(:,1) = D(:,5); %x
-reordered(:,2) = D(:, 7) * -1; %y = old z flipped
+%reordered(:,2) = D(:, 7) * -1; %y = old z flipped
+reordered(:,2) = D(:, 7); %UPDATE 7.09 >> DONT FLIP Y, so it runs correctly on franka2
 reordered(:,3) = D(:, 6); %z = old y
 reordered(:,4) = D(:, 2); %qx
 %reordered(:,4) = -D(:, 2); %TEST NEGATIVE qx
@@ -153,7 +154,7 @@ D(:,2); %y
 D(:,3) = D(:,3) + 0.20; %z
 
 %%Flip rotation around x!
-%D(:,4) = -D(:,4); %flip rotation direction
+D(:,4) = -D(:,4); %flip rotation direction
 
 %plot
 if displayplot == true

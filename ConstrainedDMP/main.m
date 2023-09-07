@@ -10,6 +10,7 @@ close all
 
 %filename = 'BagFlip.csv';
 %D = preprocess_1hand(filename, false);
+%filename = 'sack_from_bag2.csv';
 filename = 'BagFlip.csv';
 D = preprocess(filename, false, 2);
 
@@ -66,11 +67,18 @@ p_min = [-2.8973; -1.7628; -2.8973; -3.0718; -2.8973; -0.0175; -2.8973]; %not us
 sim_params.v_max = [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100];
 sim_params.a_max = [15; 7.5; 10; 12.5; 15; 20; 20];
 
+%FOR FRANKA RESEARCH3
+% p_max = [2.7437; 1.7837; 2.9007; -0.1518; 2.8065; 4.5169; 3.0159]; %not used in sim, added for PLOTTING
+% p_min = [-2.7437; -1.7837; -2.9007; -3.0421; -2.8065; 0.5445; -3.0159]; %not used in sim, added for PLOTTING
+% sim_params.v_max = [2.62; 2.62; 2.62; 2.62; 5.26; 4.18; 5.26];
+% sim_params.a_max = [10; 10; 10; 10; 10; 10; 10];
+
+
 % Scaling parameters
 tc_params.nominal_tau = dmp.nominal_tau;
 tc_params.eps = 1e-3;
 tc_params.gamma_nominal = 1;
-tc_params.gamma_a = 1; %originally 0.5, higher should reducde overshoots but increase runtime
+tc_params.gamma_a = 3; %originally 0.5, higher should reducde overshoots but increase runtime
 tc_params.a_max = sim_params.a_max; 
 tc_params.v_max = sim_params.v_max;
 
