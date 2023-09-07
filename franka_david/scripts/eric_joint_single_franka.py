@@ -205,6 +205,11 @@ if __name__ == '__main__':
    if os.path.exists(filepath):
       os.remove(filepath) 
 
+
+   pose_file = os.path.join(datafolder+"/"+"joint_control_pose.csv")
+   if os.path.exists(pose_file):
+      os.remove(pose_file) 
+
    input("Perform dynamic primitive")
 
 
@@ -213,6 +218,12 @@ if __name__ == '__main__':
    time.sleep(tf) #let motion finish before plotting and closing grippers
 
    real_traj = np.genfromtxt(filepath, delimiter=',') #NOTE: set name here!
+
+
+   #Plot pose from executed actual motion
+   ref_pose = np.genfromtxt(datafolder+"/trajectories/"+"pose_BagFlip.csv", delimiter=',') #NOTE: set name here!
+   real_pose = np.genfromtxt(pose_file, delimiter=',') #NOTE: set name here!
+
 
    #TODO: add more plots
    plt.figure(1)
@@ -232,6 +243,31 @@ if __name__ == '__main__':
    plt.plot(real_traj[:, 5], '--', label="j6")
    plt.plot(real_traj[:, 6], '--', label="j7")
    plt.legend()
+   plt.show()
+
+   #PLOT Cartesian Pose during joint control 
+   plt.figure(2)
+   plt.plot(ref_pose[:, 0], 'r-', label="ref pos_x")
+   plt.plot(ref_pose[:, 1],'g-', label="ref pos_y")
+   plt.plot(ref_pose[:, 2], 'b-', label="ref pos_z")
+   plt.title("Position components")
+   plt.plot(real_pose[:, 0], 'r--', label="actual pos_x")
+   plt.plot(real_pose[:, 1], 'g--', label="actual pos_y")
+   plt.plot(real_pose[:, 2], 'b--', label="actual pos_z")
+   plt.legend()
+
+   plt.figure(3)
+   plt.plot(ref_pose[:, 3], 'r-', label="ref qx")
+   plt.plot(ref_pose[:, 4], 'g-', label="ref qy")
+   plt.plot(ref_pose[:, 5], 'b-', label="ref qz")
+   plt.plot(ref_pose[:, 6], 'm-', label="ref qw")
+   plt.title("Quaternion components")
+   plt.plot(real_pose[:, 3], 'r--', label="actual qx")
+   plt.plot(real_pose[:, 4], 'g--', label="actual qy")
+   plt.plot(real_pose[:, 5], 'b--', label="actual qz")
+   plt.plot(real_pose[:, 6], 'm--', label="actual qw")
+   plt.legend()
+
    plt.show()
 
    franka.open_grippers()

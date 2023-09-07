@@ -658,7 +658,7 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
         double end_pose_x = trajectory_x.at(N-1);
         
         double end_pose_y = trajectory_y.at(N-1);
-        if (!this->_franka3)
+        if (this->_franka3)
         {
             end_pose_y = -trajectory_y.at(N-1);
         }
@@ -678,7 +678,7 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
 		//Eigen::Map<const Eigen::Matrix<double, 7, 1>> joint_angles(robot_state.q.data());
 		Eigen::Matrix3d R = transform.rotation();
 
-        if (!this->_franka3)
+        if (this->_franka3)
         {
             T0(1, 1) = 1.0;    T0(1, 2) = -0.0;    T0(1, 3) = 0.0;    T0(1, 4) = pos[0];
             T0(2, 1) = -0.0;    T0(2, 2) = -1.0;    T0(2, 3) = -0.0;    T0(2, 4) = pos[1];
@@ -707,7 +707,7 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
 	    for (int k=0; k<(int)N; k++)
 	    {   
             Ti[k](1, 4) = trajectory_x.at(k);
-            if (!this->_franka3)
+            if (this->_franka3)
             {
                 Ti[k](2, 4) = -trajectory_y.at(k);
             }
@@ -754,7 +754,7 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
     // 2000 - smoother than 3000
     double translational_stiffness{1400.0}; //At full speed playback 450 and 60 works for Research 3, but Panda can only have 200 and 40
     double rotational_stiffness{53.0};
-    if (!this->_franka3)
+    if (this->_franka3)
     {
         translational_stiffness = 1400.0; //105.0 previous, use with full speed
         rotational_stiffness =53.0;  

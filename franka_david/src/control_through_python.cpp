@@ -236,6 +236,17 @@ void CartesianPythonController::jointTrajectoryCallback(const franka_david::Join
         out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << "," << std::endl;
         //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
         
+
+        //Cartesian pose during joint control
+        Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+        Eigen::Vector3d position(transform.translation());
+        Eigen::Quaterniond orientation(transform.linear()); // transform.linear() extracts the rotation matrix
+
+        std::ofstream pose_out_file(HOME + "/catkin_ws/src/Data/joint_control_pose.csv", ios::app);
+        pose_out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << "," << std::endl;
+
+
+
         time += period.toSec();
         std::cout << "Time "<< double(time) << std::endl;
         //loop_iter = int(time / this->_dt) + 1;
@@ -528,7 +539,7 @@ void CartesianPythonController::motionOriCallback(const franka_david::MotionPyPt
         std::cout << "Trajectory duration " << duration << std::endl;
         double end_pose_x = trajectory_x.at(N-1);
         double end_pose_y = trajectory_y.at(N-1);
-        if (!this->_franka3)
+        if (this->_franka3)
         {
             end_pose_y = -trajectory_y.at(N-1);
         }
@@ -551,7 +562,7 @@ void CartesianPythonController::motionOriCallback(const franka_david::MotionPyPt
 //         T0(1, 1) = 0.9981;    T0(1, 2) = -0.0315;    T0(1, 3) = 0.0531;    T0(1, 4) = pos[0];
 // 		T0(2, 1) = -0.0315;    T0(2, 2) = -0.9995;    T0(2, 3) = -0.0002;    T0(2, 4) = pos[1];
 // 		T0(3, 1) = 0.0531;    T0(3, 2) = -0.0015;    T0(3, 3) = -0.9986;    T0(3, 4) = pos[2];
-        if (!this->_franka3)
+        if (this->_franka3)
         {
             T0(1, 1) = 1.0;    T0(1, 2) = -0.0;    T0(1, 3) = 0.0;    T0(1, 4) = pos[0];
             T0(2, 1) = -0.0;    T0(2, 2) = -1.0;    T0(2, 3) = -0.0;    T0(2, 4) = pos[1];
@@ -581,7 +592,7 @@ void CartesianPythonController::motionOriCallback(const franka_david::MotionPyPt
 	    for (int k=0; k<(int)N; k++)
 	    {   
             Ti[k](1, 4) = trajectory_x.at(k);
-            if (!this->_franka3)
+            if (this->_franka3)
             {
                 Ti[k](2, 4) = -trajectory_y.at(k);
             }
@@ -720,6 +731,12 @@ void CartesianPythonController::runControl(math::Transform3D* trajectory, int N)
             //     cout << "Error in creating file!!!" << endl; //TURNS OUT THAT FILE CREATION FAILS > why?
             // }
             out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << "," << std::endl;
+
+
+            Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_q(robot_state.q.data());
+
+            std::ofstream out_file_joints(HOME + "/catkin_ws/src/Data/pose_control_joints.csv", ios::app);
+            out_file_joints << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << "," << std::endl;
 
 
             loop_iter++;
