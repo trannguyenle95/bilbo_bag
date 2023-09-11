@@ -57,23 +57,42 @@ D = D(:,3:9); %skip index and time columns
 %to robot frame
 reordered = D * 0; %create empty array
 reordered(:,1) = D(:,5); %x
-%reordered(:,2) = D(:, 7) * -1; %y = old z flipped
-reordered(:,2) = D(:, 7); %UPDATE 7.09 >> DONT FLIP Y, so it runs correctly on franka2
+reordered(:,2) = D(:, 7) * -1; %y = old z flipped
 reordered(:,3) = D(:, 6); %z = old y
 reordered(:,4) = D(:, 2); %qx
-%reordered(:,4) = -D(:, 2); %TEST NEGATIVE qx
 reordered(:,5) = D(:, 4) * -1; %qy = old qz flipped
 reordered(:,6) = D(:, 3); %qz = old qy
 reordered(:,7) = D(:, 1); %qw
 D = reordered;
 
+%Now use quaternion rotation to rotate end-effector by -pi/2 around robot z-axis
+%to match grip orientation.
+%Use quaternion product here to rotate quaternions
+%https://en.wikipedia.org/wiki/Quaternion
+%first rotation q2 followed by rotation q1.
 if gripper_ori == 1
-    %Now use quaternion rotation to rotate end-effector by -pi/2 around robot z-axis
-    %to match grip orientation.
-    %Use quaternion product here to rotate quaternions
-    %https://en.wikipedia.org/wiki/Quaternion
-    %first rotation q2 followed by rotation q1.
-    angle = -pi/2;
+    angle = +pi/4; %this gives sideways grip which needs higher distance between robot hands
+    %q_rot = [cos(angle) 0 0 sin(angle)];
+    %new_quat = quatmultiply(D(4:7),q_rot);
+    qw2 = cos(angle/2);
+    qx2 = 0;
+    qy2 = 0;
+    qz2 = sin(angle/2); %rotate around z axis
+    
+    qx1 = D(:,4);
+    qy1 = D(:,5);
+    qz1 = D(:,6);
+    qw1 = D(:,7);
+    
+    D(:,4) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2;
+    D(:,5) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
+    D(:,6) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
+    D(:,7) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2;
+    
+    D(:,4:7) = D(:,4:7) ./ sqrt(sum(D(:,4:7).^2,2)); %Make sure quaternion is still unit
+
+else
+    angle = -pi/4; %this gives "normal" grip which leaves more space between the grippers
     %q_rot = [cos(angle) 0 0 sin(angle)];
     %new_quat = quatmultiply(D(4:7),q_rot);
     qw2 = cos(angle/2);
@@ -138,23 +157,27 @@ if strcmp(demoType,'dual')
         %Gripper with short side towards eachother = larger max distance 
         %min distance between grippers is (0.75-0.625)*2 - 0.10 = 0.15 between outer parts of grippers.
         %Set maximum distance between grippers to (0.75 - 0.50)*2 = 0.50.
-        D(:,1) = max(min(0.75 - (x_dist/2), 0.625),0.50); %x
-        D(:,1) = max(min(0.75 - (x_dist/2), 0.575),0.50); %x TEST INSTEAD
+        %D(:,1) = max(min(0.75 - (x_dist/2), 0.625),0.50); %x - made DMP diverge from demo in x direction
+        D(:,1) = max(min(0.75 - (x_dist/2), 0.60),0.50); %x TEST INSTEAD
     end
 else
     if gripper_ori == 1
         D(:,1) = 0.575; %x
     else
-        D(:,1) = 0.625; %x
-        D(:,1) = 0.575; %x TEST INSTEAD
+        %D(:,1) = 0.625; %x - made DMP diverge from demo in x direction
+        D(:,1) = 0.60; %x TEST INSTEAD
     end
 end
 
 D(:,2); %y
 D(:,3) = D(:,3) + 0.20; %z
 
+%Flip y direction
+%D(:,2) = -D(:,2); %position
+%D(:,5) = -D(:,5); %rotation - is zero unless ee is rotated
+
 %%Flip rotation around x!
-D(:,4) = -D(:,4); %flip rotation direction
+%D(:,4) = -D(:,4); %flip rotation direction
 
 %plot
 if displayplot == true

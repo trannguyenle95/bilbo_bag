@@ -11,12 +11,14 @@ close all
 %filename = 'BagFlip.csv';
 %D = preprocess_1hand(filename, false);
 %filename = 'sack_from_bag2.csv';
-filename = 'BagFlip.csv';
+filename = 'sack_from_bag1.csv';
 D = preprocess(filename, false, 2);
 
 %D = smoothdata(D, 1, "gaussian",50); %still noisy after IK
 
 q = InverseKinematics(D)';
+
+poseIKFK = ForwardKinematics(q');
 
 %q = smoothdata(q, 2, "gaussian",10);
 
@@ -67,7 +69,9 @@ p_min = [-2.8973; -1.7628; -2.8973; -3.0718; -2.8973; -0.0175; -2.8973]; %not us
 sim_params.v_max = [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100];
 sim_params.a_max = [15; 7.5; 10; 12.5; 15; 20; 20];
 
-%FOR FRANKA RESEARCH3
+%FOR FRANKA RESEARCH3 - NOTE Inverse Kinematics DOES NOT HANDLE RESEARCH3
+%CONSTRAINTS!!
+    % Can I define a new robot model similar to panda? https://github.com/petercorke/robotics-toolbox-matlab/blob/master/models/mdl_panda.m
 % p_max = [2.7437; 1.7837; 2.9007; -0.1518; 2.8065; 4.5169; 3.0159]; %not used in sim, added for PLOTTING
 % p_min = [-2.7437; -1.7837; -2.9007; -3.0421; -2.8065; 0.5445; -3.0159]; %not used in sim, added for PLOTTING
 % sim_params.v_max = [2.62; 2.62; 2.62; 2.62; 5.26; 4.18; 5.26];
@@ -106,14 +110,22 @@ max_joint_vel = (max(res{1}.ref_vel, [], 2) > sim_params.v_max)'
 min_joint_acc = (min(res{1}.ref_acc, [], 2) < -sim_params.a_max)'
 max_joint_acc = (max(res{1}.ref_acc, [], 2) > sim_params.a_max)'
 
-%Run Forward Kinematics for plotting and playback with cartesian control
-poseDMP = ForwardKinematics(res{1}.ref_pos');
+
 
 %q_franka3 = res{1}.ref_pos';
 %q_franka3(:,1) = -q_franka3(:,1);
 %q_franka3(:,3) = -q_franka3(:,3);
 %q_franka3(:,5) = -q_franka3(:,5);
 %q_franka3(:,7) = -q_franka3(:,7);
+
+res{1}.ref_pos(1,:) = -res{1}.ref_pos(1,:);
+res{1}.ref_pos(3,:) = -res{1}.ref_pos(3,:);
+res{1}.ref_pos(5,:) = -res{1}.ref_pos(5,:);
+res{1}.ref_pos(7,:) = -res{1}.ref_pos(7,:);
+
+%Run Forward Kinematics for plotting and playback with cartesian control
+poseDMP = ForwardKinematics(res{1}.ref_pos');
+
 
 % Plot result
 plot_result

@@ -67,3 +67,29 @@ plot(res{1}.t,poseDMP(:,7),'color','#367A62','LineWidth',1.5, 'DisplayName','DMP
 xlabel('$t$', 'Interpreter','latex','Fontsize',30)
 legend
 hold off
+
+
+%%%
+
+
+figure('Name','IKFK Cartesian Pose')
+subplot(2,1,1)
+hold on
+
+plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,1),'color','#2016E9','LineWidth',1.5, 'DisplayName','IKFK_x')
+plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,2),'color','#FF00E4','LineWidth',1.5, 'DisplayName','IKFK_y')
+plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,3),'color','#B65649','LineWidth',1.5, 'DisplayName','IKFK_z')
+xlabel('$t$', 'Interpreter','latex','Fontsize',30)
+legend
+hold off
+
+subplot(2,1,2)
+hold on
+plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,4),'color','#2016E9','LineWidth',1.5, 'DisplayName','IKFK_{qx}')
+plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,5),'color','#FF00E4','LineWidth',1.5, 'DisplayName','IKFK_{qy}')
+plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,6),'color','#B65649','LineWidth',1.5, 'DisplayName','IKFK_{qz}')
+plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,7),'color','#367A62','LineWidth',1.5, 'DisplayName','IKFK_{qw}')
+
+xlabel('$t$', 'Interpreter','latex','Fontsize',30)
+legend
+hold off

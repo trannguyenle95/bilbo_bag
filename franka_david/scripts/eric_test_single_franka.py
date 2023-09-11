@@ -40,9 +40,9 @@ if __name__ == '__main__':
    #joint_ori = [-0.06153707569372121, 0.23268072162435294, -0.003733379824253959, -2.120620626949313, -0.07440938119840552, 2.374850448676014, 0.851590066155449] #hori x align
    #joint_ori = [-0.04978088093284428, 0.40831610082646835, -0.00016188993599345562, -2.0011876919882003, -0.0764803841657652, 2.430139631960127, 0.792066740804676] #~26cm distance
 
-   #joint_ori = [0, 0.2837448589662732, 0, -2.0720574669683027, 0, 2.405712411822974, 0.7542077567525343] #NOTE: position [0.59,0,0.20] gripper in original orientation
+   joint_ori = [0, 0.2837448589662732, 0, -2.0720574669683027, 0, 2.405712411822974, 0.7542077567525343] #NOTE: position [0.59,0,0.20] gripper in original orientation
 
-   joint_ori = [0.0772848981560748, 0.240594409923399, -0.0202525725346743, -2.08784449998159, -0.31363716946651, 2.2895568232216, 0.269719648304103]
+   #joint_ori = [0.0772848981560748, 0.240594409923399, -0.0202525725346743, -2.08784449998159, -0.31363716946651, 2.2895568232216, 0.269719648304103]
 
    #^above used when initial ee grip is not rotated
    #joint_ori = [-0.06033718608193325, 0.1957925676774354, 0.1446464792309258, -2.1242161722067974, -0.12300981136857973, 2.3759525292393855, -0.6157846782301644] #rotated ee grip
@@ -59,7 +59,7 @@ if __name__ == '__main__':
    #Import traj and duration from CSV
    datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
 
-   traj = np.genfromtxt(datafolder+"/trajectories/"+"pose_BagFlip.csv", delimiter=',') #NOTE: set name here!
+   traj = np.genfromtxt(datafolder+"/trajectories/"+"pose_sack_from_bag1.csv", delimiter=',') #NOTE: set name here!
    #NOTE: 10 FPS seems too few points so it is too jumpy!
 
    
@@ -123,7 +123,7 @@ if __name__ == '__main__':
    plt.legend()
 
    #Plot joints from executed actual motion
-   ref_joints = np.genfromtxt(datafolder+"/trajectories/"+"joint_BagFlip.csv", delimiter=',') #NOTE: set name here!
+   ref_joints = np.genfromtxt(datafolder+"/trajectories/"+"joint_sack_from_bag1.csv", delimiter=',') #NOTE: set name here!
    real_joints = np.genfromtxt(joint_file, delimiter=',') #NOTE: set name here!
 
    plt.figure(3)
