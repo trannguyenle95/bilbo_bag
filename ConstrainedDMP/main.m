@@ -11,7 +11,7 @@ close all
 %filename = 'BagFlip.csv';
 %D = preprocess_1hand(filename, false);
 %filename = 'sack_from_bag2.csv';
-filename = 'sack_from_bag1.csv';
+filename = 'sack_from_bag2.csv';
 D = preprocess(filename, false, 2);
 
 %D = smoothdata(D, 1, "gaussian",50); %still noisy after IK
@@ -118,6 +118,8 @@ max_joint_acc = (max(res{1}.ref_acc, [], 2) > sim_params.a_max)'
 %q_franka3(:,5) = -q_franka3(:,5);
 %q_franka3(:,7) = -q_franka3(:,7);
 
+%DID THIS FOR FRANKA2 - don't flip for mirrored motion in Franka3?
+%NO - also do this in Franka3 and let controller do sign flips
 res{1}.ref_pos(1,:) = -res{1}.ref_pos(1,:);
 res{1}.ref_pos(3,:) = -res{1}.ref_pos(3,:);
 res{1}.ref_pos(5,:) = -res{1}.ref_pos(5,:);

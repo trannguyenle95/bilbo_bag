@@ -158,14 +158,16 @@ if strcmp(demoType,'dual')
         %min distance between grippers is (0.75-0.625)*2 - 0.10 = 0.15 between outer parts of grippers.
         %Set maximum distance between grippers to (0.75 - 0.50)*2 = 0.50.
         %D(:,1) = max(min(0.75 - (x_dist/2), 0.625),0.50); %x - made DMP diverge from demo in x direction
-        D(:,1) = max(min(0.75 - (x_dist/2), 0.60),0.50); %x TEST INSTEAD
+        %D(:,1) = max(min(0.75 - (x_dist/2), 0.60),0.50); %x - made DMP diverge from demo in x direction for other demo
+        D(:,1) = max(min(0.75 - (x_dist/2), 0.575),0.50); %x
     end
 else
     if gripper_ori == 1
         D(:,1) = 0.575; %x
     else
         %D(:,1) = 0.625; %x - made DMP diverge from demo in x direction
-        D(:,1) = 0.60; %x TEST INSTEAD
+        %D(:,1) = 0.60; %x - made DMP diverge from demo in x direction
+        D(:,1) = 0.575; %x
     end
 end
 
