@@ -10,10 +10,8 @@ function q = InverseKinematics2(D)
     
     q0 = [0, 0.2837448589662732, 0, -2.0720574669683027, 0, 2.405712411822974, 0.7542077567525343]'; %NOTE: position [0.59,0,0.20] gripper in original orientation
 
-    weights = [1 1 1 1 1 1];
+    weights = [0.25 0.25 0.25 0.25 1 1];
 
-    %pose1 = T(:,:,1);
-    
     %IK only for first pose
     %Constraints defined in RigidBodyTree
     ik = inverseKinematics('RigidBodyTree',franka);
@@ -34,16 +32,6 @@ function q = InverseKinematics2(D)
 
 
 
-
-
-
-
-
-
-
-
-
-
     %{
     gik = generalizedInverseKinematics('RigidBodyTree',franka, 'ConstraintInputs', {'jointbounds'});
 
@@ -51,7 +39,7 @@ function q = InverseKinematics2(D)
     jointConst.Bounds = [-2.7437, 2.7437;
                         -1.7628, 1.7628;
                         -2.8973, 2.8973;
-                        -0.1518, -3.0421;
+                        -3.0421 -0.1518;
                         -2.8065, 2.8065;
                         0.5445, 3.7525;
                         -2.8973, 2.8973];

@@ -92,13 +92,31 @@ CartesianPythonController::CartesianPythonController()
 
 void CartesianPythonController::jointMotionCallback(const franka_david::JointMotionPyPtr& msg)
 {
-    double joint0 = msg->joint0; 
-    double joint1 = msg->joint1; 
-    double joint2 = msg->joint2; 
-    double joint3 = msg->joint3; 
-    double joint4 = msg->joint4; 
-    double joint5 = msg->joint5; 
-    double joint6 = msg->joint6; 
+    double joint0 = msg->joint0;
+    if (this->_franka3)
+    {
+        joint0 = -msg->joint0;
+    }
+
+    double joint1 = msg->joint1;
+    double joint2 = msg->joint2;
+    if (this->_franka3)
+    {
+        joint2 = -msg->joint2;
+    }
+    double joint3 = msg->joint3;
+    double joint4 = msg->joint4;
+    if (this->_franka3)
+    {
+        joint4 = -msg->joint4;
+    }
+    double joint5 = msg->joint5;
+    double joint6 = msg->joint6;
+    if (this->_franka3)
+    {
+        //joint6 = -msg->joint6 + M_PI/2; //old initial ee orientation
+        joint6 = msg->joint6; //new initial ee orientation
+    }
     bool enable = msg->enable;
         
     if (enable)
@@ -123,6 +141,15 @@ void CartesianPythonController::jointTrajectoryCallback(const franka_david::Join
     std::vector<double> joint6 =  msg->joint6; //list of joint6 values
     bool enable = msg->enable;
     double duration = msg->duration;
+
+    //FLIP JOINTS 0, 2, 4 and 6 SIGNS FOR FRANKA3
+    if (this->_franka3)
+    {
+        std::transform(joint0.cbegin(),joint0.cend(),joint0.begin(),std::negate<double>());
+        std::transform(joint2.cbegin(),joint2.cend(),joint2.begin(),std::negate<double>());
+        std::transform(joint4.cbegin(),joint4.cend(),joint4.begin(),std::negate<double>());
+        //std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::negate<double>());
+    }
     
     std::cout << "Trajectory duration " << duration << std::endl;
     int N = int(duration / this->_dt);

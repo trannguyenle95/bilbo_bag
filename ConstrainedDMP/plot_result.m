@@ -79,6 +79,11 @@ hold on
 plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,1),'color','#2016E9','LineWidth',1.5, 'DisplayName','IKFK_x')
 plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,2),'color','#FF00E4','LineWidth',1.5, 'DisplayName','IKFK_y')
 plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,3),'color','#B65649','LineWidth',1.5, 'DisplayName','IKFK_z')
+
+plot(0:1/120:1/120*(length(D)-1), D(:,1),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_x')
+plot(0:1/120:1/120*(length(D)-1), D(:,2),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_y')
+plot(0:1/120:1/120*(length(D)-1), D(:,3),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_z')
+
 xlabel('$t$', 'Interpreter','latex','Fontsize',30)
 legend
 hold off
@@ -89,6 +94,11 @@ plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,4),'color','#2016E9','LineWidth',1.5
 plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,5),'color','#FF00E4','LineWidth',1.5, 'DisplayName','IKFK_{qy}')
 plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,6),'color','#B65649','LineWidth',1.5, 'DisplayName','IKFK_{qz}')
 plot(0:1/120:1/120*(length(D)-1),poseIKFK(:,7),'color','#367A62','LineWidth',1.5, 'DisplayName','IKFK_{qw}')
+
+plot(0:1/120:1/120*(length(D)-1), D(:,4),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_{qx}')
+plot(0:1/120:1/120*(length(D)-1), D(:,5),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_{qy}')
+plot(0:1/120:1/120*(length(D)-1), D(:,6),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_{qz}')
+plot(0:1/120:1/120*(length(D)-1), D(:,7),'color','#7A364F','LineWidth',2.5, 'DisplayName','demo_{qw}')
 
 xlabel('$t$', 'Interpreter','latex','Fontsize',30)
 legend

@@ -58,14 +58,18 @@ body5.Joint = jnt5;
 body6.Joint = jnt6;
 body7.Joint = jnt7;
 
+
+%joint 4 and joint 6 should have non-zero joint home position as min and
+%max values are not symmetric
+body4.Joint.HomePosition = mean([-3.0421 -0.1518]);
+body6.Joint.HomePosition = mean([0.5445 3.7525]);
+
 %Add constraints to joints
 %https://se.mathworks.com/help/robotics/ref/rigidbodyjoint.html:
-%CURRENTLY BREAKS IK - why?
-%HOWEVER, setting these limits makes show(franka) result look better
 body1.Joint.PositionLimits = [-2.7437 2.7437];
 body2.Joint.PositionLimits = [-1.7628 1.7628];
 body3.Joint.PositionLimits = [-2.8973 2.8973];
-body4.Joint.PositionLimits = [-0.1518 -3.0421];
+body4.Joint.PositionLimits = [-3.0421 -0.1518];
 body5.Joint.PositionLimits = [-2.8065 2.8065];
 body6.Joint.PositionLimits = [0.5445 3.7525];
 body7.Joint.PositionLimits = [-2.8973 2.8973];
@@ -79,14 +83,5 @@ addBody(robot,body6,'body5');
 addBody(robot,body7,'body6');
 
 robot.DataFormat = 'column'; %so vector can be used instead of struct in inverse kinematics
-
-%{
-robot = importrobot("frankaEmikaPanda.urdf")
-removeBody(robot, 'panda_rightfinger')
-removeBody(robot, 'panda_leftfinger')
-
-robot.DataFormat = 'column'; %so vector can be used instead of struct in inverse kinematics
-%}
-
 
 end

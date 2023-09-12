@@ -66,7 +66,7 @@ if __name__ == '__main__':
    datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
 
    #Import traj and duration from CSV
-   traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_sack_from_bag1.csv", delimiter=',') #NOTE: set name here!
+   traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_sack_from_bag2.csv", delimiter=',') #NOTE: set name here!
    dt = 0.001 #1/30 #/ 120 #NOTE: modify this to match generated CSV or set this FPS when generating csv!
    #NOTE: seems like I have to use higher dt than 1/FPS, even when there is a sleep in franka.py
 
@@ -221,7 +221,7 @@ if __name__ == '__main__':
 
 
    #Plot pose from executed actual motion
-   ref_pose = np.genfromtxt(datafolder+"/trajectories/"+"pose_sack_from_bag1.csv", delimiter=',') #NOTE: set name here!
+   ref_pose = np.genfromtxt(datafolder+"/trajectories/"+"pose_sack_from_bag2.csv", delimiter=',') #NOTE: set name here!
    real_pose = np.genfromtxt(pose_file, delimiter=',') #NOTE: set name here!
 
 

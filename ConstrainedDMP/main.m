@@ -14,11 +14,12 @@ close all
 filename = 'sack_from_bag2.csv';
 D = preprocess(filename, false, 2);
 
-%D = smoothdata(D, 1, "gaussian",50); %still noisy after IK
+Dsmooth = smoothdata(D, 1, "gaussian",35); %still noisy after IK
+Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 
-q = InverseKinematics(D)';
+q = InverseKinematics2(Dsmooth)';
 
-poseIKFK = ForwardKinematics(q');
+poseIKFK = ForwardKinematics2(q');
 
 %q = smoothdata(q, 2, "gaussian",10);
 
@@ -64,10 +65,10 @@ nominalTraj = dmp.rollout(sim_params.dt); %ROLLOUT only for nominal traj? Then u
 % can be uncommented to remove limit
 
 %FOR FRANKA PANDA (TODO RESEARCH 3 + toggle with input argument)
-p_max = [2.8973; 1.7628; 2.8973; -0.0698; 2.8973; 3.7525; 2.8973]; %not used in sim, added for PLOTTING
-p_min = [-2.8973; -1.7628; -2.8973; -3.0718; -2.8973; -0.0175; -2.8973]; %not used in sim, added for PLOTTING
-sim_params.v_max = [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100];
-sim_params.a_max = [15; 7.5; 10; 12.5; 15; 20; 20];
+% p_max = [2.8973; 1.7628; 2.8973; -0.0698; 2.8973; 3.7525; 2.8973]; %not used in sim, added for PLOTTING
+% p_min = [-2.8973; -1.7628; -2.8973; -3.0718; -2.8973; -0.0175; -2.8973]; %not used in sim, added for PLOTTING
+% sim_params.v_max = [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100];
+% sim_params.a_max = [15; 7.5; 10; 12.5; 15; 20; 20];
 
 %FOR FRANKA RESEARCH3 - NOTE Inverse Kinematics DOES NOT HANDLE RESEARCH3
 %CONSTRAINTS!!
@@ -77,6 +78,11 @@ sim_params.a_max = [15; 7.5; 10; 12.5; 15; 20; 20];
 % sim_params.v_max = [2.62; 2.62; 2.62; 2.62; 5.26; 4.18; 5.26];
 % sim_params.a_max = [10; 10; 10; 10; 10; 10; 10];
 
+%WORST CASE COMMON LIMITS
+p_max = [2.7437; 1.7628; 2.8973; -0.1518; 2.8065; 3.7525; 2.8973]; %not used in sim, added for PLOTTING
+p_min = [-2.7437; -1.7628; -2.8973; -3.0421; -2.8065; 0.5445; -2.8973]; %not used in sim, added for PLOTTING
+sim_params.v_max = [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100];
+sim_params.a_max = [10; 7.5; 10; 10; 10; 10; 10];
 
 % Scaling parameters
 tc_params.nominal_tau = dmp.nominal_tau;
@@ -118,19 +124,29 @@ max_joint_acc = (max(res{1}.ref_acc, [], 2) > sim_params.a_max)'
 %q_franka3(:,5) = -q_franka3(:,5);
 %q_franka3(:,7) = -q_franka3(:,7);
 
+
+
+%first do this for plotting
+poseDMP = ForwardKinematics2(res{1}.ref_pos');
+
+
+% Plot result
+plot_result
+
 %DID THIS FOR FRANKA2 - don't flip for mirrored motion in Franka3?
 %NO - also do this in Franka3 and let controller do sign flips
+%NOTE: ideally dont do sign flips here but in pre-processing, if robot
+%cannot symmetrically follow some joints
 res{1}.ref_pos(1,:) = -res{1}.ref_pos(1,:);
 res{1}.ref_pos(3,:) = -res{1}.ref_pos(3,:);
 res{1}.ref_pos(5,:) = -res{1}.ref_pos(5,:);
 res{1}.ref_pos(7,:) = -res{1}.ref_pos(7,:);
 
 %Run Forward Kinematics for plotting and playback with cartesian control
-poseDMP = ForwardKinematics(res{1}.ref_pos');
+%do this again so that pose with flipped joints is saved for pose
+%trajectory
+poseDMP = ForwardKinematics2(res{1}.ref_pos');
 
-
-% Plot result
-plot_result
 
 %save joint angles to file
 writematrix(res{1}.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))

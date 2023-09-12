@@ -178,7 +178,8 @@ D(:,3) = D(:,3) + 0.20; %z
 %D(:,2) = -D(:,2); %position
 %D(:,5) = -D(:,5); %rotation - is zero unless ee is rotated
 
-%%Flip rotation around x!
+%%Flip rotation around x! > causes extra problems, maybe not mathematically
+%%sound
 %D(:,4) = -D(:,4); %flip rotation direction
 
 %plot
