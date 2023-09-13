@@ -47,7 +47,7 @@ if __name__ == '__main__':
    #Import traj and duration from CSV
    datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
 
-   traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_BagFlip.csv", delimiter=',') #NOTE: set name here!
+   traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_sack_from_bag2.csv", delimiter=',') #NOTE: set name here!
    dt = 0.001 #1/30 #/ 120 #NOTE: modify this to match generated CSV or set this FPS when generating csv!
    #NOTE: seems like I have to use higher dt than 1/FPS, even when there is a sleep in franka.py
    #NOTE: 10 FPS seems too few points so it is too jumpy!
@@ -56,6 +56,10 @@ if __name__ == '__main__':
 
    joint_ori = traj[0]
    franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
+
+
+   franka.close_grippers_middle()
+   input("Close grippers")
    franka.close_grippers() #NEW
 
 

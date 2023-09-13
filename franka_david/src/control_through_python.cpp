@@ -114,8 +114,8 @@ void CartesianPythonController::jointMotionCallback(const franka_david::JointMot
     double joint6 = msg->joint6;
     if (this->_franka3)
     {
-        //joint6 = -msg->joint6 + M_PI/2; //old initial ee orientation
-        joint6 = msg->joint6; //new initial ee orientation
+        joint6 = -msg->joint6 + M_PI/2; //old initial ee orientation
+        //joint6 = msg->joint6; //new initial ee orientation
     }
     bool enable = msg->enable;
         
@@ -142,13 +142,15 @@ void CartesianPythonController::jointTrajectoryCallback(const franka_david::Join
     bool enable = msg->enable;
     double duration = msg->duration;
 
-    //FLIP JOINTS 0, 2, 4 and 6 SIGNS FOR FRANKA3
+    //FLIP JOINTS 0, 2, 4 and 6 SIGNS and modify joint7 FOR FRANKA3
     if (this->_franka3)
     {
         std::transform(joint0.cbegin(),joint0.cend(),joint0.begin(),std::negate<double>());
         std::transform(joint2.cbegin(),joint2.cend(),joint2.begin(),std::negate<double>());
         std::transform(joint4.cbegin(),joint4.cend(),joint4.begin(),std::negate<double>());
-        //std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::negate<double>());
+        
+        std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::negate<double>());
+        std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::bind2nd(std::plus<double>(), M_PI/2));
     }
     
     std::cout << "Trajectory duration " << duration << std::endl;

@@ -21,8 +21,9 @@ D(:,9) = D(:,9) - D(1,9); %y
 %scale trajectory so height is within robot reach
 max_h = max(D(:,8));
 scale = 1;
-if max_h > 0.6
-    scale = 0.6 / max_h;
+goal_max_amplitude = 1.0;
+if max_h > goal_max_amplitude
+    scale = goal_max_amplitude / max_h;
 end
 D(:,7:9) = D(:,7:9) * scale;
 
@@ -172,7 +173,8 @@ else
 end
 
 D(:,2); %y
-D(:,3) = D(:,3) + 0.20; %z
+%D(:,3) = D(:,3) + 0.20; %z
+D(:,3) = D(:,3) - 0.20;
 
 %Flip y direction
 %D(:,2) = -D(:,2); %position
