@@ -5,8 +5,8 @@ dt = params.dt;
 T_max = params.T_max;
 %kp = params.kp;
 %kv = params.kv;
-a_max = params.a_max;
-v_max = params.v_max;
+%a_max = params.a_max;
+%v_max = params.v_max;
 %s_v_max_online = params.s_v_max_online;
 %v_max_online = params.v_max_online;
 

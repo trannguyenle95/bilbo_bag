@@ -1,4 +1,4 @@
-function D = preprocess(filename, displayplot, gripper_ori)
+function D = preprocess(filename, displayplot, dx, dy, dz, max_amplitude)
 
 %D = readmatrix(filename)';
 D = csvread(strcat('demos/',filename), 7); %offset 7 rows to skip header info
@@ -21,9 +21,9 @@ D(:,9) = D(:,9) - D(1,9); %y
 %scale trajectory so height is within robot reach
 max_h = max(D(:,8));
 scale = 1;
-goal_max_amplitude = 1.0;
-if max_h > goal_max_amplitude
-    scale = goal_max_amplitude / max_h;
+max_amplitude = 1.0;
+if max_h > max_amplitude
+    scale = max_amplitude / max_h;
 end
 D(:,7:9) = D(:,7:9) * scale;
 
@@ -71,110 +71,50 @@ D = reordered;
 %Use quaternion product here to rotate quaternions
 %https://en.wikipedia.org/wiki/Quaternion
 %first rotation q2 followed by rotation q1.
-if gripper_ori == 1
-    angle = +pi/4; %this gives sideways grip which needs higher distance between robot hands
-    %q_rot = [cos(angle) 0 0 sin(angle)];
-    %new_quat = quatmultiply(D(4:7),q_rot);
-    qw2 = cos(angle/2);
-    qx2 = 0;
-    qy2 = 0;
-    qz2 = sin(angle/2); %rotate around z axis
-    
-    qx1 = D(:,4);
-    qy1 = D(:,5);
-    qz1 = D(:,6);
-    qw1 = D(:,7);
-    
-    D(:,4) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2;
-    D(:,5) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
-    D(:,6) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
-    D(:,7) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2;
-    
-    D(:,4:7) = D(:,4:7) ./ sqrt(sum(D(:,4:7).^2,2)); %Make sure quaternion is still unit
+angle = -pi/4; %this gives "normal" grip which leaves more space between the grippers
+%q_rot = [cos(angle) 0 0 sin(angle)];
+%new_quat = quatmultiply(D(4:7),q_rot);
+qw2 = cos(angle/2);
+qx2 = 0;
+qy2 = 0;
+qz2 = sin(angle/2); %rotate around z axis
 
-else
-    angle = -pi/4; %this gives "normal" grip which leaves more space between the grippers
-    %q_rot = [cos(angle) 0 0 sin(angle)];
-    %new_quat = quatmultiply(D(4:7),q_rot);
-    qw2 = cos(angle/2);
-    qx2 = 0;
-    qy2 = 0;
-    qz2 = sin(angle/2); %rotate around z axis
-    
-    qx1 = D(:,4);
-    qy1 = D(:,5);
-    qz1 = D(:,6);
-    qw1 = D(:,7);
-    
-    D(:,4) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2;
-    D(:,5) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
-    D(:,6) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
-    D(:,7) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2;
-    
-    D(:,4:7) = D(:,4:7) ./ sqrt(sum(D(:,4:7).^2,2)); %Make sure quaternion is still unit
-end
+qx1 = D(:,4);
+qy1 = D(:,5);
+qz1 = D(:,6);
+qw1 = D(:,7);
 
+D(:,4) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2;
+D(:,5) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
+D(:,6) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
+D(:,7) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2;
 
-% if gripper_ori == 2 %TEST
-%     %Now use quaternion rotation to rotate end-effector by -pi/2 around robot z-axis
-%     %to match grip orientation.
-%     %Use quaternion product here to rotate quaternions
-%     %https://en.wikipedia.org/wiki/Quaternion
-%     %first rotation q2 followed by rotation q1.
-%     angle = pi/4;
-%     %q_rot = [cos(angle) 0 0 sin(angle)];
-%     %new_quat = quatmultiply(D(4:7),q_rot);
-%     qw2 = cos(angle/2);
-%     qx2 = 0;
-%     qy2 = 0;
-%     qz2 = sin(angle/2); %rotate around z axis
-% 
-%     qx1 = D(:,4);
-%     qy1 = D(:,5);
-%     qz1 = D(:,6);
-%     qw1 = D(:,7);
-% 
-%     D(:,4) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2;
-%     D(:,5) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
-%     D(:,6) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
-%     D(:,7) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2;
-% 
-%     D(:,4:7) = D(:,4:7) ./ sqrt(sum(D(:,4:7).^2,2)); %Make sure quaternion is still unit
-% end
+D(:,4:7) = D(:,4:7) ./ sqrt(sum(D(:,4:7).^2,2)); %Make sure quaternion is still unit
 
 
 if strcmp(demoType,'dual')
     %add offsets
     %robots are 1.5m apart, so for total distance "x_dist" the distance from the
     %middle point (0.75m) to either robot should be "x_dist"/2.
-    if gripper_ori == 1
-        %remember wide side ~20cm
-        %Gripper with wide side towards eachother = smaller max distance 
-        %min distance between grippers is (0.75-0.575)*2 - 0.20 = 0.15 between outer parts of grippers.
-        %Set maximum distance between grippers to (0.75 - 0.50)*2 = 0.50.
-        D(:,1) = max(min(0.75 - (x_dist/2), 0.575),0.50); %x
-    else
+
         %short side of grippers ~10cm
         %Gripper with short side towards eachother = larger max distance 
         %min distance between grippers is (0.75-0.625)*2 - 0.10 = 0.15 between outer parts of grippers.
         %Set maximum distance between grippers to (0.75 - 0.50)*2 = 0.50.
-        %D(:,1) = max(min(0.75 - (x_dist/2), 0.625),0.50); %x - made DMP diverge from demo in x direction
-        %D(:,1) = max(min(0.75 - (x_dist/2), 0.60),0.50); %x - made DMP diverge from demo in x direction for other demo
-        D(:,1) = max(min(0.75 - (x_dist/2), 0.575),0.50); %x
-    end
+        D(:,1) = max(min(0.75 - (x_dist/2), 0.625),0.50); %x
+        %D(:,1) = max(min(0.75 - (x_dist/2), 0.575),0.50); %x
 else
-    if gripper_ori == 1
-        D(:,1) = 0.575; %x
-    else
         %D(:,1) = 0.625; %x - made DMP diverge from demo in x direction
-        %D(:,1) = 0.60; %x - made DMP diverge from demo in x direction
         D(:,1) = 0.575; %x
-    end
 end
 
-D(:,2); %y
+%add offsets
+%D(:,1) = D(:,1) + dx; %ADDED extra displacement to x
+D(:,1) = dx; %OVERWRITE to only set dx from input!
+D(:,2) = D(:,2) + dy;
+D(:,3) = D(:,3) + dz;
 %D(:,3) = D(:,3) + 0.20; %z
-D(:,3) = D(:,3) - 0.20;
+%D(:,3) = D(:,3) - 0.20;
 
 %Flip y direction
 %D(:,2) = -D(:,2); %position

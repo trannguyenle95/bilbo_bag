@@ -1,5 +1,5 @@
 function D = ForwardKinematics(q)
-    franka = createFranka()
+    franka = createFranka();
     translation = zeros(4,4,length(q));
 
     for i = 1:length(q)
