@@ -66,7 +66,7 @@ if __name__ == '__main__':
    datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
 
    #Import traj and duration from CSV
-   traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_sack_from_bag2.csv", delimiter=',') #NOTE: set name here!
+   traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_2h_flip2.csv", delimiter=',') #NOTE: set name here!
    dt = 0.001 #1/30 #/ 120 #NOTE: modify this to match generated CSV or set this FPS when generating csv!
    #NOTE: seems like I have to use higher dt than 1/FPS, even when there is a sleep in franka.py
 
@@ -76,8 +76,11 @@ if __name__ == '__main__':
 
    #first apply joint movement if it is far from desired location (large motion not doable in single linear motion)
    franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
+
+
+   franka.close_grippers_middle()
+   input("Close grippers")
    franka.close_grippers() #NEW
-   
    
    '''
    #INTERPOLATION
@@ -210,6 +213,11 @@ if __name__ == '__main__':
    if os.path.exists(pose_file):
       os.remove(pose_file) 
 
+
+   joint_vel_file = os.path.join(datafolder+"/"+"executed_joint_velocities.csv")
+   if os.path.exists(joint_vel_file):
+      os.remove(joint_vel_file) 
+
    input("Perform dynamic primitive")
 
 
@@ -221,8 +229,9 @@ if __name__ == '__main__':
 
 
    #Plot pose from executed actual motion
-   ref_pose = np.genfromtxt(datafolder+"/trajectories/"+"pose_sack_from_bag2.csv", delimiter=',') #NOTE: set name here!
+   ref_pose = np.genfromtxt(datafolder+"/trajectories/"+"pose_2h_flip2.csv", delimiter=',') #NOTE: set name here!
    real_pose = np.genfromtxt(pose_file, delimiter=',') #NOTE: set name here!
+   real_vel = np.genfromtxt(joint_vel_file, delimiter=',') #NOTE: set name here!
 
 
    #TODO: add more plots
@@ -267,6 +276,20 @@ if __name__ == '__main__':
    plt.plot(real_pose[:, 5], 'b--', label="actual qz")
    plt.plot(real_pose[:, 6], 'm--', label="actual qw")
    plt.legend()
+
+   plt.figure(4)
+   plt.title("Joint vels")
+   plt.plot(real_vel[:, 0], '-', label="vel j1")
+   plt.plot(real_vel[:, 1],'-', label="vel j2")
+   plt.plot(real_vel[:, 2], '-', label="vel j3")
+   plt.plot(real_vel[:, 3], '-', label="vel j4")
+   plt.plot(real_vel[:, 4], '-', label="vel j5")
+   plt.plot(real_vel[:, 5], '-', label="vel j6")
+   plt.plot(real_vel[:, 6], '-', label="velj7")
+   plt.legend()
+   plt.show()
+
+
 
    plt.show()
 

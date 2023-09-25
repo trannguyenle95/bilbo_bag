@@ -86,6 +86,7 @@ CartesianPythonController::CartesianPythonController()
         {{100.0, 100.0, 100.0, 100.0, 100.0, 100.0}},
         {{100.0, 100.0, 100.0, 100.0, 100.0, 100.0}});
     this->_robot->setJointImpedance({{3000, 3000, 3000, 2500, 2500, 2000, 2000}});
+    //this->_robot->setJointImpedance({{1000, 1000, 1000, 1000, 1000, 1000, 1000}});
     this->_robot->setCartesianImpedance({{3000, 3000, 3000, 300, 300, 300}});
 
 }
@@ -265,6 +266,12 @@ void CartesianPythonController::jointTrajectoryCallback(const franka_david::Join
         out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << "," << std::endl;
         //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
         
+
+        //joint velocities
+        Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_dq(robot_state.dq.data());
+
+        std::ofstream vel_out_file(HOME + "/catkin_ws/src/Data/executed_joint_velocities.csv", ios::app);
+        vel_out_file << actual_dq[0] << "," << actual_dq[1] << "," << actual_dq[2] << "," << actual_dq[3] << "," << actual_dq[4]<< "," << actual_dq[5] << "," << actual_dq[6] << "," << std::endl;
 
         //Cartesian pose during joint control
         Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
