@@ -20,7 +20,9 @@ addpath('own_code/') %ADDED
 %Each is an array of doubles, size DOF*timesteps
 
 filename = '2h_flip2.csv';
-D = preprocess(filename, false, 0.60, 0, 0, 1);
+D = preprocess(filename, false, 0.57, 0, 0, 1);
+%D = preprocess(filename, false, 0.60, 0, 0, 1);
+%D = preprocess(filename, false, 0.05, -0.05, 0.05, 1);
 Dsmooth = smoothdata(D, 1, "gaussian",35); %still noisy after IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 [q, jacobians] = InverseKinematics2(Dsmooth);
@@ -71,10 +73,11 @@ pos_lim = [[-2.7437; -1.7628; -2.8973; -3.0421; -2.8065; 0.5445; -2.8973] [2.743
 vel_lim = [-[2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100] [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100]];  % lower and upper limit, same for all DoFs
 accel_lim = [-[10; 7.5; 10; 10; 10; 10; 10] [10; 7.5; 10; 10; 10; 10; 10]];
 
-plot_pos_lim = pos_lim;
-plot_vel_lim = vel_lim;
-plot_accel_lim = accel_lim;
+actual_pos_lim = pos_lim;
+actual_vel_lim = vel_lim;
+actual_accel_lim = accel_lim;
 
+%use stricter limits than the actual ones
 pos_lim = 0.98 * pos_lim;
 vel_lim = 0.98 * vel_lim;
 accel_lim = 0.98 * accel_lim;
@@ -115,6 +118,8 @@ data{length(data)+1} = ...
     struct('Time',Time, 'Pos',P_data, 'Vel',dP_data, 'Accel',ddP_data, 'linestyle','-', ...
     'color',[0.72 0.27 1], 'legend','$DMP^*_p$', 'plot3D',true, 'plot2D',true);
 
+%% NOTE about solver output
+% "Solved inaccurate" is explained here https://osqp.org/docs/interfaces/status_values.html
 
 %% ======== Plot Results ==========
 
@@ -143,8 +148,8 @@ for k=1:length(ind)
     %plot(tau, yg(i), 'LineWidth', 4, 'LineStyle','none', 'Color','red','Marker','x', 'MarkerSize',10);
     %plot(tau, ygd(i), 'LineWidth', 4, 'LineStyle','none', 'Color','magenta','Marker','x', 'MarkerSize',10);
     % plot bounds
-    plot(ax.XLim, [plot_pos_lim(i,1) plot_pos_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    plot(ax.XLim, [plot_pos_lim(i,2) plot_pos_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+    plot(ax.XLim, [actual_pos_lim(i,1) actual_pos_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+    plot(ax.XLim, [actual_pos_lim(i,2) actual_pos_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
     % labels, title ...
     %ylabel('pos [$m$]', 'interpreter','latex', 'fontsize',label_font);
     ylabel('pos [$rad$]', 'interpreter','latex', 'fontsize',label_font);
@@ -161,8 +166,8 @@ for k=1:length(ind)
     end
     axis tight;
     % plot bounds
-    plot(ax.XLim, [plot_vel_lim(i,1) plot_vel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    plot(ax.XLim, [plot_vel_lim(i,2) plot_vel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+    plot(ax.XLim, [actual_vel_lim(i,1) actual_vel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+    plot(ax.XLim, [actual_vel_lim(i,2) actual_vel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
     %ylabel('vel [$m/s$]', 'interpreter','latex', 'fontsize',label_font);
     ylabel('vel [$rad/s$]', 'interpreter','latex', 'fontsize',label_font);
     ax.FontSize = ax_fontsize;
@@ -176,8 +181,8 @@ for k=1:length(ind)
     end
     axis tight;
     % plot bounds
-    plot(ax.XLim, [plot_accel_lim(i,1) plot_accel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    plot(ax.XLim, [plot_accel_lim(i,2) plot_accel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+    plot(ax.XLim, [actual_accel_lim(i,1) actual_accel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+    plot(ax.XLim, [actual_accel_lim(i,2) actual_accel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
     %ylabel('accel [$m/s^2$]', 'interpreter','latex', 'fontsize',label_font);
     ylabel('accel [$rad/s^2$]', 'interpreter','latex', 'fontsize',label_font);
     xlabel('time [$s$]', 'interpreter','latex', 'fontsize',label_font);
@@ -286,22 +291,36 @@ legend
 hold off
 
 
+
+
+version = 3 % 3 = vel, 4 = pos;
+
+%display whether limits are exceeded
+min_joint_pos = (min(data{version}.Pos, [], 2) < actual_pos_lim(:,1))'
+max_joint_pos = (max(data{version}.Pos, [], 2) > actual_pos_lim(:,2))'
+
+min_joint_vel = (max(data{version}.Vel, [], 2) < actual_vel_lim(:,1))' 
+max_joint_vel = (max(data{version}.Vel, [], 2) > actual_vel_lim(:,2))'
+
+min_joint_acc = (max(data{version}.Accel, [], 2) < actual_accel_lim(:,1))'
+max_joint_acc = (max(data{version}.Accel, [], 2) > actual_accel_lim(:,2))'
+
 %also do this for both robots and let controller do sign flips
 %NOTE: later change controller to use Franka3 as default and these values
 %would not need to be flipped? Note jonint7 is not just a flip but also
 %some offset (see controller code)
-data{3}.Pos(1,:) = -data{3}.Pos(1,:);
-data{3}.Pos(3,:) = -data{3}.Pos(3,:);
-data{3}.Pos(5,:) = -data{3}.Pos(5,:);
-data{3}.Pos(7,:) = -data{3}.Pos(7,:);
+data{version}.Pos(1,:) = -data{version}.Pos(1,:);
+data{version}.Pos(3,:) = -data{version}.Pos(3,:);
+data{version}.Pos(5,:) = -data{version}.Pos(5,:);
+data{version}.Pos(7,:) = -data{version}.Pos(7,:);
 
 %Run Forward Kinematics for plotting and playback with cartesian control
 %do this again so that pose with flipped joints is saved for pose
 %trajectory
-poseDMP = ForwardKinematics2(data{3}.Pos');
+poseDMP = ForwardKinematics2(data{version}.Pos');
 
 %save joint angles to file
-writematrix(data{3}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
+writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
 writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
 %writematrix(data{3}.Pos',fullfile('output',strcat('joint_',filename)))
 %writematrix(poseDMP,fullfile('output',strcat('pose_',filename)))
