@@ -93,6 +93,11 @@ CartesianRemoteController::CartesianRemoteController()
         ros::TransportHints().reliable().tcpNoDelay());
 
     
+    this->_sub_joint_vel_traj = control_py_node.subscribe(
+        "/franka/joint_vel_trajectory", 20, &CartesianRemoteController::jointVelocityTrajectoryCallback, this,
+        ros::TransportHints().reliable().tcpNoDelay());
+
+    
     // set collision behavior
     this->_robot->setCollisionBehavior(
         {{100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0}},
@@ -398,6 +403,90 @@ void CartesianRemoteController::jointTrajectoryCallback(const franka_david::Join
     }
 }
 
+
+void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_david::JointVelTrajPyPtr& msg)
+{
+    std::vector<double> joint0 =  msg->joint0; //list of joint0 values
+    std::vector<double> joint1 =  msg->joint1; //list of joint1 values
+    std::vector<double> joint2 =  msg->joint2; //list of joint2 values
+    std::vector<double> joint3 =  msg->joint3; //list of joint3 values
+    std::vector<double> joint4 =  msg->joint4; //list of joint4 values
+    std::vector<double> joint5 =  msg->joint5; //list of joint5 values
+    std::vector<double> joint6 =  msg->joint6; //list of joint6 values
+    bool enable = msg->enable;
+    double duration = msg->duration;
+
+    //FLIP JOINTS 0, 2, 4 and 6 SIGNS and modify joint7 FOR FRANKA3
+    // if (this->_franka3)
+    // {
+    //     std::transform(joint0.cbegin(),joint0.cend(),joint0.begin(),std::negate<double>());
+    //     std::transform(joint2.cbegin(),joint2.cend(),joint2.begin(),std::negate<double>());
+    //     std::transform(joint4.cbegin(),joint4.cend(),joint4.begin(),std::negate<double>());
+        
+    //     std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::negate<double>());
+    //     std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::bind2nd(std::plus<double>(), M_PI/2));
+    // }
+    
+    std::cout << "Trajectory duration " << duration << std::endl;
+    int N = int(duration / this->_dt);
+    size_t loop_iter = 0;
+    double time = 0.0;
+
+    if (enable)
+    {
+        //BASED ON https://petercorke.com/robotics/franka-emika-control-interface-libfranka/
+        // and https://frankaemika.github.io/libfranka/joint_impedance_control_8cpp-example.html
+        //FOR VELOCITY: https://frankaemika.github.io/libfranka/generate_joint_velocity_motion_8cpp-example.html
+
+        this->_robot->control([&](const franka::RobotState& robot_state,
+                                                franka::Duration period) -> franka::JointVelocities {
+
+
+        //std::cout << "j1:" << joint0[loop_iter] << " j2:" << joint1[loop_iter] << " j3:" << joint2[loop_iter] << " j4:" << joint3[loop_iter] << " j5:" << joint4[loop_iter] << " j6:" << joint5[loop_iter] << " j7:" << joint6[loop_iter] <<  std::endl;
+        franka::JointVelocities output = {{joint0[loop_iter], joint1[loop_iter], joint2[loop_iter],
+            joint3[loop_iter], joint4[loop_iter], joint5[loop_iter], joint6[loop_iter]}};
+
+        std::cout << "iter: " << loop_iter << std::endl;
+
+        //ADDED TO PRINT FOLLOWED TRAJ TO FILE
+        //get actual joint values as in https://frankaemika.github.io/libfranka/cartesian_impedance_control_8cpp-example.html#a12
+        Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_q(robot_state.q.data());
+
+        std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+        std::ofstream out_file(HOME + "/catkin_ws/src/Data/executed_joint_trajectory.csv", ios::app);
+        out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << "," << std::endl;
+        //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
+        
+
+        //joint velocities
+        Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_dq(robot_state.dq.data());
+
+        std::ofstream vel_out_file(HOME + "/catkin_ws/src/Data/executed_joint_velocities.csv", ios::app);
+        vel_out_file << actual_dq[0] << "," << actual_dq[1] << "," << actual_dq[2] << "," << actual_dq[3] << "," << actual_dq[4]<< "," << actual_dq[5] << "," << actual_dq[6] << "," << std::endl;
+
+        //Cartesian pose during joint control
+        Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+        Eigen::Vector3d position(transform.translation());
+        Eigen::Quaterniond orientation(transform.linear()); // transform.linear() extracts the rotation matrix
+
+        std::ofstream pose_out_file(HOME + "/catkin_ws/src/Data/joint_control_pose.csv", ios::app);
+        pose_out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << "," << std::endl;
+
+
+        time += period.toSec();
+        std::cout << "Time "<< double(time) << std::endl;
+        //loop_iter = int(time / this->_dt) + 1;
+        loop_iter++;
+
+        if (loop_iter > N-1) {
+            std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
+            return franka::MotionFinished(output);
+        }
+        return output;
+        });
+
+    }
+}
 
 
 void CartesianRemoteController::movetoCallback(const franka_david::MovetoPyPtr& msg)

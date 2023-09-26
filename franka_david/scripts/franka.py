@@ -13,6 +13,8 @@ from franka_david.msg import GripperGraspPy
 from franka_david.msg import RemoteMotionPy
 from geometry_msgs.msg import PoseStamped
 
+from franka_david.msg import JointVelTrajPy #ADDED 26.09
+
 
 from primitives import get_xyz_coordinates_given_mid_theta_ref_real
 
@@ -96,6 +98,9 @@ class Franka:
                                                     queue_size=10)
         self.ros_gripper_grasp_pub = rospy.Publisher(topic+'gripper_grasp', GripperGraspPy,
                                                      queue_size=10)
+
+        self.ros_jointVelTraj_pub = rospy.Publisher(topic+'joint_vel_trajectory', JointVelTrajPy,
+                                        queue_size=10) #ADDED 26.09
 
         if init_node:
             rospy.init_node(node_name, anonymous=True)
@@ -395,6 +400,25 @@ class Franka:
             print("Sending new joint trajectory")
             rospy.sleep(0.5)
             self.ros_jointTraj_pub.publish(pose_msg)
+            sleep(2)
+
+        elif move_type == 'jvt': #ADDED 26.09
+            assert traj_duration != 0.0
+            pose_msg = JointVelTrajPy()
+            pose_msg.duration = traj_duration
+            pose_msg.enable = True
+            for i in range(params.shape[0]):
+                pose_msg.joint0.append(params[i,0])
+                pose_msg.joint1.append(params[i,1])
+                pose_msg.joint2.append(params[i,2])
+                pose_msg.joint3.append(params[i,3])
+                pose_msg.joint4.append(params[i,4])
+                pose_msg.joint5.append(params[i,5])
+                pose_msg.joint6.append(params[i,6])
+
+            print("Sending new joint velocity trajectory")
+            rospy.sleep(0.5)
+            self.ros_jointVelTraj_pub.publish(pose_msg)
             sleep(2)
 
         elif move_type == 'j':

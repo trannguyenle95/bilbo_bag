@@ -218,6 +218,7 @@ if __name__ == '__main__':
    if os.path.exists(joint_vel_file):
       os.remove(joint_vel_file) 
 
+
    input("Perform dynamic primitive")
 
 
@@ -232,7 +233,9 @@ if __name__ == '__main__':
    ref_pose = np.genfromtxt(datafolder+"/trajectories/"+"pose_2h_flip2.csv", delimiter=',') #NOTE: set name here!
    real_pose = np.genfromtxt(pose_file, delimiter=',') #NOTE: set name here!
    real_vel = np.genfromtxt(joint_vel_file, delimiter=',') #NOTE: set name here!
-
+   
+   real_acc = np.diff(real_vel) / 0.001; 
+   print("real acc shape:", real_acc.shape)
 
    #TODO: add more plots
    plt.figure(1)
@@ -285,7 +288,19 @@ if __name__ == '__main__':
    plt.plot(real_vel[:, 3], '-', label="vel j4")
    plt.plot(real_vel[:, 4], '-', label="vel j5")
    plt.plot(real_vel[:, 5], '-', label="vel j6")
-   plt.plot(real_vel[:, 6], '-', label="velj7")
+   plt.plot(real_vel[:, 6], '-', label="vel j7")
+   plt.legend()
+   plt.show()
+
+   plt.figure(5)
+   plt.title("Joint accs")
+   plt.plot(real_acc[:, 0], '-', label="acc j1")
+   plt.plot(real_acc[:, 1],'-', label="acc j2")
+   plt.plot(real_acc[:, 2], '-', label="acc j3")
+   plt.plot(real_acc[:, 3], '-', label="acc j4")
+   plt.plot(real_acc[:, 4], '-', label="acc j5")
+   plt.plot(real_acc[:, 5], '-', label="acc j6")
+   plt.plot(real_acc[:, 6], '-', label="acc j7")
    plt.legend()
    plt.show()
 

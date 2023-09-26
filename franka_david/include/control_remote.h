@@ -27,6 +27,8 @@
 #include <franka_david/RemoteMotionPy.h>
 #include <franka_david/JointTrajPy.h>
 
+#include <franka_david/JointVelTrajPy.h>
+
 class CartesianRemoteController
 {
 public:
@@ -54,6 +56,9 @@ public:
     // Subscriber gripper
     ros::Subscriber _sub_gripper_grasp;
     
+    
+    // Subscriber joint velocity trajectory added 26.09
+    ros::Subscriber _sub_joint_vel_traj;
     
     // Publisher for reached state
     ros::Publisher _pub_reached;
@@ -83,6 +88,9 @@ public:
     
     // Method that subscribes to a joint trajectory, ADDED 05.09
     void jointTrajectoryCallback(const franka_david::JointTrajPyPtr& msg);
+    
+    // Method that subscribes to a joint velocity trajectory, ADDED 26.09
+    void jointVelocityTrajectoryCallback(const franka_david::JointVelTrajPyPtr& msg);
     
     // Method that subscribes to gripper
     void gripperMoveCallback(const franka_david::GripperPyPtr& msg);

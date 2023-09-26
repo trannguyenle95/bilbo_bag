@@ -39,6 +39,7 @@ GripperGraspPy.msg
 JointMotionPy.msg
 JointTrajPy.msg
 RemoteMotionPy.msg
+JointVelTrajPy.msg
 )
 
 generate_messages(DEPENDENCIES geometry_msgs)
