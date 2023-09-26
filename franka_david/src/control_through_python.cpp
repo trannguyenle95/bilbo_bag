@@ -316,15 +316,15 @@ void CartesianPythonController::jointVelocityTrajectoryCallback(const franka_dav
     double duration = msg->duration;
 
     //FLIP JOINTS 0, 2, 4 and 6 SIGNS and modify joint7 FOR FRANKA3
-    // if (this->_franka3)
-    // {
-    //     std::transform(joint0.cbegin(),joint0.cend(),joint0.begin(),std::negate<double>());
-    //     std::transform(joint2.cbegin(),joint2.cend(),joint2.begin(),std::negate<double>());
-    //     std::transform(joint4.cbegin(),joint4.cend(),joint4.begin(),std::negate<double>());
+    if (this->_franka3)
+    {
+        std::transform(joint0.cbegin(),joint0.cend(),joint0.begin(),std::negate<double>());
+        std::transform(joint2.cbegin(),joint2.cend(),joint2.begin(),std::negate<double>());
+        std::transform(joint4.cbegin(),joint4.cend(),joint4.begin(),std::negate<double>());
         
-    //     std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::negate<double>());
-    //     std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::bind2nd(std::plus<double>(), M_PI/2));
-    // }
+        std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::negate<double>());
+        //std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::bind2nd(std::plus<double>(), M_PI/2));
+    }
     
     std::cout << "Trajectory duration " << duration << std::endl;
     int N = int(duration / this->_dt);

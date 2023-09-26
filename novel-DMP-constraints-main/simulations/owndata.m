@@ -325,4 +325,9 @@ writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',
 %writematrix(data{3}.Pos',fullfile('output',strcat('joint_',filename)))
 %writematrix(poseDMP,fullfile('output',strcat('pose_',filename)))
 
+data{version}.Vel(1,:) = -data{version}.Vel(1,:);
+data{version}.Vel(3,:) = -data{version}.Vel(3,:);
+data{version}.Vel(5,:) = -data{version}.Vel(5,:);
+data{version}.Vel(7,:) = -data{version}.Vel(7,:);
+
 writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))
