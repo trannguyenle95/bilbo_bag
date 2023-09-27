@@ -4,6 +4,8 @@ from scipy.spatial import ConvexHull, convex_hull_plot_2d
 from sklearn.decomposition import PCA
 from scipy.spatial.distance import cdist
 import os
+import plotly.graph_objects as go
+import plotly.express as px
 
 #NOTE: maybe preprocess to remove outliers (distance over e.g. 0.5m from mean or median point)? Only needed if OptiTrack streams false positives
 
@@ -44,6 +46,8 @@ def BagMetrics(filename, max_area, width, plot = False):
     points2d = points3d[:, [0,2]]
     hull2d = ConvexHull(points2d)
 
+    hull3d = ConvexHull(points3d)
+    volume3d = hull3d.volume
 
     #"volume" for 2D hull is actual area, and "area" is actual perimeter
     area_ratio = hull2d.volume / max_area
@@ -63,6 +67,8 @@ def BagMetrics(filename, max_area, width, plot = False):
         #Print here so that metrics are visible without having to close pyplot figures first
         print("Convex Hull area: ", area_ratio)
         print("Convex Hull elongation: ", elongation)
+
+        print("3d hull volume: ", volume3d)
 
         convex_hull_plot_2d(hull2d) #plot 2d convex hull
         ax1 = plt.gca()
@@ -96,6 +102,19 @@ def BagMetrics(filename, max_area, width, plot = False):
             plt.plot(p[0], p[2], 'go')
 
         plt.show()
+
+        xc = points3d[hull3d.vertices]
+        fig = go.Figure(data=[go.Scatter3d(x=xc[:, 0], y=xc[:, 2], z=xc[:, 1],
+                                   mode='markers')])
+        fig.add_trace(go.Mesh3d(x=xc[:, 0], 
+                         y=xc[:, 2], #change y and z so that z points upwards
+                         z=xc[:, 1], #change y and z so that z points upwards
+                         color="blue", 
+                         opacity=.2,
+                         alphahull=0))
+
+
+        fig.show()
 
     return area_ratio, elongation
 
