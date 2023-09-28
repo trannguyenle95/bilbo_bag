@@ -308,73 +308,35 @@ max_joint_acc = (max(data{version}.Accel, [], 2) > actual_accel_lim(:,2))'
 
 
 %% distance metric
-poseDMP = ForwardKinematics2(data{version}.Pos');
-%inerpolate like this: https://se.mathworks.com/matlabcentral/answers/784166-interpolate-data-in-array-to-match-specified-length-of-data-in-another-vector
-m = size(D,1);
-n = size(poseDMP,1);
-D_new = zeros(n,7);
-xi = (1:n)'; 
-x = linspace(1,n,m)'; 
-for i = 1:7
-    Di = interp1(x,D(:,i),xi) ; 
-    D_new(:,i) = Di ; 
-end
-
-%PLOT CARTESIAN AFTER INTERPOLATION TO VERIFY IT WORKS
-figure('Name','Interpolated Cartesian Pose')
-subplot(2,1,1)
-hold on
-plot(data{version}.Time, D_new(:,1),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_x')
-plot(data{version}.Time, D_new(:,2),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_y')
-plot(data{version}.Time, D_new(:,3),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_z')
-
-plot(data{version}.Time,poseDMP(:,1),'color','#2016E9','LineWidth',1.5, 'DisplayName','DMPp_x')
-plot(data{version}.Time,poseDMP(:,2),'color','#FF00E4','LineWidth',1.5, 'DisplayName','DMPp_y')
-plot(data{version}.Time,poseDMP(:,3),'color','#B65649','LineWidth',1.5, 'DisplayName','DMPp_z')
-xlabel('$t$', 'Interpreter','latex','Fontsize',30)
-legend
-hold off
-
-subplot(2,1,2)
-hold on
-plot(data{version}.Time, D_new(:,4),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_{qx}')
-plot(data{version}.Time, D_new(:,5),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_{qy}')
-plot(data{version}.Time, D_new(:,6),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_{qz}')
-plot(data{version}.Time, D_new(:,7),'color','#7A364F','LineWidth',2.5, 'DisplayName','demo_{qw}')
-
-plot(data{version}.Time,poseDMP(:,4), 'color','#2016E9','LineWidth',1.5, 'DisplayName','DMPp_{qx}')
-plot(data{version}.Time,poseDMP(:,5), 'color','#FF00E4','LineWidth',1.5, 'DisplayName','DMPp_{qy}')
-plot(data{version}.Time,poseDMP(:,6), 'color','#B65649','LineWidth',1.5, 'DisplayName','DMPp_{qz}')
-plot(data{version}.Time,poseDMP(:,7), 'color','#367A62','LineWidth',1.5, 'DisplayName','DMPp_{qw}')
-xlabel('$t$', 'Interpreter','latex','Fontsize',30)
-legend
-hold off
-
-d_pos = mean(abs(D_new(:,1:3) - poseDMP(:,1:3)), "all")
-
-
-%calculate quatenrion distance as in the paper
-% "Ude, Aleš, et al. "Orientation in cartesian space dynamic movement
-% primitives." 2014 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2014."
-
-%quaternion product
-d_ori = zeros(length(poseDMP),4);
-
-qw2 = poseDMP(:,7);
-qx2 = poseDMP(:,4);
-qy2 = poseDMP(:,5);
-qz2 = poseDMP(:,6);
-
-qx1 = -D_new(:,4);
-qy1 = -D_new(:,5);
-qz1 = -D_new(:,6);
-qw1 = D_new(:,7);
-
-d_ori(:,1) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2; 
-d_ori(:,2) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
-d_ori(:,3) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
-d_ori(:,4) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2; %w
-%d_ori
+% poseDMP = ForwardKinematics2(data{version}.Pos');
+% 
+% 
+% D_new = interpolate(D, poseDMP, false);
+% 
+% d_pos = mean(abs(D_new(:,1:3) - poseDMP(:,1:3)), "all")
+% 
+% %calculate quatenrion distance as in the paper
+% % "Ude, Aleš, et al. "Orientation in cartesian space dynamic movement
+% % primitives." 2014 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2014."
+% 
+% %quaternion product
+% d_ori = zeros(length(poseDMP),4);
+% 
+% qw2 = poseDMP(:,7);
+% qx2 = poseDMP(:,4);
+% qy2 = poseDMP(:,5);
+% qz2 = poseDMP(:,6);
+% 
+% qx1 = -D_new(:,4);
+% qy1 = -D_new(:,5);
+% qz1 = -D_new(:,6);
+% qw1 = D_new(:,7);
+% 
+% d_ori(:,1) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2; 
+% d_ori(:,2) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
+% d_ori(:,3) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
+% d_ori(:,4) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2; %w
+% %d_ori
 
 %WIP <<< go from quaternion representation to single value? Use quat_log
 %metric like in paper? Or just calculate distance in joint space similar to
@@ -385,6 +347,8 @@ d_ori(:,4) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2; %w
 %demos with different length of time BEFROE the motion starts >> some will
 %have longer time of almost zero difference between traj and demo!!
 
+demoVel = interpolate(data{1}.Vel', data{version}.Vel', true);
+d_jointVel = mean(maxk(abs(demoVel - data{version}.Vel'), 1000), "all") %use max 1000 timesteps (total 1s time anywhere over the traj) 
 
 %%
 
