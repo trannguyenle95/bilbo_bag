@@ -32,7 +32,7 @@ def BagMetrics(filename, max_area, width, plot = False):
 
     #remove rows in points3d that correspond to duplicate points so that only one is perserved
     #NOTE: define a good threshold - bag opening is flexible so markers can move closer and further appart!
-    threshold = 0.01 #markers within this distance (in meters) are treated as the same
+    threshold = 0.001 #markers within this distance (in meters) are treated as the same
     
     filter = np.where(pairdist < threshold, 1, 0)
     filter = np.tril(filter) #take lower triangular matrix to remove double references to same pairs
@@ -43,14 +43,24 @@ def BagMetrics(filename, max_area, width, plot = False):
     #require that bag is not tilted so that projection directly onto xz plane gives area.
     #this should correspond to using the area as viewed by a top-down camera, and it would be unnecesarily complicated to deal 
     #with tilted planes
-    points2d = points3d[:, [0,2]]
+
+
+    delete_points = []
+
+    for i, point  in enumerate(points3d):
+        if np.abs(point[1] - np.max(points3d[:,1])) > np.abs(point[1] - np.min(points3d[:,1])):
+            delete_points.append(i)
+
+    rim_points = np.delete(points3d, delete_points, axis = 0)
+
+    points2d = rim_points[:, [0,2]]
     hull2d = ConvexHull(points2d)
 
     hull3d = ConvexHull(points3d)
     volume3d = hull3d.volume
 
     #"volume" for 2D hull is actual area, and "area" is actual perimeter
-    area_ratio = hull2d.volume / max_area
+    area_ratio = hull2d.volume #/ max_area
 
     #Use PCA major and minor axes for elongation measure (like in the AutoBag paper by Chen et al. 2023 https://doi.org/10.48550/arXiv.2210.17217)
     #If bounding box was used instead there would be problems if the bag is e.g. slim but diagonal wrt. the coordinate axes like so: / , 
@@ -112,9 +122,13 @@ def BagMetrics(filename, max_area, width, plot = False):
                          color="blue", 
                          opacity=.2,
                          alphahull=0))
-
-
+        
         fig.show()
+
+        fig2 = go.Figure(data=[go.Scatter3d(x=rim_points[:, 0], y=rim_points[:, 2], z=rim_points[:, 1],
+                                   mode='markers')]).update_traces(marker=dict(color='red'))
+        
+        fig2.show()
 
     return area_ratio, elongation
 

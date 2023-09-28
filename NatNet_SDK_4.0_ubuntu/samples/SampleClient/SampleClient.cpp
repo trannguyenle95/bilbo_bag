@@ -301,8 +301,10 @@ void NATNET_CALLCONV DataHandler(sFrameOfMocapData* data, void* pUserData)
         char szMarkerType[512];
         if (bActiveMarker)
             strcpy(szMarkerType, "Active");
-        else if(bUnlabeled)
+        else if(bUnlabeled){
             strcpy(szMarkerType, "Unlabeled");
+            out_file << marker.x << "," << marker.y << "," << marker.z << std::endl;
+        }
         else
             strcpy(szMarkerType, "Labeled");
 
@@ -310,7 +312,7 @@ void NATNET_CALLCONV DataHandler(sFrameOfMocapData* data, void* pUserData)
             szMarkerType, modelID, markerID, marker.size, marker.x, marker.y, marker.z);
 
         //OWN ADDITION to write most recent (overwrite each time) values to csv:
-        out_file << marker.x << "," << marker.y << "," << marker.z << std::endl;
+        //out_file << marker.x << "," << marker.y << "," << marker.z << std::endl;
 
 	}
 
