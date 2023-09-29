@@ -44,16 +44,17 @@ def BagMetrics(filename, max_area, width, plot = False):
     #this should correspond to using the area as viewed by a top-down camera, and it would be unnecesarily complicated to deal 
     #with tilted planes
 
-
-    delete_points = []
+    rim_point_mask = np.zeros(points3d.shape[0], dtype=bool)
 
     for i, point  in enumerate(points3d):
-        if np.abs(point[1] - np.max(points3d[:,1])) > np.abs(point[1] - np.min(points3d[:,1])):
-            delete_points.append(i)
+        if np.abs(point[1] - np.max(points3d[:,1])) < np.abs(point[1] - np.min(points3d[:,1])):
+            rim_point_mask[i] = 1
 
-    rim_points = np.delete(points3d, delete_points, axis = 0)
+    rim_points = points3d[rim_point_mask, :]
 
     points2d = rim_points[:, [0,2]]
+
+
     hull2d = ConvexHull(points2d)
 
     hull3d = ConvexHull(points3d)
@@ -113,22 +114,28 @@ def BagMetrics(filename, max_area, width, plot = False):
 
         plt.show()
 
-        xc = points3d[hull3d.vertices]
-        fig = go.Figure(data=[go.Scatter3d(x=xc[:, 0], y=xc[:, 2], z=xc[:, 1],
-                                   mode='markers')])
-        fig.add_trace(go.Mesh3d(x=xc[:, 0], 
-                         y=xc[:, 2], #change y and z so that z points upwards
-                         z=xc[:, 1], #change y and z so that z points upwards
+        ch_points = points3d[hull3d.vertices]
+        bottom_points = points3d[np.logical_not(rim_point_mask)]
+
+        print("b:", bottom_points)
+
+        fig = go.Figure(data=[go.Scatter3d(x=rim_points[:, 0], y=rim_points[:, 2], z=rim_points[:, 1],
+                                   mode='markers')]).update_traces(marker=dict(color='red'))
+        fig.add_trace(go.Mesh3d(x=ch_points[:, 0], 
+                         y=ch_points[:, 2], #change y and z so that z points upwards
+                         z=ch_points[:, 1], #change y and z so that z points upwards
                          color="blue", 
-                         opacity=.2,
+                         opacity=0.2,
                          alphahull=0))
         
-        fig.show()
+        fig.add_trace(go.Scatter3d(x=bottom_points[:, 0], y=bottom_points[:, 2], z=bottom_points[:, 1],
+                                   mode='markers', marker=dict(
+        #size=12,
+        color="blue",                # set color to an array/list of desired values
+        opacity=0.8
+    )))
 
-        fig2 = go.Figure(data=[go.Scatter3d(x=rim_points[:, 0], y=rim_points[:, 2], z=rim_points[:, 1],
-                                   mode='markers')]).update_traces(marker=dict(color='red'))
-        
-        fig2.show()
+        fig.show()
 
     return area_ratio, elongation
 
