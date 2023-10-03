@@ -3,38 +3,24 @@ clc
 close all 
 
 % Create demonstration trajectory
-%load('trajectories/g')
-
-%D = readmatrix(strcat('demos/','BagFlip_q.csv'))';
-
-
-%filename = 'BagFlip.csv';
-%D = preprocess_1hand(filename, false);
 %filename = 'sack_from_bag2.csv';
-filename = 'sack_from_bag2.csv';
-D = preprocess(filename, false, 2);
+%D = preprocess(filename, false, 0.57, 0, -0.20, 1); %other processing of x distance to avoid collisions... >>  if larger range of x allowed then robots need to be moved closer potentially
 
-%D = smoothdata(D, 1, "gaussian",50); %still noisy after IK
+filename = '2h_flip2.csv';
+%D = preprocess(filename, false, 0.60, 0, 0, 1);
+D = preprocess(filename, false, 0.05, -0.05, 0.10, 1);
 
-q = InverseKinematics3(D)';
+Dsmooth = smoothdata(D, 1, "gaussian",35); %still noisy after IK
+Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 
-poseIKFK = ForwardKinematics(q');
+[q, jacobians] = InverseKinematics2(Dsmooth);
+
+poseIKFK = ForwardKinematics2(q);
 
 %q = smoothdata(q, 2, "gaussian",10);
 
-demo_traj = generateDemo(q, 1/120);
-%demo_traj = generateDemo('sack2_pre_pyth_ik_mat_q.csv', 1/120)
+demo_traj = generateDemo(q', 1/120);
 
-%demo_traj = generateDemo('sack2_pre_pyth_ik_mat_q.csv', 1/120)
-
-%NOTE: this dmeo too large matrix to handle??
-% TODO: how to replay on robots? Need to go from tau etc back to setpoints
-% for each timestep 1 ms...
-
-% load('trajectories/omega')
-% load('trajectories/z')
-% load('trajectories/s')
-% load('trajectories/psi')
 
 % Nominal trajectory functions
 dmp_params.D = 20;
@@ -63,28 +49,24 @@ nominalTraj = dmp.rollout(sim_params.dt); %ROLLOUT only for nominal traj? Then u
 % sim_params.v_max_online = inf*[1 1]'; %Commented away in original code,
 % can be uncommented to remove limit
 
-%FOR FRANKA PANDA (TODO RESEARCH 3 + toggle with input argument)
-p_max = [2.8973; 1.7628; 2.8973; -0.0698; 2.8973; 3.7525; 2.8973]; %not used in sim, added for PLOTTING
-p_min = [-2.8973; -1.7628; -2.8973; -3.0718; -2.8973; -0.0175; -2.8973]; %not used in sim, added for PLOTTING
+
+%WORST CASE COMMON LIMITS
+p_max = [2.7437; 1.7628; 2.8973; -0.1518; 2.8065; 3.7525; 2.8973]; %not used in sim, added for PLOTTING
+p_min = [-2.7437; -1.7628; -2.8973; -3.0421; -2.8065; 0.5445; -2.8973]; %not used in sim, added for PLOTTING
 sim_params.v_max = [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100];
-sim_params.a_max = [15; 7.5; 10; 12.5; 15; 20; 20];
-
-%FOR FRANKA RESEARCH3 - NOTE Inverse Kinematics DOES NOT HANDLE RESEARCH3
-%CONSTRAINTS!!
-    % Can I define a new robot model similar to panda? https://github.com/petercorke/robotics-toolbox-matlab/blob/master/models/mdl_panda.m
-% p_max = [2.7437; 1.7837; 2.9007; -0.1518; 2.8065; 4.5169; 3.0159]; %not used in sim, added for PLOTTING
-% p_min = [-2.7437; -1.7837; -2.9007; -3.0421; -2.8065; 0.5445; -3.0159]; %not used in sim, added for PLOTTING
-% sim_params.v_max = [2.62; 2.62; 2.62; 2.62; 5.26; 4.18; 5.26];
-% sim_params.a_max = [10; 10; 10; 10; 10; 10; 10];
-
+sim_params.a_max = [10; 7.5; 10; 10; 10; 10; 10];
+%NOTE: scale vel and acc limits by 0.98 in run_simulation.m
 
 % Scaling parameters
 tc_params.nominal_tau = dmp.nominal_tau;
 tc_params.eps = 1e-3;
 tc_params.gamma_nominal = 1;
-tc_params.gamma_a = 3; %originally 0.5, higher should reducde overshoots but increase runtime
-tc_params.a_max = sim_params.a_max; 
-tc_params.v_max = sim_params.v_max;
+tc_params.gamma_a = 0.5; %originally 0.5, higher should reducde overshoots but increase runtime
+tc_params.a_max = sim_params.a_max * 0.98; %NOTE added scaling here to have some margin as vel/acc limits are not guaranteed
+tc_params.v_max = sim_params.v_max * 0.98; %NOTE added scaling here to have some margin as vel/acc limits are not guaranteed
+%alternativley gamma_a can be increased to get rid of small overshoots, but
+%trajectory slowdown experimentally seems to be lower when adding small
+%margin by scaling 0.98
 
 % Create temporal coupling objects
 tc = {};
@@ -92,6 +74,8 @@ tc{1} = TemporalCoupling(tc_params);
 %tc{2} = NoTemporalCoupling(tc_params);
 %tc{3} = TemporalCouplingNoPotentials(tc_params);
 
+%TODO: clean up this + plotting, no need to use cells when only tc{1} is
+%used
 % Simulate
 nSim = length(tc);
 res = cell(length(tc),1);
@@ -100,7 +84,7 @@ for d = 1:nSim
     res{d} = run_simulation(dmp,tc{d},sim_params);   
 end
 
-
+%plot whether limits are exceeded
 min_joint_pos = (min(res{1}.ref_pos, [], 2) < p_min)'
 max_joint_pos = (max(res{1}.ref_pos, [], 2) > p_max)'
 
@@ -110,26 +94,23 @@ max_joint_vel = (max(res{1}.ref_vel, [], 2) > sim_params.v_max)'
 min_joint_acc = (min(res{1}.ref_acc, [], 2) < -sim_params.a_max)'
 max_joint_acc = (max(res{1}.ref_acc, [], 2) > sim_params.a_max)'
 
-
-
-%q_franka3 = res{1}.ref_pos';
-%q_franka3(:,1) = -q_franka3(:,1);
-%q_franka3(:,3) = -q_franka3(:,3);
-%q_franka3(:,5) = -q_franka3(:,5);
-%q_franka3(:,7) = -q_franka3(:,7);
-
-
+slowdown = res{1}.t(end) - demo_traj.t(end)
 
 %first do this for plotting
-poseDMP = ForwardKinematics(res{1}.ref_pos');
+poseDMP = ForwardKinematics2(res{1}.ref_pos');
 
+[mu1, mu2, mu3, w, kappa] = manipulabilityMeasures(jacobians);
+
+res_jacobians = getJacobians(res{1}.ref_pos');
+[res_mu1, res_mu2, res_mu3, res_w, res_kappa] = manipulabilityMeasures(res_jacobians);
 
 % Plot result
 plot_result
 
-%DID THIS FOR FRANKA2 - don't flip for mirrored motion in Franka3?
-%NO - also do this in Franka3 and let controller do sign flips
-%NOTE: ideally dont do sign flps
+%also do this for both robots and let controller do sign flips
+%NOTE: later change controller to use Franka3 as default and these values
+%would not need to be flipped? Note jonint7 is not just a flip but also
+%some offset (see controller code)
 res{1}.ref_pos(1,:) = -res{1}.ref_pos(1,:);
 res{1}.ref_pos(3,:) = -res{1}.ref_pos(3,:);
 res{1}.ref_pos(5,:) = -res{1}.ref_pos(5,:);
@@ -138,8 +119,7 @@ res{1}.ref_pos(7,:) = -res{1}.ref_pos(7,:);
 %Run Forward Kinematics for plotting and playback with cartesian control
 %do this again so that pose with flipped joints is saved for pose
 %trajectory
-poseDMP = ForwardKinematics(res{1}.ref_pos');
-
+poseDMP = ForwardKinematics2(res{1}.ref_pos');
 
 %save joint angles to file
 writematrix(res{1}.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))

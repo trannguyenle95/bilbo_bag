@@ -1,7 +1,9 @@
-function D = preprocess(filename, displayplot, dx, dy, dz, max_amplitude)
+function D = preprocess(filename, displayplot, dx, dy, dz, max_amplitude, gripper_ori)
 
 %D = readmatrix(filename)';
-D = csvread(strcat('demos/',filename), 7); %offset 7 rows to skip header info
+D = csvread(strcat('own_demos/',filename), 7); %offset 7 rows to skip header info
+
+D(D==0) = NaN; %csvread fills missing values with zeros, undo this so fillmissing on next row works
 
 D = fillmissing(fillmissing(D, 'next'), 'previous'); %copy values if there are gaps, so quaternions should still be valid
 
@@ -11,6 +13,14 @@ else
     demoType = 'dual'; %two hands tracked
     x_dist = abs(D(:,7) - D(:,14)); %offset between both hands
 end
+
+%Make quaternion representation consistent qw always positive
+for row = 1:length(D)
+    if D(row, 6) < 0
+        D(row, 3:6) = -D(row, 3:6);
+    end
+end
+
 
 %normalize around (0,0,0) add offset later
 D(:,7) = D(:,7) - D(1,7); %x
@@ -71,9 +81,14 @@ D = reordered;
 %Use quaternion product here to rotate quaternions
 %https://en.wikipedia.org/wiki/Quaternion
 %first rotation q2 followed by rotation q1.
-angle = -pi/4; %this gives "normal" grip which leaves more space between the grippers
-%q_rot = [cos(angle) 0 0 sin(angle)];
-%new_quat = quatmultiply(D(4:7),q_rot);
+
+if strcmp(gripper_ori, 'ori1')
+    angle = -pi/4; %this gives "normal" grip which leaves more space between the grippers
+else
+    angle = pi/4; %this gives "rotated" grip which leaves less space between
+%the grippers, but a more natural grip
+end
+
 qw2 = cos(angle/2);
 qx2 = 0;
 qy2 = 0;
@@ -101,7 +116,7 @@ if strcmp(demoType,'dual')
         %Gripper with short side towards eachother = larger max distance 
         %min distance between grippers is (0.75-0.625)*2 - 0.10 = 0.15 between outer parts of grippers.
         %Set maximum distance between grippers to (0.75 - 0.50)*2 = 0.50.
-        D(:,1) = max(min(0.75 - (x_dist/2), 0.625),0.50); %x
+        D(:,1) = max(min(0.75 - (x_dist/2), 0.62),0.50); %x previously (0.50, 0.625)
         %D(:,1) = max(min(0.75 - (x_dist/2), 0.575),0.50); %x
 else
         %D(:,1) = 0.625; %x - made DMP diverge from demo in x direction
@@ -109,8 +124,8 @@ else
 end
 
 %add offsets
-%D(:,1) = D(:,1) + dx; %ADDED extra displacement to x
-D(:,1) = dx; %OVERWRITE to only set dx from input!
+D(:,1) = D(:,1) + dx; %ADDED extra displacement to x
+%D(:,1) = dx; %OVERWRITE to only set dx from input!
 D(:,2) = D(:,2) + dy;
 D(:,3) = D(:,3) + dz;
 %D(:,3) = D(:,3) + 0.20; %z

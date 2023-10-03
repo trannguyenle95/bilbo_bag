@@ -6,8 +6,9 @@ close all
 %filename = 'sack_from_bag2.csv';
 %D = preprocess(filename, false, 0.57, 0, -0.20, 1); %other processing of x distance to avoid collisions... >>  if larger range of x allowed then robots need to be moved closer potentially
 
-filename = '2h_flip2.csv';
-D = preprocess(filename, false, 0.60, 0, 0, 1);
+filename = '10l_bag_flip.csv';
+D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori2');
+%D = preprocess(filename, false, 0.05, -0.05, 0.05, 1);
 
 Dsmooth = smoothdata(D, 1, "gaussian",35); %still noisy after IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
@@ -60,7 +61,7 @@ sim_params.a_max = [10; 7.5; 10; 10; 10; 10; 10];
 tc_params.nominal_tau = dmp.nominal_tau;
 tc_params.eps = 1e-3;
 tc_params.gamma_nominal = 1;
-tc_params.gamma_a = 0.5; %originally 0.5, higher should reducde overshoots but increase runtime
+tc_params.gamma_a = 0.2; %originally 0.5, higher should reducde overshoots but increase runtime
 tc_params.a_max = sim_params.a_max * 0.98; %NOTE added scaling here to have some margin as vel/acc limits are not guaranteed
 tc_params.v_max = sim_params.v_max * 0.98; %NOTE added scaling here to have some margin as vel/acc limits are not guaranteed
 %alternativley gamma_a can be increased to get rid of small overshoots, but
@@ -124,3 +125,10 @@ poseDMP = ForwardKinematics2(res{1}.ref_pos');
 writematrix(res{1}.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
 %writematrix(q_franka3,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
 writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
+
+res{1}.ref_vel(1,:) = -res{1}.ref_vel(1,:);
+res{1}.ref_vel(3,:) = -res{1}.ref_vel(3,:);
+res{1}.ref_vel(5,:) = -res{1}.ref_vel(5,:);
+res{1}.ref_vel(7,:) = -res{1}.ref_vel(7,:);
+
+writematrix(res{1}.ref_vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))

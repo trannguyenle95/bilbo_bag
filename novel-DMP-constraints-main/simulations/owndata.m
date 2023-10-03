@@ -7,6 +7,7 @@ import_gmp_lib();
 import_io_lib();
 
 addpath('own_code/') %ADDED
+addpath('own_demos/') %ADDED
 
 %% Load training data
 % fid = FileIO('data/pos_data.bin', FileIO.in);
@@ -19,8 +20,14 @@ addpath('own_code/') %ADDED
 %ddPd data!
 %Each is an array of doubles, size DOF*timesteps
 
-filename = '2h_flip2.csv';
-D = preprocess(filename, false, 0.57, 0, 0, 1);
+filename = '10l_bag_flip.csv';
+%filename = 'd8_flip.csv';
+%filename = 'd8_flip.csv';
+
+version = 4 % 3 = vel, 4 = pos, select which optimization version to export
+
+D = preprocess(filename, false, -0.015, 0.00, 0.00, 1, 'ori2');
+%D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori2');
 %D = preprocess(filename, false, 0.60, 0, 0, 1);
 %D = preprocess(filename, false, 0.05, -0.05, 0.05, 1);
 Dsmooth = smoothdata(D, 1, "gaussian",35); %still noisy after IK
@@ -293,8 +300,6 @@ hold off
 
 
 
-version = 3 % 3 = vel, 4 = pos;
-
 %display whether limits are exceeded
 min_joint_pos = (min(data{version}.Pos, [], 2) < actual_pos_lim(:,1))'
 max_joint_pos = (max(data{version}.Pos, [], 2) > actual_pos_lim(:,2))'
@@ -347,7 +352,7 @@ max_joint_acc = (max(data{version}.Accel, [], 2) > actual_accel_lim(:,2))'
 %demos with different length of time BEFROE the motion starts >> some will
 %have longer time of almost zero difference between traj and demo!!
 
-demoVel = interpolate(data{1}.Vel', data{version}.Vel', true);
+demoVel = interpolate(data{1}.Vel', data{version}.Vel', false);
 d_jointVel = mean(maxk(abs(demoVel - data{version}.Vel'), 1000), "all") %use max 1000 timesteps (total 1s time anywhere over the traj) 
 
 %%
@@ -367,14 +372,19 @@ data{version}.Pos(7,:) = -data{version}.Pos(7,:);
 poseDMP = ForwardKinematics2(data{version}.Pos');
 
 %save joint angles to file
-writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
-writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
-%writematrix(data{3}.Pos',fullfile('output',strcat('joint_',filename)))
-%writematrix(poseDMP,fullfile('output',strcat('pose_',filename)))
+%writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
+%writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
+
+%use general filename for to easily switch between demos when generating
+%from new files above
+writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_demoDMP.csv'))
+writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','pose_demoDMP.csv'))
+
 
 data{version}.Vel(1,:) = -data{version}.Vel(1,:);
 data{version}.Vel(3,:) = -data{version}.Vel(3,:);
 data{version}.Vel(5,:) = -data{version}.Vel(5,:);
 data{version}.Vel(7,:) = -data{version}.Vel(7,:);
 
-writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))
+%writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))
+writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_vel_demoDMP.csv'))
