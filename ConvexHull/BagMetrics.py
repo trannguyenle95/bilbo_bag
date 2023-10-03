@@ -61,7 +61,7 @@ def BagMetrics(filename, max_area, width, plot = False):
     volume3d = hull3d.volume
 
     #"volume" for 2D hull is actual area, and "area" is actual perimeter
-    area_ratio = hull2d.volume #/ max_area
+    area_ratio = hull2d.volume / max_area
 
     #Use PCA major and minor axes for elongation measure (like in the AutoBag paper by Chen et al. 2023 https://doi.org/10.48550/arXiv.2210.17217)
     #If bounding box was used instead there would be problems if the bag is e.g. slim but diagonal wrt. the coordinate axes like so: / , 
@@ -76,10 +76,11 @@ def BagMetrics(filename, max_area, width, plot = False):
     #Plotting
     if plot:
         #Print here so that metrics are visible without having to close pyplot figures first
-        print("Convex Hull area: ", area_ratio)
+        #print("Convex Hull area ratio: ", area_ratio)
         print("Convex Hull elongation: ", elongation)
 
-        print("3d hull volume: ", volume3d)
+        print("Rim area (cm2): ", hull2d.volume / 0.0001) #convert from m2 to cm2
+        print("3d hull volume (liters): ", volume3d / 0.001) #convert from m3 to liters
 
         convex_hull_plot_2d(hull2d) #plot 2d convex hull
         ax1 = plt.gca()
@@ -93,7 +94,7 @@ def BagMetrics(filename, max_area, width, plot = False):
         plt.plot((data_mean[0], data_mean[0]-pca_axes[0,0]*np.sqrt(pca_magnitude[0])), (data_mean[1], data_mean[1]-pca_axes[0,1]*np.sqrt(pca_magnitude[0]))) #Plot major axis - note sqrt() to get standard deviation from variance for plotting
         plt.plot((data_mean[0], data_mean[0]-pca_axes[1,0]*np.sqrt(pca_magnitude[1])), (data_mean[1], data_mean[1]-pca_axes[1,1]*np.sqrt(pca_magnitude[1]))) #Plot minor axis - note sqrt() to get standard deviation from variance for plotting
         
-        plt.show()
+        #plt.show()
 
         #plot median point
         ax2 = plt.gca()
@@ -112,12 +113,10 @@ def BagMetrics(filename, max_area, width, plot = False):
         for p in points3d:
             plt.plot(p[0], p[2], 'go')
 
-        plt.show()
+        #plt.show()
 
         ch_points = points3d[hull3d.vertices]
         bottom_points = points3d[np.logical_not(rim_point_mask)]
-
-        print("b:", bottom_points)
 
         fig = go.Figure(data=[go.Scatter3d(x=rim_points[:, 0], y=rim_points[:, 2], z=rim_points[:, 1],
                                    mode='markers')]).update_traces(marker=dict(color='red'))
@@ -140,6 +139,6 @@ def BagMetrics(filename, max_area, width, plot = False):
     return area_ratio, elongation
 
 if __name__ == '__main__':
-    A_CH, E_CH = BagMetrics("tracked_markers.csv", 0.085, 0.4, plot=True)
+    A_CH, E_CH = BagMetrics("tracked_markers.csv", 0.045, 0.3, plot=True)
     #print("Convex Hull area: ", A_CH)
     #print("Convex Hull elongation: ", E_CH)
