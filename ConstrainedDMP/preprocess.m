@@ -11,7 +11,9 @@ if size(D, 2) == 9
     demoType = 'single'; %single hand tracked
 else
     demoType = 'dual'; %two hands tracked
-    x_dist = min(abs(D(:,7) - D(:,14)), bag_width); %offset between both hands
+    x_dist = max(min(abs(D(:,7) - D(:,14)), bag_width), 0.28); %offset between both hands
+    %added max( , 0.28) so that distance between grippers is at least 0.28
+    %- 2*0.10 = 8cm which leaves some margin after DMP distortion
 end
 
 %Make quaternion representation consistent qw always positive
