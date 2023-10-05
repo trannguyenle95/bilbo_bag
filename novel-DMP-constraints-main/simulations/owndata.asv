@@ -20,11 +20,11 @@ addpath('own_demos/') %ADDED
 %ddPd data!
 %Each is an array of doubles, size DOF*timesteps
 
-%filename = '10l_bag_flip.csv';
-filename = 'd10_flip.csv';
+filename = '10l_bag_flip.csv';
+%filename = 'd8_flip.csv';
 %filename = 'd8_flip.csv';
 
-version = 4 % 3 = vel, 4 = pos, select which optimization version to export
+version = 3 % 3 = vel, 4 = pos, select which optimization version to export
 
 D = preprocess(filename, false, -0.015, 0.00, 0.00, 1, 'ori2', 0.38);
 %D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori2');
@@ -44,7 +44,7 @@ ddPd_data = demo_traj.acc;
 
 %% initialize and train GMP
 train_method = 'LS'; %NOTE: I can also try LWR
-N_kernels = 50; %Originally 30, difference in MSE but not noticable in plots
+N_kernels = 100; %Originally 30, difference in MSE but not noticable in plots
 kernels_std_scaling = 1.5;
 n_dof = size(Pd_data,1);
 gmp = GMP(n_dof, N_kernels, kernels_std_scaling); %NOTE: there is also GMPo for Cartesian pose
@@ -403,4 +403,4 @@ else
     W = w3;
 end
 
-writematrix(W,fullfile('/home/erichannus/catkin_ws/src/Data/Weights',strcat('W_',filename)))
+writematrix(,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))

@@ -7,7 +7,7 @@ close all
 %D = preprocess(filename, false, 0.57, 0, -0.20, 1); %other processing of x distance to avoid collisions... >>  if larger range of x allowed then robots need to be moved closer potentially
 
 filename = '10l_bag_flip.csv';
-D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori2');
+D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori2', 0.38);
 %D = preprocess(filename, false, 0.05, -0.05, 0.05, 1);
 
 Dsmooth = smoothdata(D, 1, "gaussian",35); %still noisy after IK

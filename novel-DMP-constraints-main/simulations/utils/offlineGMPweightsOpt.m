@@ -1,8 +1,10 @@
-function [Time, P_data, dP_data, ddP_data] = offlineGMPweightsOpt(gmp0, tau, y0, yg, pos_lim, vel_lim, accel_lim, opt_pos, opt_vel, vp_config, qp_solver_type)
+function [Time, P_data, dP_data, ddP_data, W] = offlineGMPweightsOpt(gmp0, tau, y0, yg, pos_lim, vel_lim, accel_lim, opt_pos, opt_vel, vp_config, qp_solver_type)
     
     gmp = gmp0.deepCopy();
     
-    gmp.autoRetrain(30, 1.5, 300, 'LS');
+    %gmp.autoRetrain(30, 1.5, 300, 'LS'); %NOTE: commented away this, so
+    %that all trained DMPs have same number of weights specified in the
+    %main script
     
     n_dof = length(y0);
     
@@ -53,4 +55,5 @@ function [Time, P_data, dP_data, ddP_data] = offlineGMPweightsOpt(gmp0, tau, y0,
 
     [Time, P_data, dP_data, ddP_data] = getGMPTrajectory(gmp, tau, y0, yg);
     
+    W = gmp.W;
 end

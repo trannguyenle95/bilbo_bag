@@ -458,7 +458,7 @@ classdef GMP_Opt < matlab.mixin.Copyable
         function [x, success, exit_status] = osqpSolver(H, f, Aineq, lb_ineq, ub_ineq, Aeq, beq, x0)
             
             osqp_solver = osqp;
-            osqp_solver.setup(sparse(H), f, sparse([Aineq; Aeq]), [lb_ineq; beq], [ub_ineq; beq], 'warm_start',true, 'verbose',false, 'eps_abs',1e-4, 'eps_rel',1e-5);%, 'max_iter',20000);
+            osqp_solver.setup(sparse(H), f, sparse([Aineq; Aeq]), [lb_ineq; beq], [ub_ineq; beq], 'warm_start',true, 'verbose',false, 'eps_abs',1e-4, 'eps_rel',1e-5, 'max_iter',20000);%, 'max_iter',20000);
             res = osqp_solver.solve();
             exit_status = res.info.status;
             ex_flag = res.info.status_val;

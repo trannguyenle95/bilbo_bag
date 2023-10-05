@@ -1,4 +1,4 @@
-function D = preprocess(filename, displayplot, dx, dy, dz, max_amplitude, gripper_ori)
+function D = preprocess(filename, displayplot, dx, dy, dz, max_amplitude, gripper_ori, bag_width)
 
 %D = readmatrix(filename)';
 D = csvread(strcat('own_demos/',filename), 7); %offset 7 rows to skip header info
@@ -11,7 +11,7 @@ if size(D, 2) == 9
     demoType = 'single'; %single hand tracked
 else
     demoType = 'dual'; %two hands tracked
-    x_dist = abs(D(:,7) - D(:,14)); %offset between both hands
+    x_dist = min(abs(D(:,7) - D(:,14)), bag_width); %offset between both hands
 end
 
 %Make quaternion representation consistent qw always positive
