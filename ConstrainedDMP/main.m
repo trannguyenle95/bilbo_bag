@@ -25,7 +25,7 @@ demo_traj = generateDemo(q', 1/120);
 % Nominal trajectory functions
 dmp_params.D = 20;
 dmp_params.K = dmp_params.D^2/4;
-dmp_params.n_kernel = 100; %default 100
+dmp_params.n_kernel = 200; %default 100
 %Originally 100, better fit with 200 - with 100 some peaks from demo are reduced by smoothing
 %BUT 200 can overfit and give acceleration that exceeds limits slightly,
 %not enough smooothing effect in that case...
@@ -61,7 +61,7 @@ sim_params.a_max = [10; 7.5; 10; 10; 10; 10; 10];
 tc_params.nominal_tau = dmp.nominal_tau;
 tc_params.eps = 1e-3;
 tc_params.gamma_nominal = 1;
-tc_params.gamma_a = 0.2; %originally 0.5, higher should reducde overshoots but increase runtime
+tc_params.gamma_a = 0.5; %originally 0.5, higher should reducde overshoots but increase runtime
 tc_params.a_max = sim_params.a_max * 0.98; %NOTE added scaling here to have some margin as vel/acc limits are not guaranteed
 tc_params.v_max = sim_params.v_max * 0.98; %NOTE added scaling here to have some margin as vel/acc limits are not guaranteed
 %alternativley gamma_a can be increased to get rid of small overshoots, but
@@ -122,13 +122,18 @@ res{1}.ref_pos(7,:) = -res{1}.ref_pos(7,:);
 poseDMP = ForwardKinematics2(res{1}.ref_pos');
 
 %save joint angles to file
-writematrix(res{1}.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
-%writematrix(q_franka3,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
-writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
+%writematrix(res{1}.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
+%writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
+
+%use general filename for to easily switch between demos when generating
+%from new files above
+writematrix(res{1}.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_demoDMP.csv'))
+writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','pose_demoDMP.csv'))
 
 res{1}.ref_vel(1,:) = -res{1}.ref_vel(1,:);
 res{1}.ref_vel(3,:) = -res{1}.ref_vel(3,:);
 res{1}.ref_vel(5,:) = -res{1}.ref_vel(5,:);
 res{1}.ref_vel(7,:) = -res{1}.ref_vel(7,:);
 
-writematrix(res{1}.ref_vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))
+%writematrix(res{1}.ref_vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))
+writematrix(res{1}.ref_vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_vel_demoDMP.csv'))

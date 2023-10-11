@@ -20,13 +20,14 @@ addpath('own_demos/') %ADDED
 %ddPd data!
 %Each is an array of doubles, size DOF*timesteps
 
-%filename = '10l_bag_flip.csv';
-filename = 'd10_flip.csv';
+filename = '10l_bag_flip.csv';
+%filename = 'd10_flip.csv';
 %filename = 'd8_flip.csv';
 
 version = 4 % 3 = vel, 4 = pos, select which optimization version to export
 
 D = preprocess(filename, false, -0.015, 0.00, 0.00, 1, 'ori2', 0.38);
+%D = preprocess(filename, false, 0.56, 0.00, 0.00, 1, 'ori2', 0.38);
 %D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori2');
 %D = preprocess(filename, false, 0.60, 0, 0, 1);
 %D = preprocess(filename, false, 0.05, -0.05, 0.05, 1);
@@ -44,7 +45,7 @@ ddPd_data = demo_traj.acc;
 
 %% initialize and train GMP
 train_method = 'LS'; %NOTE: I can also try LWR
-N_kernels = 50; %Originally 30, difference in MSE but not noticable in plots
+N_kernels = 30; %Originally 30, difference in MSE but not noticable in plots
 kernels_std_scaling = 1.5;
 n_dof = size(Pd_data,1);
 gmp = GMP(n_dof, N_kernels, kernels_std_scaling); %NOTE: there is also GMPo for Cartesian pose
@@ -87,7 +88,7 @@ actual_accel_lim = accel_lim;
 %use stricter limits than the actual ones
 pos_lim = 0.98 * pos_lim;
 vel_lim = 0.98 * vel_lim;
-accel_lim = 0.88 * accel_lim;
+accel_lim = 0.70 * accel_lim;
 
 %% ======== Generate trajectories ==========
 
@@ -378,13 +379,13 @@ data{version}.Pos(7,:) = -data{version}.Pos(7,:);
 poseDMP = ForwardKinematics2(data{version}.Pos');
 
 %save joint angles to file
-writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
-writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
+%writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
+%writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
 
 %use general filename for to easily switch between demos when generating
 %from new files above
-%writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_demoDMP.csv'))
-%writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','pose_demoDMP.csv'))
+writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_demoDMP.csv'))
+writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','pose_demoDMP.csv'))
 
 
 data{version}.Vel(1,:) = -data{version}.Vel(1,:);
@@ -392,8 +393,8 @@ data{version}.Vel(3,:) = -data{version}.Vel(3,:);
 data{version}.Vel(5,:) = -data{version}.Vel(5,:);
 data{version}.Vel(7,:) = -data{version}.Vel(7,:);
 
-writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))
-%writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_vel_demoDMP.csv'))
+%writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))
+writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_vel_demoDMP.csv'))
 
 
 %Export weights for the demo
