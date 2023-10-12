@@ -15,6 +15,8 @@ from geometry_msgs.msg import PoseStamped
 
 from franka_david.msg import JointVelTrajPy #ADDED 26.09
 
+from franka_david.msg import MoveRelativePy #ADDED 12.10
+
 
 from primitives import get_xyz_coordinates_given_mid_theta_ref_real
 
@@ -53,8 +55,8 @@ WORKSPACE_SURFACE_MAX = 0.5
 
 GRIPPER_OPEN = 0.07
 GRIPPER_CLOSED = 0.0006
-GRIPPER_MIDDLE_OPEN = 0.05
-GRIPPER_MIDDLE_CLOSED = 0.002 #originally 0.025
+GRIPPER_MIDDLE_OPEN = 0.001 #originally 0.05
+GRIPPER_MIDDLE_CLOSED = 0.001 #originally 0.025
 GRIPPER_SPEED = 0.05
 GRIPPER_FORCE = 40  # Newtons
 
@@ -101,6 +103,9 @@ class Franka:
 
         self.ros_jointVelTraj_pub = rospy.Publisher(topic+'joint_vel_trajectory', JointVelTrajPy,
                                         queue_size=10) #ADDED 26.09
+
+        self.ros_moveRelative_pub = rospy.Publisher(topic+'move_relative', MoveRelativePy,
+                                        queue_size=10) #ADDED 12.10
 
         if init_node:
             rospy.init_node(node_name, anonymous=True)
@@ -453,3 +458,16 @@ class Franka:
             sleep(traj_duration)
 
         self.rate.sleep()
+
+
+    def move_relative(self, params, traj_duration: float):
+        pose_msg = MoveRelativePy()
+        pose_msg.duration = traj_duration
+        pose_msg.x = params[0]
+        pose_msg.y = params[1]
+        pose_msg.z = params[2]
+        pose_msg.enable = True
+        print("Sending new relative position")
+        rospy.sleep(0.5)
+        self.ros_moveRelative_pub.publish(pose_msg)
+        sleep(traj_duration)

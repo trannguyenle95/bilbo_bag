@@ -26,7 +26,7 @@ filename = '10l_bag_flip.csv';
 
 version = 4 % 3 = vel, 4 = pos, select which optimization version to export
 
-D = preprocess(filename, false, -0.015, 0.00, 0.00, 1, 'ori2', 0.38);
+D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
 %D = preprocess(filename, false, 0.56, 0.00, 0.00, 1, 'ori2', 0.38);
 %D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori2');
 %D = preprocess(filename, false, 0.60, 0, 0, 1);
@@ -88,7 +88,7 @@ actual_accel_lim = accel_lim;
 %use stricter limits than the actual ones
 pos_lim = 0.98 * pos_lim;
 vel_lim = 0.98 * vel_lim;
-accel_lim = 0.70 * accel_lim;
+accel_lim = 0.88 * accel_lim;
 
 %% ======== Generate trajectories ==========
 

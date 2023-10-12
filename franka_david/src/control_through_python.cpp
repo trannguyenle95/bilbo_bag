@@ -83,6 +83,10 @@ CartesianPythonController::CartesianPythonController()
         "/frankapy/joint_vel_trajectory", 20, &CartesianPythonController::jointVelocityTrajectoryCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
 
+    this->_sub_move_relative = control_py_node.subscribe(
+        "/frankapy/move_relative", 20, &CartesianPythonController::moveRelativeCallback, this,
+        ros::TransportHints().reliable().tcpNoDelay());
+
     
     // set collision behavior
     this->_robot->setCollisionBehavior(
@@ -761,6 +765,84 @@ void CartesianPythonController::motionOriCallback(const franka_david::MotionPyPt
 //     
 // 
 //     
+}
+
+
+void CartesianPythonController::moveRelativeCallback(const franka_david::MoveRelativePyPtr& msg)
+{
+    double dx = msg->x;
+    double dy = msg->y;
+    if (this->_franka3)
+    {
+        dy = -dy;
+    }
+    double dz = msg->z;
+    double duration = msg->duration;
+    bool enable = msg->enable;
+        
+    
+    if (enable)
+    {
+    //Motion generator based on this example: https://frankaemika.github.io/libfranka/generate_cartesian_pose_motion_8cpp-example.html
+    std::array<double, 16> initial_pose;
+    double time = 0.0;
+
+    this->_robot->control([&](const franka::RobotState& robot_state,
+                                         franka::Duration period) -> franka::CartesianPose {
+    //     time += period.toSec();
+    //     if (time == 0.0) {
+    //         initial_pose = robot_state.O_T_EE;
+    //         new_pose = initial_pose;
+    //     }
+
+    //     //new_pose = initial_pose;
+
+
+    //     new_pose[12] += 0.00001;
+    //     //new_pose[12] += (time/duration) * dx;
+
+    //     //new_pose[13] += (time/duration) * dy;
+    //     //new_pose[14] += (time/duration) * dz;
+
+    //     std::cout << "step: " << (time/duration) * dx << std::endl;
+        
+    //     std::cout << "Time: " << time << std::endl;
+
+
+
+    //     if (time >= duration) {
+    //         std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
+    //         return franka::MotionFinished(new_pose);
+    //     }
+    //     return new_pose;
+
+    // });
+
+    
+    if (time == 0.0) {
+    initial_pose = robot_state.O_T_EE_c;
+    }
+    time += period.toSec();
+    //double delta_x = (time/duration)*dx;
+    double angle = M_PI / 4 * (1 - std::cos(M_PI / duration * time));
+    double delta_x = dx * std::sin(angle);
+    
+    std::array<double, 16> new_pose = initial_pose;
+    new_pose[12] += delta_x;
+    std::cout << "new x: " << new_pose[12] << std::endl;
+    std::cout << "dx: " << delta_x << std::endl;
+    std::cout << "angle: " << std::sin(angle) << std::endl;
+    if (time >= duration) {
+        
+        std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
+        return franka::MotionFinished(new_pose);
+    }
+    return new_pose;
+});
+
+std::cout << std::endl << "here" << std::endl;
+
+}
 }
 
 

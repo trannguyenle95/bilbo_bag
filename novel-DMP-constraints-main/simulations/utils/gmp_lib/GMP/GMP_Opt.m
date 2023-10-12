@@ -152,7 +152,8 @@ classdef GMP_Opt < matlab.mixin.Copyable
             % solve optimization problem
             % tic
             
-            solve_coupled = 0;
+            %solve_coupled = 0; %original
+            solve_coupled = 1; %modified
             
 %             disp([ 'H-sp: ' num2str(sum(H(:)== 0)) ' / ' num2str(numel(H)) ] );
 %             disp([ 'A-sp: ' num2str(sum(Aineq(:)== 0)) ' / ' num2str(numel(Aineq)) ] );

@@ -97,6 +97,10 @@ CartesianRemoteController::CartesianRemoteController()
         "/franka/joint_vel_trajectory", 20, &CartesianRemoteController::jointVelocityTrajectoryCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
 
+    this->_sub_move_relative = control_py_node.subscribe(
+        "/franka/move_relative", 20, &CartesianRemoteController::moveRelativeCallback, this,
+        ros::TransportHints().reliable().tcpNoDelay());
+
     
     // set collision behavior
     this->_robot->setCollisionBehavior(
@@ -454,7 +458,7 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
 
         std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
         std::ofstream out_file(HOME + "/catkin_ws/src/Data/executed_joint_trajectory.csv", ios::app);
-        out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << "," << std::endl;
+        out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << std::endl;
         //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
         
 
@@ -462,7 +466,7 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
         Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_dq(robot_state.dq.data());
 
         std::ofstream vel_out_file(HOME + "/catkin_ws/src/Data/executed_joint_velocities.csv", ios::app);
-        vel_out_file << actual_dq[0] << "," << actual_dq[1] << "," << actual_dq[2] << "," << actual_dq[3] << "," << actual_dq[4]<< "," << actual_dq[5] << "," << actual_dq[6] << "," << std::endl;
+        vel_out_file << actual_dq[0] << "," << actual_dq[1] << "," << actual_dq[2] << "," << actual_dq[3] << "," << actual_dq[4]<< "," << actual_dq[5] << "," << actual_dq[6] << std::endl;
 
         //Cartesian pose during joint control
         Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
@@ -470,7 +474,7 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
         Eigen::Quaterniond orientation(transform.linear()); // transform.linear() extracts the rotation matrix
 
         std::ofstream pose_out_file(HOME + "/catkin_ws/src/Data/joint_control_pose.csv", ios::app);
-        pose_out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << "," << std::endl;
+        pose_out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << std::endl;
 
 
         time += period.toSec();
@@ -850,6 +854,39 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
     
 }
 
+
+void CartesianRemoteController::moveRelativeCallback(const franka_david::MoveRelativePyPtr& msg)
+{
+    double dx = msg->x;
+    double dy = msg->y;
+    if (this->_franka3)
+    {
+        dy = -dy;
+    }
+    double dz = msg->z;
+    double duration = msg->duration;
+    bool enable = msg->enable;
+        
+    
+    if (enable)
+    {
+    //Motion generator based on this example: https://frankaemika.github.io/libfranka/generate_cartesian_pose_motion_8cpp-example.html
+    this->_robot->control([&](const franka::RobotState& robot_state,
+                                         franka::Duration period) -> franka::CartesianPose {
+        
+        std::array<double, 16> initial_pose = robot_state.O_T_EE_c;
+        std::array<double, 16> new_pose = initial_pose;
+        new_pose[12] += dx;
+        new_pose[13] += dx;
+        new_pose[14] += dz;
+        
+        return franka::MotionFinished(new_pose);
+    });
+    }
+}
+
+
+
 void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 {
     // Compliance parameters
@@ -981,8 +1018,8 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 
 int main(int argc, char **argv)
 {
-    //ros::init(argc, argv, "remote_franka2");
-    ros::init(argc, argv, "remote_franka3");
+    ros::init(argc, argv, "remote_franka2");
+    //ros::init(argc, argv, "remote_franka3");
     CartesianRemoteController controller;
 
     ros::spin();

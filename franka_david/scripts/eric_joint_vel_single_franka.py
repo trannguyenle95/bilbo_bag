@@ -160,3 +160,7 @@ if __name__ == '__main__':
    franka.open_grippers()
    #franka.release_grippers() #NEW
    #franka.move(move_type='d',params=traj, traj_duration=4.0)
+
+   action = input("Move relative (Y/N)?").capitalize()
+   delta = 5 #how many cm movement in x direction
+   franka.move_relative(params=[0.05, 0.00, 0.00], traj_duration=5.0) #for joint movement to origin

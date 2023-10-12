@@ -40,6 +40,7 @@ JointMotionPy.msg
 JointTrajPy.msg
 RemoteMotionPy.msg
 JointVelTrajPy.msg
+MoveRelativePy.msg
 )
 
 generate_messages(DEPENDENCIES geometry_msgs)
