@@ -88,7 +88,7 @@ actual_accel_lim = accel_lim;
 %use stricter limits than the actual ones
 pos_lim = 0.98 * pos_lim;
 vel_lim = 0.98 * vel_lim;
-accel_lim = 0.88 * accel_lim;
+accel_lim = 0.80 * accel_lim;
 
 %% ======== Generate trajectories ==========
 

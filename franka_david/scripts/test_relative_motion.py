@@ -38,7 +38,8 @@ if __name__ == '__main__':
    joint_ori = traj[0]
 
    #first apply joint movement if it is far from desired location (large motion not doable in single linear motion)
-   franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
+   
+   #franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
 
 
    action = input("Move relative (Y/N)?").capitalize()

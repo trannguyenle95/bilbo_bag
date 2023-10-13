@@ -871,16 +871,33 @@ void CartesianRemoteController::moveRelativeCallback(const franka_david::MoveRel
     if (enable)
     {
     //Motion generator based on this example: https://frankaemika.github.io/libfranka/generate_cartesian_pose_motion_8cpp-example.html
+    std::array<double, 16> initial_pose;
+    double time = 0.0;
+
     this->_robot->control([&](const franka::RobotState& robot_state,
                                          franka::Duration period) -> franka::CartesianPose {
+        if (time == 0.0) {
+        initial_pose = robot_state.O_T_EE_c;
+        }
+        time += period.toSec();
+        //double delta_x = (time/duration)*dx; //Old, now instead of linear velocity use the lines below to slow down velocity at end of motion
+        double angle = M_PI / 4 * (1 - std::cos(M_PI / duration * time));
+        double delta_x = dx * std::sin(angle);
+        double delta_y = dy * std::sin(angle);
+        double delta_z = dz * std::sin(angle);
         
-        std::array<double, 16> initial_pose = robot_state.O_T_EE_c;
         std::array<double, 16> new_pose = initial_pose;
-        new_pose[12] += dx;
-        new_pose[13] += dx;
-        new_pose[14] += dz;
-        
-        return franka::MotionFinished(new_pose);
+        new_pose[12] += delta_x;
+        new_pose[13] += delta_y;
+        new_pose[14] += delta_z;
+
+
+        if (time >= duration) {
+            
+            std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
+            return franka::MotionFinished(new_pose);
+        }
+        return new_pose;
     });
     }
 }

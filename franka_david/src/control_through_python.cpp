@@ -789,60 +789,30 @@ void CartesianPythonController::moveRelativeCallback(const franka_david::MoveRel
 
     this->_robot->control([&](const franka::RobotState& robot_state,
                                          franka::Duration period) -> franka::CartesianPose {
-    //     time += period.toSec();
-    //     if (time == 0.0) {
-    //         initial_pose = robot_state.O_T_EE;
-    //         new_pose = initial_pose;
-    //     }
-
-    //     //new_pose = initial_pose;
-
-
-    //     new_pose[12] += 0.00001;
-    //     //new_pose[12] += (time/duration) * dx;
-
-    //     //new_pose[13] += (time/duration) * dy;
-    //     //new_pose[14] += (time/duration) * dz;
-
-    //     std::cout << "step: " << (time/duration) * dx << std::endl;
+        if (time == 0.0) {
+        initial_pose = robot_state.O_T_EE_c;
+        }
+        time += period.toSec();
+        //double delta_x = (time/duration)*dx; //Old, now instead of linear velocity use the lines below to slow down velocity at end of motion
+        double angle = M_PI / 4 * (1 - std::cos(M_PI / duration * time));
+        double delta_x = dx * std::sin(angle);
+        double delta_y = dy * std::sin(angle);
+        double delta_z = dz * std::sin(angle);
         
-    //     std::cout << "Time: " << time << std::endl;
+        std::array<double, 16> new_pose = initial_pose;
+        new_pose[12] += delta_x;
+        new_pose[13] += delta_y;
+        new_pose[14] += delta_z;
 
 
-
-    //     if (time >= duration) {
-    //         std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
-    //         return franka::MotionFinished(new_pose);
-    //     }
-    //     return new_pose;
-
-    // });
-
-    
-    if (time == 0.0) {
-    initial_pose = robot_state.O_T_EE_c;
+        if (time >= duration) {
+            
+            std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
+            return franka::MotionFinished(new_pose);
+        }
+        return new_pose;
+    });
     }
-    time += period.toSec();
-    //double delta_x = (time/duration)*dx;
-    double angle = M_PI / 4 * (1 - std::cos(M_PI / duration * time));
-    double delta_x = dx * std::sin(angle);
-    
-    std::array<double, 16> new_pose = initial_pose;
-    new_pose[12] += delta_x;
-    std::cout << "new x: " << new_pose[12] << std::endl;
-    std::cout << "dx: " << delta_x << std::endl;
-    std::cout << "angle: " << std::sin(angle) << std::endl;
-    if (time >= duration) {
-        
-        std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
-        return franka::MotionFinished(new_pose);
-    }
-    return new_pose;
-});
-
-std::cout << std::endl << "here" << std::endl;
-
-}
 }
 
 
