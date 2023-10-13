@@ -13,28 +13,17 @@ from sensor_msgs.msg import PointCloud
 
 #NOTE: maybe preprocess to remove outliers (distance over e.g. 0.5m from mean or median point)? Only needed if OptiTrack streams false positives
 
+def calculate_metrics(max_area, width, displayPlot = False):
 
-def listener():
-    rospy.init_node('listener', anonymous=True)
-
+    #Get points from NatNet rostopic
     cloud = rospy.wait_for_message("/natnet_ros/pointcloud", PointCloud, timeout=None)
-
-    points3d = np.empty((len(cloud.points), 3))
+    points3d = np.empty((len(cloud.points), 3)) #Note: y-axis denotes height, axes are only flipped when plotting the 3D plot
 
     for i, point in enumerate(cloud.points):
         #NOTE: this ix xyz order from the point cloud. As Motive exports with y-axis pointing upwards this is handled in BagMetrics()
         points3d[i][0] = point.x
         points3d[i][1] = point.y
         points3d[i][2] = point.z
-
-    return points3d
-
-
-def BagMetrics(filename, max_area, width, plot = False):
-
-    points3d = listener()
-    #Note: y-axis denotes height, axes are only flipped when plotting the 3D plot
-
 
     #filter out outliers
     x_med = np.median(points3d[:,0])
@@ -81,9 +70,10 @@ def BagMetrics(filename, max_area, width, plot = False):
 
     hull3d = ConvexHull(points3d)
     volume3d = hull3d.volume
+    rim_area = hull2d.volume
 
     #"volume" for 2D hull is actual area, and "area" is actual perimeter
-    area_ratio = hull2d.volume / max_area
+    area_ratio = rim_area / max_area
 
     #Use PCA major and minor axes for elongation measure (like in the AutoBag paper by Chen et al. 2023 https://doi.org/10.48550/arXiv.2210.17217)
     #If bounding box was used instead there would be problems if the bag is e.g. slim but diagonal wrt. the coordinate axes like so: / , 
@@ -96,12 +86,13 @@ def BagMetrics(filename, max_area, width, plot = False):
     #short over long axis in my implementation (maybe other in AutoBag) > this way elongation is 1 if opening is perfectly round and a smaller value for worse cases
 
     #Plotting
-    if plot:
+    if displayPlot:
         #Print here so that metrics are visible without having to close pyplot figures first
         #print("Convex Hull area ratio: ", area_ratio)
         print("Convex Hull elongation: ", elongation)
 
-        print("Rim area (cm2): ", hull2d.volume / 0.0001) #convert from m2 to cm2
+        print("Rim area (cm2): ", rim_area / 0.0001) #convert from m2 to cm2
+        print("Rim area (m2): ", rim_area) #convert from m2 to cm2
         print("3d hull volume (liters): ", volume3d / 0.001) #convert from m3 to liters
 
         convex_hull_plot_2d(hull2d) #plot 2d convex hull
@@ -156,13 +147,16 @@ def BagMetrics(filename, max_area, width, plot = False):
         #size=12,
         color="blue",                # set color to an array/list of desired values
         opacity=0.8
-    )))
+        )))
+
+        fig.update_layout(scene_aspectmode='data')
 
         fig.show()
 
-    return area_ratio, elongation
+    return rim_area, volume3d, elongation
 
 if __name__ == '__main__':
-    A_CH, E_CH = BagMetrics("tracked_markers.csv", 0.045, 0.3, plot=True)
+    rospy.init_node('listener', anonymous=True)
+    A_rim, Vol, E_rim = calculate_metrics(0.045, 0.3, displayPlot=True)
     #print("Convex Hull area: ", A_CH)
     #print("Convex Hull elongation: ", E_CH)
