@@ -36,74 +36,77 @@ if __name__ == '__main__':
 
    dt = 0.001
 
-   action = input("Move relative (Y/N)?").capitalize()
-   delta = 5 #how many cm movement in x direction
-   #franka.move_relative(params=[0.03, 0.00, 0.00], traj_duration=3.0*1.6) #for joint movement to origin
-   franka.move_relative(params=[0.10, 0.00, 0.00], traj_duration=10.0*0.1) #for joint movement to origin
+   input("Move robots to origin")
 
-   # input("Move robots to origin")
-
-   # joint_ori = traj[0]
-   # franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
+   joint_ori = traj[0]
+   franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
 
 
-   # franka.close_grippers_middle()
-   # input("Close grippers")
-   # franka.close_grippers()
+   franka.close_grippers_middle()
+   input("Close grippers")
+   franka.close_grippers()
 
-   # tf = traj.shape[0] * dt
-   # print('tf:', tf)
-
-
-   # filepath = os.path.join(datafolder+"/"+'executed_joint_trajectory.csv')
-   # if os.path.exists(filepath):
-   #    os.remove(filepath)
-
-   # pose_file = os.path.join(datafolder+"/"+"joint_control_pose.csv")
-   # if os.path.exists(pose_file):
-   #    os.remove(pose_file) 
-
-   # input("Perform dynamic primitive")
-   # time.sleep(10) #sleep 10s when operating robots alone
-
-   # franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
-
-   # time.sleep(tf) #let motion finish before plotting and closing grippers
-
-   # real_traj = np.genfromtxt(filepath, delimiter=',') #NOTE: set name here!
-
-   # real_pose = np.genfromtxt(pose_file, delimiter=',') #NOTE: set name here!
-
-   # init_pose = real_pose[-1]
-
-   # print("init pose: ", init_pose)
-
-   # x_dist = init_pose[0]
-
-   # action = input("Repeat (R), adjust distance (D), or stop (any other key)?").capitalize()
-
-   # while action == 'R' or action == 'D':
-   #    if action == 'R':
-   #       joint_ori = traj[0]
-   #       franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
-   #       time.sleep(3.0)
-   #       franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
-   #       time.sleep(tf)
-   #       real_pose = np.genfromtxt(pose_file, delimiter=',')
-   #       init_pose = real_pose[-1]
-   #       x_dist = init_pose[0]
-   #    elif action == 'D':
-   #       delta = 5 #how many cm movement in x direction
-   #       if x_dist < 0.6:
-   #          #franka.move_relative(params=[delta*0.01, 0.00, 0.00], traj_duration=5) #for joint movement to origin
-   #          #time.sleep(1)
-   #          franka.move_relative(params=[0.10, 0.00, 0.00], traj_duration=10.0) #for joint movement to origin
-   #       else:
-   #          print("max xdist reached")
-   #          print("pose: ", pose)
-
-   #    action = input("Repeat (R), adjust distance (D), or stop (any other key)?").capitalize()
+   tf = traj.shape[0] * dt
+   print('tf:', tf)
 
 
+   filepath = os.path.join(datafolder+"/"+'executed_joint_trajectory.csv')
+   if os.path.exists(filepath):
+      os.remove(filepath)
 
-   # franka.open_grippers_middle()
+   pose_file = os.path.join(datafolder+"/"+"joint_control_pose.csv")
+   if os.path.exists(pose_file):
+      os.remove(pose_file) 
+
+   input("Perform dynamic primitive")
+   time.sleep(10) #sleep 10s when operating robots alone
+
+   franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
+
+   time.sleep(tf) #let motion finish before plotting and closing grippers
+
+   real_traj = np.genfromtxt(filepath, delimiter=',') #NOTE: set name here!
+
+   real_pose = np.genfromtxt(pose_file, delimiter=',') #NOTE: set name here!
+
+   new_pose = real_pose[-1]
+   x_min = real_pose[-1][0]
+
+   print("x min: ", x_min)
+   x_max = 0.65
+
+   action = input("Repeat (R), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
+
+   print("action: ", action)
+
+   while action == 'R' or action == 'DI' or action == 'DD':
+      if action == 'R':
+         joint_ori = traj[0]
+         franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
+         time.sleep(3.0)
+         franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
+         time.sleep(tf)
+         real_pose = np.genfromtxt(pose_file, delimiter=',')
+         new_pose = real_pose[-1]
+      elif action == 'DI':
+         delta = 0.02 #how many cm movement in x direction
+         if new_pose[0] + delta < x_max:
+            franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            new_pose[0] = new_pose[0] + delta
+         else:
+            print("max xdist reached")
+            print("pose: ", new_pose)
+      elif action == 'DD':
+         delta = -0.02 #how many cm movement in x direction
+         if new_pose[0] - delta > x_min:
+            franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            new_pose[0] = new_pose[0] + delta
+         else:
+            print("min xdist reached")
+            print("pose: ", new_pose)
+
+      action = input("Repeat (R), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
+
+
+
+   franka.open_grippers_middle()
