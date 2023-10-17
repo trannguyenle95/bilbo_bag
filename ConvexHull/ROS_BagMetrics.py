@@ -6,12 +6,11 @@ from scipy.spatial.distance import cdist
 import os
 import plotly.graph_objects as go
 import plotly.express as px
-
 import rospy
-
 from sensor_msgs.msg import PointCloud
+from shapely.geometry import Polygon
 
-#NOTE: maybe preprocess to remove outliers (distance over e.g. 0.5m from mean or median point)? Only needed if OptiTrack streams false positives
+
 
 def calculate_metrics(max_area, width, displayPlot = False):
 
@@ -63,14 +62,23 @@ def calculate_metrics(max_area, width, displayPlot = False):
 
     rim_points = points3d[rim_point_mask, :]
 
-    points2d = rim_points[:, [0,2]]
-
+    points2d = rim_points[:, [2,0]] #use x and z axis and reorder so plot is oriented same way as bag in lab
 
     hull2d = ConvexHull(points2d)
 
     hull3d = ConvexHull(points3d)
     volume3d = hull3d.volume
-    rim_area = hull2d.volume
+    rim_area = hull2d.volume #Convex Hull area
+
+    #area when approximating rim with potentially non-convex polygon.
+    #Polygon is created from unsorted points like here: https://pavcreations.com/clockwise-and-counterclockwise-sorting-of-coordinates/
+    center = np.mean(points2d, axis=0)
+    diff = points2d - center
+    angles = np.arctan2(diff[:,0], diff[:,1]) #angles in same order as points in points2d
+    sorted_points = points2d[np.argsort(angles)]
+    #create potentially non-convex polygon
+    rim_poly = Polygon(sorted_points)
+
 
     #"volume" for 2D hull is actual area, and "area" is actual perimeter
     area_ratio = rim_area / max_area
@@ -95,6 +103,14 @@ def calculate_metrics(max_area, width, displayPlot = False):
         print("Rim area (m2): ", rim_area) #convert from m2 to cm2
         print("3d hull volume (liters): ", volume3d / 0.001) #convert from m3 to liters
 
+        print("Non-convex rim area (cm2): ", rim_poly.area / 0.0001) #convert from m2 to cm2
+
+        #plot potentially non-convex poly
+        # x,y = rim_poly.exterior.xy
+        # plt.plot(x,y, 'r')
+        # plt.axis('scaled')
+        # plt.show()
+
         convex_hull_plot_2d(hull2d) #plot 2d convex hull
         ax1 = plt.gca()
         ax1.set_aspect('equal') #Set equal axes so that orthogonality of components can be verified
@@ -107,6 +123,9 @@ def calculate_metrics(max_area, width, displayPlot = False):
         plt.plot((data_mean[0], data_mean[0]-pca_axes[0,0]*np.sqrt(pca_magnitude[0])), (data_mean[1], data_mean[1]-pca_axes[0,1]*np.sqrt(pca_magnitude[0]))) #Plot major axis - note sqrt() to get standard deviation from variance for plotting
         plt.plot((data_mean[0], data_mean[0]-pca_axes[1,0]*np.sqrt(pca_magnitude[1])), (data_mean[1], data_mean[1]-pca_axes[1,1]*np.sqrt(pca_magnitude[1]))) #Plot minor axis - note sqrt() to get standard deviation from variance for plotting
         
+        x,y = rim_poly.exterior.xy
+        plt.plot(x,y, '--r')
+
         plt.show()
 
         #plot median point
@@ -126,7 +145,7 @@ def calculate_metrics(max_area, width, displayPlot = False):
         for p in points3d:
             plt.plot(p[0], p[2], 'go')
 
-        plt.show()
+        #plt.show()
 
         ch_points = points3d[hull3d.vertices]
         bottom_points = points3d[np.logical_not(rim_point_mask)]
@@ -151,7 +170,7 @@ def calculate_metrics(max_area, width, displayPlot = False):
 
         fig.update_layout(scene_aspectmode='data')
 
-        fig.show()
+        #fig.show()
 
     return rim_area, volume3d, elongation
 
