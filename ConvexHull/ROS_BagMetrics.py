@@ -12,7 +12,7 @@ from shapely.geometry import Polygon
 
 
 
-def calculate_metrics(max_area, width, displayPlot = False):
+def calculate_metrics(width, displayPlot = False):
 
     #Get points from NatNet rostopic
     cloud = rospy.wait_for_message("/natnet_ros/pointcloud", PointCloud, timeout=None)
@@ -68,7 +68,7 @@ def calculate_metrics(max_area, width, displayPlot = False):
 
     hull3d = ConvexHull(points3d)
     volume3d = hull3d.volume
-    rim_area = hull2d.volume #Convex Hull area
+    rim_area_CH = hull2d.volume #Convex Hull area, volume" for 2D hull is actual area, and "area" is actual perimeter
 
     #area when approximating rim with potentially non-convex polygon.
     #Polygon is created from unsorted points like here: https://pavcreations.com/clockwise-and-counterclockwise-sorting-of-coordinates/
@@ -78,10 +78,7 @@ def calculate_metrics(max_area, width, displayPlot = False):
     sorted_points = points2d[np.argsort(angles)]
     #create potentially non-convex polygon
     rim_poly = Polygon(sorted_points)
-
-
-    #"volume" for 2D hull is actual area, and "area" is actual perimeter
-    area_ratio = rim_area / max_area
+    rim_area_poly = rim_poly.area
 
     #Use PCA major and minor axes for elongation measure (like in the AutoBag paper by Chen et al. 2023 https://doi.org/10.48550/arXiv.2210.17217)
     #If bounding box was used instead there would be problems if the bag is e.g. slim but diagonal wrt. the coordinate axes like so: / , 
@@ -98,18 +95,10 @@ def calculate_metrics(max_area, width, displayPlot = False):
         #Print here so that metrics are visible without having to close pyplot figures first
         #print("Convex Hull area ratio: ", area_ratio)
         print("Convex Hull elongation: ", elongation)
-
-        print("Rim area (cm2): ", rim_area / 0.0001) #convert from m2 to cm2
-        print("Rim area (m2): ", rim_area) #convert from m2 to cm2
+        print("Rim area (cm2): ", rim_area_CH / 0.0001) #convert from m2 to cm2
         print("3d hull volume (liters): ", volume3d / 0.001) #convert from m3 to liters
+        print("Non-convex rim area (cm2): ",  rim_area_poly / 0.0001) #convert from m2 to cm2
 
-        print("Non-convex rim area (cm2): ", rim_poly.area / 0.0001) #convert from m2 to cm2
-
-        #plot potentially non-convex poly
-        # x,y = rim_poly.exterior.xy
-        # plt.plot(x,y, 'r')
-        # plt.axis('scaled')
-        # plt.show()
 
         convex_hull_plot_2d(hull2d) #plot 2d convex hull
         ax1 = plt.gca()
@@ -145,7 +134,7 @@ def calculate_metrics(max_area, width, displayPlot = False):
         for p in points3d:
             plt.plot(p[0], p[2], 'go')
 
-        #plt.show()
+        plt.show()
 
         ch_points = points3d[hull3d.vertices]
         bottom_points = points3d[np.logical_not(rim_point_mask)]
@@ -170,12 +159,10 @@ def calculate_metrics(max_area, width, displayPlot = False):
 
         fig.update_layout(scene_aspectmode='data')
 
-        #fig.show()
+        fig.show()
 
-    return rim_area, volume3d, elongation
+    return rim_area_CH, rim_area_poly, volume3d, elongation
 
 if __name__ == '__main__':
     rospy.init_node('listener', anonymous=True)
-    A_rim, Vol, E_rim = calculate_metrics(0.045, 0.3, displayPlot=True)
-    #print("Convex Hull area: ", A_CH)
-    #print("Convex Hull elongation: ", E_CH)
+    A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics(0.3, displayPlot=True)
