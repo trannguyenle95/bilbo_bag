@@ -4,6 +4,7 @@
 #include <memory>
 #include <stdexcept>
 #include <string>
+#include <thread>
 
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -57,7 +58,11 @@ public:
     ros::Subscriber _sub_gripper_move;
     // Subscriber gripper
     ros::Subscriber _sub_gripper_grasp;
-    
+
+    ros::Publisher _franka_2_state;
+    ros::Publisher _franka_3_state;
+    ros::Subscriber _sub_franka_2_state;
+    ros::Subscriber _sub_franka_3_state;
     
     // Subscriber joint velocity trajectory added 26.09
     ros::Subscriber _sub_joint_vel_traj;
@@ -75,6 +80,11 @@ public:
     
     // Delta time - 1KHz control
     double _dt = 0.001;
+
+    // Method for publishing the state
+    void publishFranka2State();
+    // Method for publishing the state
+    void publishFranka3State();
     
     // Method that subscribes to a joint motion
     void runRemoteMotionCallback(const franka_david::RemoteMotionPyPtr& msg);
@@ -106,6 +116,11 @@ public:
     // Method that subscribes to a relative motion, ADDED 12.10
     void moveRelativeCallback(const franka_david::MoveRelativePyPtr& msg);
     
+    //Added error callback
+    void franka2ErrorCallback(const std_msgs::BoolPtr& msg);
+    void franka3ErrorCallback(const std_msgs::BoolPtr& msg);
+    
+    
     
     CartesianRemoteController();
     
@@ -115,5 +130,9 @@ public:
     franka::Robot* _robot;
     franka::Gripper* _gripper;
     bool _franka3 = false; //change this to match current robot (2 or 3)
+        /// \brief Thread running the rosPublishQueue.
+    std::thread _franka2statethread;
+    std::thread _franka3statethread;
+    
     
 };

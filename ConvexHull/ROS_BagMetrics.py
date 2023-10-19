@@ -54,21 +54,26 @@ def calculate_metrics(width, displayPlot = False):
     #this should correspond to using the area as viewed by a top-down camera, and it would be unnecesarily complicated to deal 
     #with tilted planes
 
-    rim_point_mask = np.zeros(points3d.shape[0], dtype=bool)
 
-    for i, point  in enumerate(points3d):
-        if np.abs(point[1] - np.max(points3d[:,1])) < np.abs(point[1] - np.min(points3d[:,1])):
-            rim_point_mask[i] = 1
-
+    #get ponints from the 3D cloud belonging to the rim
+    if np.max(points3d[:,1]) - np.min(points3d[:,1]) < 0.10: #if spread is less than 10cm then it is assumed only rim point are visible in initial state
+        rim_point_mask = np.ones(points3d.shape[0], dtype=bool)
+    else: #there are both rim and non-rim points
+        rim_point_mask = np.zeros(points3d.shape[0], dtype=bool)
+        for i, point  in enumerate(points3d):
+            if np.abs(point[1] - np.max(points3d[:,1])) < np.abs(point[1] - np.min(points3d[:,1])):
+                rim_point_mask[i] = 1
+                
     rim_points = points3d[rim_point_mask, :]
-
     points2d = rim_points[:, [2,0]] #use x and z axis and reorder so plot is oriented same way as bag in lab
 
     hull2d = ConvexHull(points2d)
 
     hull3d = ConvexHull(points3d)
     volume3d = hull3d.volume
+    volume3d /= 0.001 #convert from m3 to liters
     rim_area_CH = hull2d.volume #Convex Hull area, volume" for 2D hull is actual area, and "area" is actual perimeter
+    rim_area_CH /= 0.0001 #convert from m2 to cm2
 
     #area when approximating rim with potentially non-convex polygon.
     #Polygon is created from unsorted points like here: https://pavcreations.com/clockwise-and-counterclockwise-sorting-of-coordinates/
@@ -79,6 +84,7 @@ def calculate_metrics(width, displayPlot = False):
     #create potentially non-convex polygon
     rim_poly = Polygon(sorted_points)
     rim_area_poly = rim_poly.area
+    rim_area_poly /= 0.0001 #convert from m2 to cm2
 
     #Use PCA major and minor axes for elongation measure (like in the AutoBag paper by Chen et al. 2023 https://doi.org/10.48550/arXiv.2210.17217)
     #If bounding box was used instead there would be problems if the bag is e.g. slim but diagonal wrt. the coordinate axes like so: / , 
@@ -86,18 +92,30 @@ def calculate_metrics(width, displayPlot = False):
     pca = PCA(n_components=2)
     pca.fit(points2d[hull2d.vertices])
     pca_axes = pca.components_
+
+    print("major axis: ", pca_axes[0])
+    print("minor axis: ", pca_axes[1])
+
     pca_magnitude = pca.explained_variance_
+
     elongation = np.sqrt(pca_magnitude[1]) / np.sqrt(pca_magnitude[0]) 
     #short over long axis in my implementation (maybe other in AutoBag) > this way elongation is 1 if opening is perfectly round and a smaller value for worse cases
+
+    if abs(pca_axes[0][0] > abs(pca_axes[1][0])): #major axis is mostly aligned with x-axis
+        elongation = np.sqrt(pca_magnitude[1]) / np.sqrt(pca_magnitude[0]) 
+    else: #major axis is mostly aligned with y-axis
+        elongation = np.sqrt(pca_magnitude[0]) / np.sqrt(pca_magnitude[1]) 
+    #elongation is now <1 if ellipse is too long along x axis, >1 if ellipse is too long along y axis, and 1 if ellipse is perfectly round
+
 
     #Plotting
     if displayPlot:
         #Print here so that metrics are visible without having to close pyplot figures first
         #print("Convex Hull area ratio: ", area_ratio)
         print("Convex Hull elongation: ", elongation)
-        print("Rim area (cm2): ", rim_area_CH / 0.0001) #convert from m2 to cm2
-        print("3d hull volume (liters): ", volume3d / 0.001) #convert from m3 to liters
-        print("Non-convex rim area (cm2): ",  rim_area_poly / 0.0001) #convert from m2 to cm2
+        print("Rim area (cm2): ", rim_area_CH)
+        print("3d hull volume (liters): ", volume3d)
+        print("Non-convex rim area (cm2): ",  rim_area_poly)
 
 
         convex_hull_plot_2d(hull2d) #plot 2d convex hull

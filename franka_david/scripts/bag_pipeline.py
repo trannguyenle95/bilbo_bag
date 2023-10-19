@@ -19,9 +19,6 @@ from matplotlib import pyplot as plt
 import os
 import argparse
 
-#sys.path.append(os.path.dirname(os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')))
-#import ROS_BagMetrics
-
 sys.path.append(os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src'))
 
 import ConvexHull.ROS_BagMetrics as BagMetrics
@@ -32,11 +29,18 @@ VELOCITY_TIME_MULTIPLIER = 1.0
 
 
 if __name__ == '__main__':
- 
+
    parser = argparse.ArgumentParser()
-   parser.add_argument('max_area', type=float, help='Maximum area of bag rim when opening is fully open and circular.')
-   parser.add_argument('width', type=float, help='Maximum width of the bag.')
+   parser.add_argument('Bag', type=str, help='Select bag: A-E')
    args = parser.parse_args()
+
+   if args.Bag == "A":
+      width = 0.44
+      V_max = 17.7
+      A_max = 462
+   #TODO: add other bags (maybe used pandas df?)
+   max_actions = 10
+   actions = 0
 
    rospy.init_node('franka3_talker', anonymous=True)
 
@@ -71,10 +75,14 @@ if __name__ == '__main__':
 
    pose_file = os.path.join(datafolder+"/"+"joint_control_pose.csv")
    if os.path.exists(pose_file):
-      os.remove(pose_file) 
+      os.remove(pose_file)
+
+
+   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
+   print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
 
    input("Perform dynamic primitive")
-   time.sleep(10) #sleep 10s when operating robots alone
+   #time.sleep(10) #sleep 10s when operating robots alone
 
    franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
 
@@ -84,19 +92,19 @@ if __name__ == '__main__':
 
    real_pose = np.genfromtxt(pose_file, delimiter=',') #NOTE: set name here!
 
-   A_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.max_area, args.width, displayPlot=False)
-   print("A_rim (cm2): ", A_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
+   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
+   print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
 
    new_pose = real_pose[-1]
    x_min = real_pose[-1][0]
    x_max = 0.65
 
-   action = input("Repeat (R), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
+   actions += 1
+   print("actions: ", actions)
 
-   print("action: ", action)
-
-   while action == 'R' or action == 'DI' or action == 'DD':
-      if action == 'R':
+   while actions <= max_actions:
+      if Vol < 0.5*V_max:
+         print("redoing flip")
          joint_ori = traj[0]
          franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
          time.sleep(3.0)
@@ -104,7 +112,8 @@ if __name__ == '__main__':
          time.sleep(tf)
          real_pose = np.genfromtxt(pose_file, delimiter=',')
          new_pose = real_pose[-1]
-      elif action == 'DI':
+
+      elif E_rim < 0.8:
          delta = 0.02 #how many cm movement in x direction
          if new_pose[0] + delta < x_max:
             franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
@@ -112,19 +121,28 @@ if __name__ == '__main__':
          else:
             print("max xdist reached")
             print("pose: ", new_pose)
-      elif action == 'DD':
+   
+      elif E_rim > 1.2:
          delta = -0.02 #how many cm movement in x direction
          if new_pose[0] - delta > x_min:
             franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
             new_pose[0] = new_pose[0] + delta
          else:
-            print("min xdist reached")
+            print("max xdist reached")
             print("pose: ", new_pose)
 
-      A_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.max_area, args.width, displayPlot=False)
-      print("A_rim (cm2): ", A_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
-      action = input("Repeat (R), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
+      else:
+         print("sufficient bag state reached in ", actions, "actions")
+         break
+      
+      A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
+      print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
 
+      actions += 1
+      print("actions: ", actions)
 
+   print("final state:")
+   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=True)
+   print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
 
    franka.open_grippers_middle()

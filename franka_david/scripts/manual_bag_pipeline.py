@@ -84,8 +84,8 @@ if __name__ == '__main__':
 
    real_pose = np.genfromtxt(pose_file, delimiter=',') #NOTE: set name here!
 
-   A_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.max_area, args.width, displayPlot=False)
-   print("A_rim (cm2): ", A_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
+   # A_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.max_area, args.width, displayPlot=False)
+   # print("A_rim (cm2): ", A_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
 
    new_pose = real_pose[-1]
    x_min = real_pose[-1][0]
@@ -121,8 +121,8 @@ if __name__ == '__main__':
             print("min xdist reached")
             print("pose: ", new_pose)
 
-      A_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.max_area, args.width, displayPlot=False)
-      print("A_rim (cm2): ", A_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
+      # A_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.max_area, args.width, displayPlot=False)
+      # print("A_rim (cm2): ", A_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
       action = input("Repeat (R), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
 
 

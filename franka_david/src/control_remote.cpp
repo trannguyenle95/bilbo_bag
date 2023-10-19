@@ -16,6 +16,7 @@
 
 #include <geometry_msgs/PoseStamped.h>
 #include <std_msgs/Header.h>
+#include <std_msgs/Bool.h>
 #include <ros/ros.h>
 
 #include <franka_hw/franka_cartesian_command_interface.h>
@@ -111,6 +112,35 @@ CartesianRemoteController::CartesianRemoteController()
     this->_robot->setJointImpedance({{3000, 3000, 3000, 2500, 2500, 2000, 2000}});
     this->_robot->setCartesianImpedance({{3000, 3000, 3000, 300, 300, 300}});
 
+    // Create the error publisher and subscriber
+    if (this->_franka3)
+    {
+        this->_franka_3_state = control_py_node.advertise<std_msgs::Bool>("franka3_state", 100);
+        this->_sub_franka_2_state = control_py_node.subscribe(
+        "/franka/franka2_state", 20, &CartesianRemoteController::franka2ErrorCallback, this,
+        ros::TransportHints().reliable().tcpNoDelay());
+    }
+    else
+    {
+        this->_franka_2_state = control_py_node.advertise<std_msgs::Bool>("franka2_state", 100);
+        this->_sub_franka_3_state = control_py_node.subscribe(
+        "/franka/franka3_state", 20, &CartesianRemoteController::franka3ErrorCallback, this,
+        ros::TransportHints().reliable().tcpNoDelay());
+    }
+    
+}
+
+//Franka error callbacks
+void CartesianRemoteController::franka2ErrorCallback(const std_msgs::BoolPtr& msg){
+    if (msg){
+        std::cout << "Callback from Franka2 error" << std::endl;
+    }
+}
+
+void CartesianRemoteController::franka3ErrorCallback(const std_msgs::BoolPtr& msg){
+    if (msg){
+        std::cout << "Callback from Franka3 error" << std::endl;
+    }
 }
 
 //Gripper code added 16.08 from "control_through_python.cpp"
@@ -442,52 +472,71 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
         // and https://frankaemika.github.io/libfranka/joint_impedance_control_8cpp-example.html
         //FOR VELOCITY: https://frankaemika.github.io/libfranka/generate_joint_velocity_motion_8cpp-example.html
 
-        this->_robot->control([&](const franka::RobotState& robot_state,
-                                                franka::Duration period) -> franka::JointVelocities {
+        try {
+
+            this->_robot->control([&](const franka::RobotState& robot_state,
+                                                    franka::Duration period) -> franka::JointVelocities {
 
 
-        //std::cout << "j1:" << joint0[loop_iter] << " j2:" << joint1[loop_iter] << " j3:" << joint2[loop_iter] << " j4:" << joint3[loop_iter] << " j5:" << joint4[loop_iter] << " j6:" << joint5[loop_iter] << " j7:" << joint6[loop_iter] <<  std::endl;
-        franka::JointVelocities output = {{joint0[loop_iter], joint1[loop_iter], joint2[loop_iter],
-            joint3[loop_iter], joint4[loop_iter], joint5[loop_iter], joint6[loop_iter]}};
+            //std::cout << "j1:" << joint0[loop_iter] << " j2:" << joint1[loop_iter] << " j3:" << joint2[loop_iter] << " j4:" << joint3[loop_iter] << " j5:" << joint4[loop_iter] << " j6:" << joint5[loop_iter] << " j7:" << joint6[loop_iter] <<  std::endl;
+            franka::JointVelocities output = {{joint0[loop_iter], joint1[loop_iter], joint2[loop_iter],
+                joint3[loop_iter], joint4[loop_iter], joint5[loop_iter], joint6[loop_iter]}};
 
-        std::cout << "iter: " << loop_iter << std::endl;
+            std::cout << "iter: " << loop_iter << std::endl;
 
-        //ADDED TO PRINT FOLLOWED TRAJ TO FILE
-        //get actual joint values as in https://frankaemika.github.io/libfranka/cartesian_impedance_control_8cpp-example.html#a12
-        Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_q(robot_state.q.data());
+            //ADDED TO PRINT FOLLOWED TRAJ TO FILE
+            //get actual joint values as in https://frankaemika.github.io/libfranka/cartesian_impedance_control_8cpp-example.html#a12
+            Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_q(robot_state.q.data());
 
-        std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
-        std::ofstream out_file(HOME + "/catkin_ws/src/Data/executed_joint_trajectory.csv", ios::app);
-        out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << std::endl;
-        //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
-        
+            std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+            std::ofstream out_file(HOME + "/catkin_ws/src/Data/executed_joint_trajectory.csv", ios::app);
+            out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << std::endl;
+            //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
+            
 
-        //joint velocities
-        Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_dq(robot_state.dq.data());
+            //joint velocities
+            Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_dq(robot_state.dq.data());
 
-        std::ofstream vel_out_file(HOME + "/catkin_ws/src/Data/executed_joint_velocities.csv", ios::app);
-        vel_out_file << actual_dq[0] << "," << actual_dq[1] << "," << actual_dq[2] << "," << actual_dq[3] << "," << actual_dq[4]<< "," << actual_dq[5] << "," << actual_dq[6] << std::endl;
+            std::ofstream vel_out_file(HOME + "/catkin_ws/src/Data/executed_joint_velocities.csv", ios::app);
+            vel_out_file << actual_dq[0] << "," << actual_dq[1] << "," << actual_dq[2] << "," << actual_dq[3] << "," << actual_dq[4]<< "," << actual_dq[5] << "," << actual_dq[6] << std::endl;
 
-        //Cartesian pose during joint control
-        Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
-        Eigen::Vector3d position(transform.translation());
-        Eigen::Quaterniond orientation(transform.linear()); // transform.linear() extracts the rotation matrix
+            //Cartesian pose during joint control
+            Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+            Eigen::Vector3d position(transform.translation());
+            Eigen::Quaterniond orientation(transform.linear()); // transform.linear() extracts the rotation matrix
 
-        std::ofstream pose_out_file(HOME + "/catkin_ws/src/Data/joint_control_pose.csv", ios::app);
-        pose_out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << std::endl;
+            std::ofstream pose_out_file(HOME + "/catkin_ws/src/Data/joint_control_pose.csv", ios::app);
+            pose_out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << std::endl;
 
 
-        time += period.toSec();
-        std::cout << "Time "<< double(time) << std::endl;
-        //loop_iter = int(time / this->_dt) + 1;
-        loop_iter++;
+            time += period.toSec();
+            std::cout << "Time "<< double(time) << std::endl;
+            //loop_iter = int(time / this->_dt) + 1;
+            loop_iter++;
 
-        if (loop_iter > N-1) {
-            std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
-            return franka::MotionFinished(output);
+            if (loop_iter > N-1) {
+                std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
+                return franka::MotionFinished(output);
+            }
+            return output;
+            });
+
+          } catch (const franka::Exception& e)
+          {
+            std::cout << e.what() << std::endl;
+            std_msgs::Bool robot_exception;
+            robot_exception.data = true;
+            if (this->_franka3)
+            {
+                this->_franka_3_state.publish(robot_exception);
+                std::cout << "Error in Franka3" << std::endl;
+            }
+            else
+            {
+                this->_franka_2_state.publish(robot_exception);
+                std::cout << "Error in Franka2" << std::endl;
+            }
         }
-        return output;
-        });
 
     }
 }
