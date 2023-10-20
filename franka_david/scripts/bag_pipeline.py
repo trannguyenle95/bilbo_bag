@@ -21,7 +21,7 @@ import argparse
 
 sys.path.append(os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src'))
 
-import ConvexHull.ROS_BagMetrics as BagMetrics
+import SupportScripts.ROS_BagMetrics as BagMetrics
 
 #matplotlib.use('TkAgg')
 
@@ -29,6 +29,15 @@ VELOCITY_TIME_MULTIPLIER = 1.0
 
 
 if __name__ == '__main__':
+   datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
+   #create robot error flag files so that pipeline will not run if you forget to run robot stop script
+   filepath = os.path.join(datafolder+"/"+"fr2_error.txt") #read errors from other robot
+   f = open(filepath, 'x')
+   f.close
+   filepath = os.path.join(datafolder+"/"+"fr3_error.txt") #read errors from other robot
+   f = open(filepath, 'x')
+   f.close
+
 
    parser = argparse.ArgumentParser()
    parser.add_argument('Bag', type=str, help='Select bag: A-E')
@@ -49,7 +58,6 @@ if __name__ == '__main__':
    franka.rate.sleep()
 
    #Import traj and duration from CSV
-   datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
    traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_demoDMP.csv", delimiter=',') #NOTE: set name here!
    vel_traj = np.genfromtxt(datafolder+"/trajectories/"+"joint_vel_demoDMP.csv", delimiter=',') #NOTE: set name here!
 

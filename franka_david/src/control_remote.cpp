@@ -117,14 +117,14 @@ CartesianRemoteController::CartesianRemoteController()
     {
         this->_franka_3_state = control_py_node.advertise<std_msgs::Bool>("franka3_state", 100);
         this->_sub_franka_2_state = control_py_node.subscribe(
-        "/franka/franka2_state", 20, &CartesianRemoteController::franka2ErrorCallback, this,
+        "/franka2_control_node/franka2_state", 20, &CartesianRemoteController::franka2ErrorCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
     }
     else
     {
         this->_franka_2_state = control_py_node.advertise<std_msgs::Bool>("franka2_state", 100);
         this->_sub_franka_3_state = control_py_node.subscribe(
-        "/franka/franka3_state", 20, &CartesianRemoteController::franka3ErrorCallback, this,
+        "/franka3_control_node/franka3_state", 20, &CartesianRemoteController::franka3ErrorCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
     }
     
@@ -132,14 +132,18 @@ CartesianRemoteController::CartesianRemoteController()
 
 //Franka error callbacks
 void CartesianRemoteController::franka2ErrorCallback(const std_msgs::BoolPtr& msg){
-    if (msg){
-        std::cout << "Callback from Franka2 error" << std::endl;
+    //NOTE: not in use
+    //std::cout << "Callback from Franka2 error change" << std::endl;
+    if (msg->data){
+        //std::cout << "Callback from Franka2 error active" << std::endl;
     }
 }
 
 void CartesianRemoteController::franka3ErrorCallback(const std_msgs::BoolPtr& msg){
-    if (msg){
-        std::cout << "Callback from Franka3 error" << std::endl;
+    //NOTE: not in use
+    //std::cout << "Callback from Franka3 error change" << std::endl;
+    if (msg->data){
+        //std::cout << "Callback from Franka3 error active" << std::endl;
     }
 }
 
@@ -466,6 +470,13 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
     size_t loop_iter = 0;
     double time = 0.0;
 
+    //files for checking error in other robot
+    std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+    std:string error_file = HOME + "/catkin_ws/src/Data/fr3_error.txt";
+    if (this->_franka3){
+        error_file = HOME + "/catkin_ws/src/Data/fr2_error.txt";
+    }
+
     if (enable)
     {
         //BASED ON https://petercorke.com/robotics/franka-emika-control-interface-libfranka/
@@ -477,12 +488,11 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
             this->_robot->control([&](const franka::RobotState& robot_state,
                                                     franka::Duration period) -> franka::JointVelocities {
 
-
             //std::cout << "j1:" << joint0[loop_iter] << " j2:" << joint1[loop_iter] << " j3:" << joint2[loop_iter] << " j4:" << joint3[loop_iter] << " j5:" << joint4[loop_iter] << " j6:" << joint5[loop_iter] << " j7:" << joint6[loop_iter] <<  std::endl;
             franka::JointVelocities output = {{joint0[loop_iter], joint1[loop_iter], joint2[loop_iter],
                 joint3[loop_iter], joint4[loop_iter], joint5[loop_iter], joint6[loop_iter]}};
 
-            std::cout << "iter: " << loop_iter << std::endl;
+            //std::cout << "iter: " << loop_iter << std::endl;
 
             //ADDED TO PRINT FOLLOWED TRAJ TO FILE
             //get actual joint values as in https://frankaemika.github.io/libfranka/cartesian_impedance_control_8cpp-example.html#a12
@@ -510,14 +520,21 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
 
 
             time += period.toSec();
-            std::cout << "Time "<< double(time) << std::endl;
+            //std::cout << "Time "<< double(time) << std::endl;
             //loop_iter = int(time / this->_dt) + 1;
             loop_iter++;
+
+            //check if file exists like here https://stackoverflow.com/questions/12774207/fastest-way-to-check-if-a-file-exists-using-standard-c-c11-14-17-c
+            if ( access( error_file.c_str(), F_OK ) != -1 ){
+                std::cout << std::endl << "Stopped motion due to error in other robot" << std::endl;
+                return franka::MotionFinished(output);
+            }
 
             if (loop_iter > N-1) {
                 std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
                 return franka::MotionFinished(output);
             }
+
             return output;
             });
 
@@ -1084,8 +1101,8 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "remote_franka2");
-    //ros::init(argc, argv, "remote_franka3");
+    //ros::init(argc, argv, "remote_franka2");
+    ros::init(argc, argv, "remote_franka3");
     CartesianRemoteController controller;
 
     ros::spin();
