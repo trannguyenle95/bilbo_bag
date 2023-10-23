@@ -24,7 +24,7 @@ import argparse
 
 sys.path.append(os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src'))
 
-import ConvexHull.ROS_BagMetrics as BagMetrics
+import SupportScripts.ROS_BagMetrics as BagMetrics
 
 #matplotlib.use('TkAgg')
 

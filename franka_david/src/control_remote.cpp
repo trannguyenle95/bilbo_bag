@@ -127,6 +127,11 @@ CartesianRemoteController::CartesianRemoteController()
         "/franka3_control_node/franka3_state", 20, &CartesianRemoteController::franka3ErrorCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
     }
+
+    // Instantiate the flag class
+    this->_flag_object = new StopFlag();
+    // prompt the id of this->_flag_object->_flag;
+    std::cout << "flag address: " << &(this->_flag_object->_flag) << std::endl;
     
 }
 
