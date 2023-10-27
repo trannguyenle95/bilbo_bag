@@ -163,3 +163,56 @@ add_dependencies(remotefranka
   ${catkin_EXPORTED_TARGETS}
 )
 
+add_executable(franka_error_check
+  src/robot_stopper.cpp
+)
+target_include_directories(franka_error_check PUBLIC
+  ${catkin_INCLUDE_DIRS}
+  cpptoolbox/include/
+  include
+)
+target_link_libraries(franka_error_check PUBLIC
+  ${Franka_LIBRARIES}
+  ${catkin_LIBRARIES}
+  cpp_fares
+)
+add_dependencies(franka_error_check
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+add_executable(UDP_client
+  src/client.cpp
+)
+target_include_directories(UDP_client PUBLIC
+  ${catkin_INCLUDE_DIRS}
+  cpptoolbox/include/
+  include
+)
+target_link_libraries(UDP_client PUBLIC
+  ${Franka_LIBRARIES}
+  ${catkin_LIBRARIES}
+  cpp_fares
+)
+add_dependencies(UDP_client
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
+add_executable(UDP_server
+  src/server.cpp
+)
+target_include_directories(UDP_server PUBLIC
+  ${catkin_INCLUDE_DIRS}
+  cpptoolbox/include/
+  include
+)
+target_link_libraries(UDP_server PUBLIC
+  ${Franka_LIBRARIES}
+  ${catkin_LIBRARIES}
+  cpp_fares
+)
+add_dependencies(UDP_server
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)

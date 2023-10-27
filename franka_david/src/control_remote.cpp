@@ -140,9 +140,9 @@ CartesianRemoteController::CartesianRemoteController()
     }
 
     // Instantiate the flag class
-    this->_flag_object = new StopFlag();
+    //this->_flag_object = new StopFlag();
     // prompt the id of this->_flag_object->_flag;
-    std::cout << "flag address: " << &(this->_flag_object->_flag) << std::endl;
+    //std::cout << "flag address: " << &(this->_flag_object->_flag) << std::endl;
 
 }
 
@@ -1179,7 +1179,7 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 
 int main(int argc, char **argv)
 {
-    ros::init(argc, argv, "remote_franka2");
+    ros::init(argc, argv, "remote_franka3");
     //ros::init(argc, argv, "remote_franka3");
     CartesianRemoteController controller;
 
