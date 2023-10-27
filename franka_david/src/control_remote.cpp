@@ -32,6 +32,17 @@
 
 #include <control_remote.h>
 
+#include <chrono>
+
+
+#include <bits/stdc++.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
 
 // template <class T, size_t N>
 // std::ostream& operator<<(std::ostream& ostream, const std::array<T, N>& array) {
@@ -56,35 +67,35 @@ CartesianRemoteController::CartesianRemoteController()
 
     this->_robot = new franka::Robot("172.16.0.2");
     this->_gripper = new franka::Gripper("172.16.0.2");
-    
-    
+
+
     // TODO Modify delay
     this->_sub_run_motion = control_py_node.subscribe(
         "/franka/remote_motion", 20, &CartesianRemoteController::runRemoteMotionCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
-    
+
     this->_sub_motion = control_py_node.subscribe(
         "/franka/motion", 20, &CartesianRemoteController::motionCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
-    
+
     this->_sub_motion_ori = control_py_node.subscribe(
         "/franka/motion_ori", 20, &CartesianRemoteController::motionOriCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
-    
-    
+
+
     this->_sub_moveto = control_py_node.subscribe(
         "/franka/moveto", 20, &CartesianRemoteController::movetoCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
-    
+
     this->_sub_joint = control_py_node.subscribe(
         "/franka/jointmotion", 20, &CartesianRemoteController::jointMotionCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
-    
+
     //ADDED 16.08
     this->_sub_gripper_move = control_py_node.subscribe(
         "/franka/gripper_move", 20, &CartesianRemoteController::gripperMoveCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
-    
+
     this->_sub_gripper_grasp = control_py_node.subscribe(
         "/franka/gripper_grasp", 20, &CartesianRemoteController::gripperGraspCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
@@ -93,7 +104,7 @@ CartesianRemoteController::CartesianRemoteController()
         "/franka/joint_trajectory", 20, &CartesianRemoteController::jointTrajectoryCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
 
-    
+
     this->_sub_joint_vel_traj = control_py_node.subscribe(
         "/franka/joint_vel_trajectory", 20, &CartesianRemoteController::jointVelocityTrajectoryCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
@@ -102,7 +113,7 @@ CartesianRemoteController::CartesianRemoteController()
         "/franka/move_relative", 20, &CartesianRemoteController::moveRelativeCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
 
-    
+
     // set collision behavior
     this->_robot->setCollisionBehavior(
         {{100.0, 100.0, 100.0, 100.0, 100.0, 100.0, 100.0}},
@@ -132,7 +143,7 @@ CartesianRemoteController::CartesianRemoteController()
     this->_flag_object = new StopFlag();
     // prompt the id of this->_flag_object->_flag;
     std::cout << "flag address: " << &(this->_flag_object->_flag) << std::endl;
-    
+
 }
 
 //Franka error callbacks
@@ -158,13 +169,13 @@ void CartesianRemoteController::gripperMoveCallback(const franka_david::GripperP
     double width = msg->width;
     double speed = msg->speed;
     bool enable = msg->enable;
-    
+
     if (enable)
     {
     	std::cout << "Moving the gripper at speed " << speed << " and to width " << width << std::endl;
         this->_gripper->move(width, speed);
     }
-    
+
 }
 
 void CartesianRemoteController::gripperGraspCallback(const franka_david::GripperGraspPyPtr& msg)
@@ -174,10 +185,10 @@ void CartesianRemoteController::gripperGraspCallback(const franka_david::Gripper
     double force = msg->force;
     bool release = msg->release;
     bool enable = msg->enable;
-    
+
     if (enable)
     {
-    	
+
         if (release)
         {
             std::cout << "Releasing gripper" <<std::endl;
@@ -189,17 +200,17 @@ void CartesianRemoteController::gripperGraspCallback(const franka_david::Gripper
             this->_gripper->grasp(distance, speed, force);
         }
     }
-    
+
 }
 
 
 void CartesianRemoteController::runRemoteMotionCallback(const franka_david::RemoteMotionPyPtr& msg)
-{   
-    
+{
+
     std_msgs::Header header = msg->header;
     double duration = msg->duration;
     bool enable = msg->enable;
-    
+
     std::cout << "Trajectory duration " << duration << std::endl;
     // time duration in seconds and steps
 //     double duration = 4;
@@ -207,13 +218,13 @@ void CartesianRemoteController::runRemoteMotionCallback(const franka_david::Remo
     int Nend = N * 10 /100;  // Percentage of the trajectory to determine point from which to have more trajectory points
     int Npoints1 = N * 60/100;  // Number of points designated for the first part of the traj
 //     std::cout << "Trajectory length=" << N << ", end points=" << Nend << std::endl;
-    
+
     Eigen::Affine3d transform;
     Eigen::Vector3d pos;
     Eigen::Quaterniond ori;
     math::Transform3D *Ti_temp, *Ti_temp1, *Ti_temp2, *Ti, T0, Tmiddle, Tend;
     // Read the current state of the robot
-    
+
     if (enable)
     {
     	this->_robot->read([&](const franka::RobotState &robot_state){
@@ -223,11 +234,11 @@ void CartesianRemoteController::runRemoteMotionCallback(const franka_david::Remo
 		Eigen::Map<const Eigen::Matrix<double, 7, 1>> joint_angles(robot_state.q.data());
 		Eigen::Matrix3d R = transform.rotation();
 
-        
+
 //         T0(1, 1) = 1.0;    T0(1, 2) = -0.0;    T0(1, 3) = 0.0;    T0(1, 4) = pos[0];
 // 		T0(2, 1) = -0.0;    T0(2, 2) = -1.0;    T0(2, 3) = -0.0;    T0(2, 4) = pos[1];
 // 		T0(3, 1) = 0.0;    T0(3, 2) = -0.0;    T0(3, 3) = -1.0;    T0(3, 4) = pos[2];
-// 
+//
 // 		Tend = T0;
 // 		Tend(1, 4) = pose_x;
 // 		Tend(2, 4) = pose_y;
@@ -238,17 +249,17 @@ void CartesianRemoteController::runRemoteMotionCallback(const franka_david::Remo
 
 		return 0;
 	    });
-        
-        
+
+
 	    Ti_temp = math::ctraj(T0, Tend, N);
-	    
+
 	    Ti = new math::Transform3D[(int)N];
 
-	    
+
 	    this->runControl(Ti, N);
     }
-    
-    
+
+
 }
 
 
@@ -280,8 +291,8 @@ void CartesianRemoteController::jointMotionCallback(const franka_david::JointMot
         //joint6 = msg->joint6; //new initial ee orientation
     }
     bool enable = msg->enable;
-        
-    
+
+
     if (enable)
     {
         std::cout<< "Received message" << std::endl;
@@ -290,7 +301,7 @@ void CartesianRemoteController::jointMotionCallback(const franka_david::JointMot
 
         this->_robot->control(motion_generator);
     }
-    
+
 }
 
 
@@ -318,7 +329,7 @@ void CartesianRemoteController::jointTrajectoryCallback(const franka_david::Join
     }
 
 
-    
+
     std::cout << "Trajectory duration " << duration << std::endl;
     int N = int(duration / this->_dt);
     size_t loop_iter = 0;
@@ -338,7 +349,7 @@ void CartesianRemoteController::jointTrajectoryCallback(const franka_david::Join
             joint_motion_generator_callback = [&](const franka::RobotState &robot_state,
                                              franka::Duration period) -> franka::JointPositions
         {
-            
+
 
 
             std::cout << "iter: " << loop_iter << " sent joint values:"<< std::endl;
@@ -373,7 +384,7 @@ void CartesianRemoteController::jointTrajectoryCallback(const franka_david::Join
 
         */
 
-        
+
 
         std::array<double, 7> initial_position;
         this->_robot->control([&](const franka::RobotState& robot_state,
@@ -390,7 +401,7 @@ void CartesianRemoteController::jointTrajectoryCallback(const franka_david::Join
                                             initial_position[6] + delta_angle}};
 
 
-        
+
         //std::cout << "j1:" << joint0[loop_iter] << " j2:" << joint1[loop_iter] << " j3:" << joint2[loop_iter] << " j4:" << joint3[loop_iter] << " j5:" << joint4[loop_iter] << " j6:" << joint5[loop_iter] << " j7:" << joint6[loop_iter] <<  std::endl;
         franka::JointPositions output = {{joint0[loop_iter], joint1[loop_iter], joint2[loop_iter],
             joint3[loop_iter], joint4[loop_iter], joint5[loop_iter], joint6[loop_iter]}};
@@ -430,7 +441,7 @@ void CartesianRemoteController::jointTrajectoryCallback(const franka_david::Join
         std::ofstream out_file(HOME + "/catkin_ws/src/Data/executed_joint_trajectory.csv", ios::app);
         out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << "," << std::endl;
         //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
-        
+
         time += period.toSec();
         std::cout << "Time "<< double(time) << std::endl;
         //loop_iter = int(time / this->_dt) + 1;
@@ -465,11 +476,11 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
         std::transform(joint0.cbegin(),joint0.cend(),joint0.begin(),std::negate<double>());
         std::transform(joint2.cbegin(),joint2.cend(),joint2.begin(),std::negate<double>());
         std::transform(joint4.cbegin(),joint4.cend(),joint4.begin(),std::negate<double>());
-        
+
         std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::negate<double>());
         //std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::bind2nd(std::plus<double>(), M_PI/2));
     }
-    
+
     std::cout << "Trajectory duration " << duration << std::endl;
     int N = int(duration / this->_dt);
     size_t loop_iter = 0;
@@ -487,6 +498,22 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
         //BASED ON https://petercorke.com/robotics/franka-emika-control-interface-libfranka/
         // and https://frankaemika.github.io/libfranka/joint_impedance_control_8cpp-example.html
         //FOR VELOCITY: https://frankaemika.github.io/libfranka/generate_joint_velocity_motion_8cpp-example.html
+
+        //UDP stopper based on https://www.geeksforgeeks.org/udp-server-client-implementation-c/
+        int sockfd;
+        const char *flag = "0"; //just send something to indicate stopping
+        struct sockaddr_in servaddr;
+
+        // Creating socket file descriptor
+        if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
+            perror("socket creation failed");
+            exit(EXIT_FAILURE);
+        }
+        memset(&servaddr, 0, sizeof(servaddr));
+
+        servaddr.sin_family = AF_INET;
+        servaddr.sin_port = htons(8080);
+        servaddr.sin_addr.s_addr = inet_addr("130.233.123.182");
 
         try {
 
@@ -507,7 +534,7 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
             std::ofstream out_file(HOME + "/catkin_ws/src/Data/executed_joint_trajectory.csv", ios::app);
             out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << std::endl;
             //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
-            
+
 
             //joint velocities
             Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_dq(robot_state.dq.data());
@@ -524,16 +551,59 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
             pose_out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << std::endl;
 
 
+            //write force to file
+            // Eigen::Map<const Eigen::Matrix<double, 6, 1>> wrench(robot_state.O_F_ext_hat_K.data());
+            // std::ofstream force_out_file(HOME + "/catkin_ws/src/Data/joint_control_force.csv", ios::app);
+            // force_out_file << wrench[0] << "," << wrench[1] << "," << wrench[2] << "," << wrench[3] << "," << wrench[4] << "," << wrench[5] << "," << sqrt(pow(wrench[0],2) +  pow(wrench[1],2) + pow(wrench[2],2)) << std::endl;
+
             time += period.toSec();
             //std::cout << "Time "<< double(time) << std::endl;
             //loop_iter = int(time / this->_dt) + 1;
+
+
+            //std::cout << "before send" << std::endl;
+            //std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
+            //send message to signal that robot is still running
+            // sendto(sockfd, (const char *)flag, strlen(flag),
+            //     MSG_CONFIRM, (const struct sockaddr *) &servaddr,
+            //         sizeof(servaddr));
+
+            //default flags!
+
+            if(loop_iter == 0){
+                const char *reset_flag = "1";
+                sendto(sockfd, (const char *)reset_flag, strlen(reset_flag),
+                0, (const struct sockaddr *) &servaddr,
+                    sizeof(servaddr));
+                std::cout << std::endl << "sent reset flag" << std::endl;
+            }
             loop_iter++;
+
+
+            sendto(sockfd, (const char *)flag, strlen(flag),
+                0, (const struct sockaddr *) &servaddr,
+                    sizeof(servaddr));
+
+            //std::cout<<"Robot stop message sent"<<std::endl;
 
             //check if file exists like here https://stackoverflow.com/questions/12774207/fastest-way-to-check-if-a-file-exists-using-standard-c-c11-14-17-c
             if ( access( error_file.c_str(), F_OK ) != -1 ){
-                std::cout << std::endl << "Stopped motion due to error in other robot" << std::endl;
-                return franka::MotionFinished(output);
+                this->_robot->stop();
+                //return franka::MotionFinished(output);
             }
+
+            //Test _robot->stop()
+            // if (loop_iter == 2950){
+            // if ((wrench[2] < -3) && (wrench[0] < -3)){
+            //     // sendto(sockfd, (const char *)flag, strlen(flag),
+            //     // 0, (const struct sockaddr *) &servaddr,
+            //     //     sizeof(servaddr));
+            //     std::cout << std::endl << "STOPPING" << std::endl;
+            //     this->_robot->stop();
+            //     //return franka::MotionFinished(output);
+            // }
+
+            //std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
 
             if (loop_iter > N-1) {
                 std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
@@ -545,19 +615,22 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
 
           } catch (const franka::Exception& e)
           {
-            std::cout << e.what() << std::endl;
-            std_msgs::Bool robot_exception;
-            robot_exception.data = true;
-            if (this->_franka3)
-            {
-                this->_franka_3_state.publish(robot_exception);
-                std::cout << "Error in Franka3" << std::endl;
-            }
-            else
-            {
-                this->_franka_2_state.publish(robot_exception);
-                std::cout << "Error in Franka2" << std::endl;
-            }
+            std::cout << "error catch" << std::endl;
+            std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
+            // std::cout << e.what() << std::endl;
+            // std_msgs::Bool robot_exception;
+            // robot_exception.data = true;
+            // if (this->_franka3)
+            // {
+            //     this->_franka_3_state.publish(robot_exception);
+            //     std::cout << "Error in Franka3" << std::endl;
+            // }
+            // else
+            // {
+            //     this->_franka_2_state.publish(robot_exception);
+            //     std::cout << "Error in Franka2" << std::endl;
+            //     std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
+            // }
         }
 
     }
@@ -565,8 +638,8 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
 
 
 void CartesianRemoteController::movetoCallback(const franka_david::MovetoPyPtr& msg)
-{   
-    
+{
+
     geometry_msgs::Point pose = msg->pose.pose.position;
     geometry_msgs::Quaternion ori_d = msg->pose.pose.orientation;
     double duration = msg->duration;
@@ -587,7 +660,7 @@ void CartesianRemoteController::movetoCallback(const franka_david::MovetoPyPtr& 
     double ori_z = ori_d.z;
     double ori_w = ori_d.w;
     bool enable = msg->enable;
-    
+
     std::cout << "Trajectory duration " << duration << std::endl;
     // time duration in seconds and steps
 //     double duration = 4;
@@ -595,13 +668,13 @@ void CartesianRemoteController::movetoCallback(const franka_david::MovetoPyPtr& 
     int Nend = N * 10 /100;  // Percentage of the trajectory to determine point from which to have more trajectory points
     int Npoints1 = N * 60/100;  // Number of points designated for the first part of the traj
 //     std::cout << "Trajectory length=" << N << ", end points=" << Nend << std::endl;
-    
+
     Eigen::Affine3d transform;
     Eigen::Vector3d pos;
     Eigen::Quaterniond ori;
     math::Transform3D *Ti_temp, *Ti_temp1, *Ti_temp2, *Ti, T0, Tmiddle, Tend;
     // Read the current state of the robot
-    
+
     if (enable)
     {
     	this->_robot->read([&](const franka::RobotState &robot_state){
@@ -614,22 +687,22 @@ void CartesianRemoteController::movetoCallback(const franka_david::MovetoPyPtr& 
  		T0(2, 1) = R(1, 0);    T0(2, 2) = R(1, 1);    T0(2, 3) = R(1, 2);    T0(2, 4) = pos[1];
  		T0(3, 1) = R(2, 0);    T0(3, 2) = R(2, 1);    T0(3, 3) = R(2, 2);    T0(3, 4) = pos[2];
         T0.print("my current");
-//           -0.0218   0.9988   0.0439   0.0085 
-//               0.9986   0.0196   0.0486   0.5806 
-//               0.0476   0.0449  -0.9979   0.4733 
-//               0.0000   0.0000   0.0000   1.0000 
+//           -0.0218   0.9988   0.0439   0.0085
+//               0.9986   0.0196   0.0486   0.5806
+//               0.0476   0.0449  -0.9979   0.4733
+//               0.0000   0.0000   0.0000   1.0000
 //         Franka 3:
-//         my current:  
-//              -0.0078  -0.9985   0.0548   0.3805 
-//              -0.9956   0.0026  -0.0933  -0.3752 
-//               0.0931  -0.0553  -0.9941   0.5570 
-//               0.0000   0.0000   0.0000   1.0000 
+//         my current:
+//              -0.0078  -0.9985   0.0548   0.3805
+//              -0.9956   0.0026  -0.0933  -0.3752
+//               0.0931  -0.0553  -0.9941   0.5570
+//               0.0000   0.0000   0.0000   1.0000
 //         Franka 2:
-//         my current:  
-//              -0.0075   0.9985   0.0550   0.3805 
-//               0.9956   0.0023   0.0938   0.3752 
-//               0.0935   0.0554  -0.9941   0.5570 
-//               0.0000   0.0000   0.0000   1.0000 
+//         my current:
+//              -0.0075   0.9985   0.0550   0.3805
+//               0.9956   0.0023   0.0938   0.3752
+//               0.0935   0.0554  -0.9941   0.5570
+//               0.0000   0.0000   0.0000   1.0000
 
         if (this->_franka3)
         {
@@ -643,7 +716,7 @@ void CartesianRemoteController::movetoCallback(const franka_david::MovetoPyPtr& 
             T0(2, 1) = 0.996194698;     T0(2, 2) = 0.0075961234;    T0(2, 3) = 0.08682408;    T0(2, 4) = pos[1];
             T0(3, 1) = 0.08715574;      T0(3, 2) = 0.08682408;      T0(3, 3) = -0.99240387;    T0(3, 4) = pos[2];
         }
-        
+
 //         T0(1, 1) = 1.0;    T0(1, 2) = -0.0;    T0(1, 3) = 0.0;    T0(1, 4) = pos[0];
 // 		T0(2, 1) = -0.0;    T0(2, 2) = -1.0;    T0(2, 3) = -0.0;    T0(2, 4) = pos[1];
 // 		T0(3, 1) = 0.0;    T0(3, 2) = -0.0;    T0(3, 3) = -1.0;    T0(3, 4) = pos[2];
@@ -661,24 +734,24 @@ void CartesianRemoteController::movetoCallback(const franka_david::MovetoPyPtr& 
 
 		return 0;
 	    });
-        
-        
+
+
 	    Ti_temp = math::ctraj(T0, Tend, N);
 // 	    Tmiddle = T0;
 // 	    Tmiddle(1, 4) = Ti_temp[N-Nend](1, 4);
 // 	    Tmiddle(2, 4) = Ti_temp[N-Nend](2, 4);
 // 	    Tmiddle(3, 4) = Ti_temp[N-Nend](3, 4);
 	    //std::cout << "Compute T temp 1" << std::endl;
-	    
+
 // 	    Ti_temp1 = math::ctraj(T0, Tmiddle, Npoints1);
 // 	    //std::cout << "Compute T temp 2" << std::endl;
 // 	    Ti_temp2 = math::ctraj(Tmiddle, Tend, N-Npoints1);
 // 	    //std::cout << "For loop" << std::endl;
-// 	    
+//
 // 	    Ti = new math::Transform3D[(int)N];
 // 	    std::ofstream out_file("output.txt");
 // 	    for (int k=0; k<(int)N; k++)
-// 	    {   
+// 	    {
 // 	        if (k< Npoints1)
 // 	        {
 // 	            Ti[k] = Ti_temp1[k];
@@ -689,36 +762,36 @@ void CartesianRemoteController::movetoCallback(const franka_david::MovetoPyPtr& 
 // 	            //std::cout << "Number of points" << k-(Npoints1) << std::endl;
 // 	            Ti[k] = Ti_temp2[k-(Npoints1)];
 // 	        }
-// 	        
+//
 // 	        out_file << "Ti pose i=" << k << " x=" << Ti[k](1, 4) << " y=" <<  Ti[k](2, 4) << " z=" << Ti[k](3,4) << std::endl;
-// 	        
+//
 // 	    }
 //         out_file.close();
-	    
+
 	    this->runControl(Ti_temp, N);
     }
-    
-    
+
+
 }
 
 
 void CartesianRemoteController::motionCallback(const franka_david::MotionPyPtr& msg)
 {
-        
+
     std::vector<geometry_msgs::PoseStamped> trajectory = msg->trajectory;
     bool enable = msg->enable;
-    
+
     if (enable)
-    {   
+    {
         std::vector<geometry_msgs::PoseStamped>::iterator it;
-    
+
         std::vector<double> trajectory_x;
         std::vector<double> trajectory_y;
         std::vector<double> trajectory_z;
-        
+
 
         for(it = trajectory.begin(); it != trajectory.end(); it++)    {
-            
+
             trajectory_x.push_back(it->pose.position.x);
             trajectory_y.push_back(it->pose.position.y);
             trajectory_z.push_back(it->pose.position.z);
@@ -729,21 +802,21 @@ void CartesianRemoteController::motionCallback(const franka_david::MotionPyPtr& 
         double duration = N * this->_dt;
         std::cout << "Trajectory duration " << duration << std::endl;
         double end_pose_x = trajectory_x.at(N-1);
-        
+
         double end_pose_y = trajectory_y.at(N-1);
         if (this->_franka3)
         {
             end_pose_y = -trajectory_y.at(N-1);
         }
         double end_pose_z = trajectory_z.at(N-1);
-        
-        
+
+
         Eigen::Affine3d transform;
         Eigen::Vector3d pos;
         Eigen::Quaterniond ori;
         math::Transform3D *Ti, T0, Tend;
 
-        
+
     	this->_robot->read([&](const franka::RobotState &robot_state){
 		transform = Eigen::Matrix4d::Map(robot_state.O_T_EE.data());
 		pos = transform.translation();
@@ -775,11 +848,11 @@ void CartesianRemoteController::motionCallback(const franka_david::MotionPyPtr& 
 
 		return 0;
 	    });
-        
+
 	    Ti = math::ctraj(T0, Tend, N);
-	    
+
 	    for (int k=0; k<(int)N; k++)
-	    {   
+	    {
             Ti[k](1, 4) = trajectory_x.at(k);
             if (this->_franka3)
             {
@@ -789,14 +862,14 @@ void CartesianRemoteController::motionCallback(const franka_david::MotionPyPtr& 
             {
                 Ti[k](2, 4) = trajectory_y.at(k);
             }
-                    
+
             Ti[k](3, 4) = trajectory_z.at(k);
 	    }
-	    
-	    
+
+
 	    this->runControl(Ti, N);
     }
-    
+
 }
 
 
@@ -804,19 +877,19 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
 {
     std::vector<geometry_msgs::PoseStamped> trajectory = msg->trajectory;
     bool enable = msg->enable;
-    
+
     if (enable)
-    {   
+    {
         std::vector<geometry_msgs::PoseStamped>::iterator it;
-    
+
         std::vector<double> trajectory_x;
         std::vector<double> trajectory_y;
         std::vector<double> trajectory_z;
         std::vector<Eigen::Quaterniond> trajectory_quat;
-        
+
 
         for(it = trajectory.begin(); it != trajectory.end(); it++)    {
-            
+
             trajectory_x.push_back(it->pose.position.x);
             trajectory_y.push_back(it->pose.position.y);
             trajectory_z.push_back(it->pose.position.z);
@@ -825,7 +898,7 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
             a.y() = it->pose.orientation.y;
             a.z() = it->pose.orientation.z;
             a.w() = it->pose.orientation.w;
-            
+
             trajectory_quat.push_back(a);
 
         }
@@ -833,21 +906,21 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
         double duration = N * this->_dt;
         std::cout << "Trajectory duration " << duration << std::endl;
         double end_pose_x = trajectory_x.at(N-1);
-        
+
         double end_pose_y = trajectory_y.at(N-1);
         if (this->_franka3)
         {
             end_pose_y = -trajectory_y.at(N-1);
         }
         double end_pose_z = trajectory_z.at(N-1);
-        
-        
+
+
         Eigen::Affine3d transform;
         Eigen::Vector3d pos;
         Eigen::Quaterniond ori;
         math::Transform3D *Ti, T0, Tend;
 
-        
+
     	this->_robot->read([&](const franka::RobotState &robot_state){
 		transform = Eigen::Matrix4d::Map(robot_state.O_T_EE.data());
 		pos = transform.translation();
@@ -878,11 +951,11 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
 
 		return 0;
 	    });
-        
+
 	    Ti = math::ctraj(T0, Tend, N);
-	    
+
 	    for (int k=0; k<(int)N; k++)
-	    {   
+	    {
             Ti[k](1, 4) = trajectory_x.at(k);
             if (this->_franka3)
             {
@@ -892,12 +965,12 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
             {
                 Ti[k](2, 4) = trajectory_y.at(k);
             }
-                    
+
             Ti[k](3, 4) = trajectory_z.at(k);
-            
+
             Eigen::Matrix3d rot = trajectory_quat.at(k).normalized().toRotationMatrix();
-            Ti[k](1, 1) = rot(0, 0); Ti[k](1, 2) = rot(0, 1); Ti[k](1, 3) = rot(0, 2); 
-            Ti[k](2, 1) = rot(1, 0); Ti[k](2, 2) = rot(1, 1); Ti[k](2, 3) = rot(1, 2); 
+            Ti[k](1, 1) = rot(0, 0); Ti[k](1, 2) = rot(0, 1); Ti[k](1, 3) = rot(0, 2);
+            Ti[k](2, 1) = rot(1, 0); Ti[k](2, 2) = rot(1, 1); Ti[k](2, 3) = rot(1, 2);
             Ti[k](3, 1) = rot(2, 0); Ti[k](3, 2) = rot(2, 1); Ti[k](3, 3) = rot(2, 2);
 
             //if (! this->_franka3) //OLD
@@ -906,23 +979,23 @@ void CartesianRemoteController::motionOriCallback(const franka_david::MotionPyPt
                 //From OLD code for other inital ee rotation
                 // Ti[k](1, 2) = -rot(0, 1);
                 // Ti[k](2, 1) = -rot(1, 0);
-                // Ti[k](2, 3) = -rot(1, 2); 
+                // Ti[k](2, 3) = -rot(1, 2);
                 // Ti[k](3, 2) = -rot(2, 1);
 
                 //For NEW ee initial rotation
                 Ti[k](3, 1) = -rot(2, 0);
                 Ti[k](3, 2) = -rot(2, 1);
-                Ti[k](1, 3) = -rot(0, 2); 
+                Ti[k](1, 3) = -rot(0, 2);
                 Ti[k](2, 3) = -rot(1, 2);
-                
+
             }
-            
+
 	    }
-	    
-	    
+
+
 	    this->runControl(Ti, N);
     }
-    
+
 }
 
 
@@ -937,8 +1010,8 @@ void CartesianRemoteController::moveRelativeCallback(const franka_david::MoveRel
     double dz = msg->z;
     double duration = msg->duration;
     bool enable = msg->enable;
-        
-    
+
+
     if (enable)
     {
     //Motion generator based on this example: https://frankaemika.github.io/libfranka/generate_cartesian_pose_motion_8cpp-example.html
@@ -956,7 +1029,7 @@ void CartesianRemoteController::moveRelativeCallback(const franka_david::MoveRel
         double delta_x = dx * std::sin(angle);
         double delta_y = dy * std::sin(angle);
         double delta_z = dz * std::sin(angle);
-        
+
         std::array<double, 16> new_pose = initial_pose;
         new_pose[12] += delta_x;
         new_pose[13] += delta_y;
@@ -964,7 +1037,7 @@ void CartesianRemoteController::moveRelativeCallback(const franka_david::MoveRel
 
 
         if (time >= duration) {
-            
+
             std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
             return franka::MotionFinished(new_pose);
         }
@@ -984,21 +1057,21 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
     if (this->_franka3)
     {
         translational_stiffness = 1400.0; //105.0 previous, use with full speed
-        rotational_stiffness =53.0;  
+        rotational_stiffness =53.0;
     }
     else
     {
         translational_stiffness = 1400.0; //150.0 previous, with full speed
-        rotational_stiffness = 53.0;   
+        rotational_stiffness = 53.0;
     }
 
     std::cout << "Translational stifness: " << translational_stiffness << " , rotational: " << rotational_stiffness << std::endl;
 
 //     100 shakes too much, 50 not that good, 10- too soft
-    // 70 might be fine - shakes a bit, 
+    // 70 might be fine - shakes a bit,
     // 68 shakes close to the robot, doesn't when far but orientation is really good
     // 50
-    
+
     Eigen::MatrixXd stiffness(6, 6), damping(6, 6);
     stiffness.setZero();
     stiffness.topLeftCorner(3, 3) << translational_stiffness * Eigen::MatrixXd::Identity(3, 3);
@@ -1008,18 +1081,18 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
                                     Eigen::MatrixXd::Identity(3, 3);
     damping.bottomRightCorner(3, 3) << 2.0 * sqrt(rotational_stiffness) *
                                         Eigen::MatrixXd::Identity(3, 3);
-                                        
+
     size_t loop_iter = 0;
-    
+
     Eigen::Matrix<double, 6, 1> error, error_old;
     error_old << .0, .0, .0, .0, .0, .0;
     Eigen::Vector3d position_d;
     Eigen::Quaterniond orientation_d;
     franka::Model model = this->_robot->loadModel();
-    
+
     double dt = this->_dt;
     double time = 0.0;
-    
+
     std::function<franka::Torques(const franka::RobotState &, franka::Duration)>
             impedance_control_callback = [&](const franka::RobotState &robot_state,
                                              franka::Duration /*duration*/) -> franka::Torques
@@ -1043,7 +1116,7 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
             orientation_d.w() = quat_desired.s();
             orientation_d.x() = quat_desired.x();
             orientation_d.y() = quat_desired.y();
-            orientation_d.z() = quat_desired.z();		
+            orientation_d.z() = quat_desired.z();
             position_d << trajectory[loop_iter](1,4), trajectory[loop_iter](2,4), trajectory[loop_iter](3,4);
             // compute error to desired equilibrium pose
             // position error
@@ -1052,7 +1125,7 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
             // Prevent quaternion flips
             if (orientation_d.coeffs().dot(orientation.coeffs()) < 0.0) {
                 orientation.coeffs() << -orientation.coeffs();
-            }	
+            }
             // "difference" quaternion
             Eigen::Quaterniond error_quaternion(orientation.inverse() * orientation_d);
             error.tail(3) << error_quaternion.x(), error_quaternion.y(), error_quaternion.z();
@@ -1093,7 +1166,7 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
             }
             return tau_d_array;
         };
-        
+
     // start real-time control loop
 //     std::cout << "WARNING: Collision thresholds are set to high values. "
 //                 << "Make sure you have the user stop at hand!" << std::endl
@@ -1106,8 +1179,8 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 
 int main(int argc, char **argv)
 {
-    //ros::init(argc, argv, "remote_franka2");
-    ros::init(argc, argv, "remote_franka3");
+    ros::init(argc, argv, "remote_franka2");
+    //ros::init(argc, argv, "remote_franka3");
     CartesianRemoteController controller;
 
     ros::spin();
