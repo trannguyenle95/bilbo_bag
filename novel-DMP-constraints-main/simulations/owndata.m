@@ -6,8 +6,8 @@ addpath('utils/');
 import_gmp_lib();
 import_io_lib();
 
-addpath('own_code/') %ADDED
-addpath('own_demos/') %ADDED
+addpath('/home/erichannus/catkin_ws/src/MatlabPreProcess/')
+addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 %% Load training data
 % fid = FileIO('data/pos_data.bin', FileIO.in);
@@ -20,6 +20,10 @@ addpath('own_demos/') %ADDED
 %ddPd data!
 %Each is an array of doubles, size DOF*timesteps
 
+
+
+%NOTE -- small changes to source code marked by comments <<< can have this
+%file here as well...
 filename = '10l_bag_flip.csv';
 %filename = 'd10_flip.csv';
 %filename = 'd8_flip.csv';
@@ -33,7 +37,7 @@ D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
 %D = preprocess(filename, false, 0.05, -0.05, 0.05, 1);
 Dsmooth = smoothdata(D, 1, "gaussian",35); %still noisy after IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
-[q, jacobians] = InverseKinematics2(Dsmooth);
+[q, jacobians] = InverseKinematics(Dsmooth);
 demo_traj = generateDemo(q', 1/120);
 
 Timed = demo_traj.t;
@@ -208,7 +212,7 @@ end
 % ======================================================
 
 %Plot demo in cartesian and constrained DMP result
-poseDMP = ForwardKinematics2(data{2}.Pos'); %index2 = DMP without constraints
+poseDMP = ForwardKinematics(data{2}.Pos'); %index2 = DMP without constraints
 figure('Name','Cartesian Pose')
 subplot(2,1,1)
 hold on
@@ -241,7 +245,7 @@ hold off
 
 
 %Plot demo in cartesian and constrained DMP result
-poseDMP = ForwardKinematics2(data{3}.Pos'); %index 3 = vel optimization
+poseDMP = ForwardKinematics(data{3}.Pos'); %index 3 = vel optimization
 figure('Name','Cartesian Pose')
 subplot(2,1,1)
 hold on
@@ -273,7 +277,7 @@ legend
 hold off
 
 %Plot demo in cartesian and constrained DMP result
-poseDMP = ForwardKinematics2(data{4}.Pos'); %index 4 = pos optimization
+poseDMP = ForwardKinematics(data{4}.Pos'); %index 4 = pos optimization
 figure('Name','Cartesian Pose')
 subplot(2,1,1)
 hold on
@@ -320,7 +324,7 @@ max_joint_acc = (max(data{version}.Accel, [], 2) > actual_accel_lim(:,2))'
 
 
 %% distance metric
-% poseDMP = ForwardKinematics2(data{version}.Pos');
+% poseDMP = ForwardKinematics(data{version}.Pos');
 % 
 % 
 % D_new = interpolate(D, poseDMP, false);
@@ -376,7 +380,7 @@ data{version}.Pos(7,:) = -data{version}.Pos(7,:);
 %Run Forward Kinematics for plotting and playback with cartesian control
 %do this again so that pose with flipped joints is saved for pose
 %trajectory
-poseDMP = ForwardKinematics2(data{version}.Pos');
+poseDMP = ForwardKinematics(data{version}.Pos');
 
 %save joint angles to file
 %writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
@@ -396,12 +400,3 @@ data{version}.Vel(7,:) = -data{version}.Vel(7,:);
 %writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))
 writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_vel_demoDMP.csv'))
 
-
-%Export weights for the demo
-if version == 3
-    W = w2;
-else
-    W = w3;
-end
-
-writematrix(W,fullfile('/home/erichannus/catkin_ws/src/Data/Weights',strcat('W_',filename)))
