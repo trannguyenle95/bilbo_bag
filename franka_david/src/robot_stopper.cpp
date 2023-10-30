@@ -76,48 +76,50 @@ int main() {
   socklen_t len;
   int n;
   len = sizeof(cliaddr);  //len is value/result
-  //receive first message, no timeout for this message
-  n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
-  0, ( struct sockaddr *) &cliaddr,
-  &len);
-  std::cout << "first message received" << std::endl;
 
-  //set timeout for subsequent messages
-  struct timeval tv;
-  tv.tv_sec = 0; //timeout_in_seconds
-  tv.tv_usec = 2000; //timeout in microseconds, now 2ms
-  setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+  //Stopper that waits for single msg
+  while(true){
+      n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
+      0, ( struct sockaddr *) &cliaddr,
+      &len);
 
-  bool reset = 1;
-
-  while(1){
-    n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
-    0, ( struct sockaddr *) &cliaddr,
-    &len);
-
-    if(buffer[0]=='1'){
-      std::cout << "reset received" << n << std::endl;
-      remove(outfile.c_str());
-      reset = 1;
-    }
-
-    if((n <= 0) && (reset == 1)){
       std::ofstream output(outfile); //ADDED for file-based stopper
-      std::cout << "stopped" << n << std::endl;
-      reset = 0;
-    }
-
+      std::cout << "stop message received" << std::endl;
   }
 
-  while(n>0){
-    n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
-    0, ( struct sockaddr *) &cliaddr,
-    &len);
-    buffer[n] = '\0';
-    std::cout << "message received " << buffer << std::endl;
-  }
 
-  std::ofstream output(outfile); //ADDED for file-based stopper
+  //receive first message, no timeout for this message
+  // n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
+  // 0, ( struct sockaddr *) &cliaddr,
+  // &len);
+  // std::cout << "first message received" << std::endl;
+
+  // //set timeout for subsequent messages
+  // struct timeval tv;
+  // tv.tv_sec = 0; //timeout_in_seconds
+  // tv.tv_usec = 3000; //timeout in microseconds, now 3ms
+  // setsockopt(sockfd, SOL_SOCKET, SO_RCVTIMEO, (const char*)&tv, sizeof tv);
+
+  // bool reset = 1;
+
+  // while(1){
+  //   n = recvfrom(sockfd, (char *)buffer, MAXLINE,  
+  //   0, ( struct sockaddr *) &cliaddr,
+  //   &len);
+
+  //   if(buffer[0]=='1'){
+  //     std::cout << "reset received" << std::endl;
+  //     //remove(outfile.c_str());
+  //     reset = 1;
+  //   }
+
+  //   else if((n <= 0) && (reset == 1)){
+  //     std::ofstream output(outfile); //ADDED for file-based stopper
+  //     std::cout << "stopped" << std::endl;
+  //     reset = 0;
+  //   }
+
+  // }
 
   return 0;
 }

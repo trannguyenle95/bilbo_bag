@@ -513,7 +513,8 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
             servaddr.sin_addr.s_addr = inet_addr("130.233.123.190");
         }
 
-
+        this->_robot.automaticErrorRecovery();
+        
         try {
 
             this->_robot->control([&](const franka::RobotState& robot_state,
@@ -569,19 +570,33 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
 
             //default flags!
 
+            // if(loop_iter == 0){
+            //     remove(error_file.c_str());
+            //     const char *reset_flag = "1";
+            //     sendto(sockfd, (const char *)reset_flag, strlen(reset_flag),
+            //     0, (const struct sockaddr *) &servaddr,
+            //         sizeof(servaddr));
+            //     std::cout << std::endl << "sent reset flag" << std::endl;
+            // }
+            // else{
+            //     sendto(sockfd, (const char *)flag, strlen(flag),
+            //     0, (const struct sockaddr *) &servaddr,
+            //         sizeof(servaddr));
+            // }
+
             if(loop_iter == 0){
-                const char *reset_flag = "1";
-                sendto(sockfd, (const char *)reset_flag, strlen(reset_flag),
-                0, (const struct sockaddr *) &servaddr,
-                    sizeof(servaddr));
-                std::cout << std::endl << "sent reset flag" << std::endl;
+                remove(error_file.c_str());
             }
+
             loop_iter++;
 
-
-            sendto(sockfd, (const char *)flag, strlen(flag),
+            if(bool(robot_state.current_errors)){
+                this->_robot->stop();
+                sendto(sockfd, (const char *)flag, strlen(flag),
                 0, (const struct sockaddr *) &servaddr,
                     sizeof(servaddr));
+                std::cout << std::endl << "error found" << std::endl;
+            }
 
             //std::cout<<"Robot stop message sent"<<std::endl;
 
@@ -616,7 +631,10 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
           {
             std::cout << "error catch" << std::endl;
             std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
-            // std::cout << e.what() << std::endl;
+            std::cout << e.what() << std::endl;
+            this->_robot->automaticErrorRecovery();
+            std::cout << "error recovery" << std::endl;
+
             // std_msgs::Bool robot_exception;
             // robot_exception.data = true;
             // if (this->_franka3)
@@ -1178,8 +1196,8 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 
 int main(int argc, char **argv)
 {
+    //ros::init(argc, argv, "remote_franka2");
     ros::init(argc, argv, "remote_franka3");
-    //ros::init(argc, argv, "remote_franka3");
     CartesianRemoteController controller;
 
     ros::spin();
