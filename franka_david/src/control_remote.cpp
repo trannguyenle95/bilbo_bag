@@ -139,11 +139,6 @@ CartesianRemoteController::CartesianRemoteController()
         ros::TransportHints().reliable().tcpNoDelay());
     }
 
-    // Instantiate the flag class
-    //this->_flag_object = new StopFlag();
-    // prompt the id of this->_flag_object->_flag;
-    //std::cout << "flag address: " << &(this->_flag_object->_flag) << std::endl;
-
 }
 
 //Franka error callbacks
@@ -514,6 +509,10 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
         servaddr.sin_family = AF_INET;
         servaddr.sin_port = htons(8080);
         servaddr.sin_addr.s_addr = inet_addr("130.233.123.182");
+        if (this->_franka3){
+            servaddr.sin_addr.s_addr = inet_addr("130.233.123.190");
+        }
+
 
         try {
 

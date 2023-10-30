@@ -32,12 +32,6 @@
 
 #include <franka_david/MoveRelativePy.h>
 
-class StopFlag
-{
-    public:
-        bool _flag = false;
-
-};
 
 class CartesianRemoteController
 {
@@ -136,8 +130,7 @@ public:
 // private:
     franka::Robot* _robot;
     franka::Gripper* _gripper;
-    StopFlag* _flag_object;
-    bool _franka3 = false; //change this to match current robot (2 or 3)
+    bool _franka3 = true; //change this to match current robot (2 or 3)
         /// \brief Thread running the rosPublishQueue.
     std::thread _franka2statethread;
     std::thread _franka3statethread;
