@@ -31,7 +31,6 @@
 #include <examples_common.h>
 
 #include <control_remote.h>
-
 #include <chrono>
 
 
@@ -513,7 +512,7 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
             servaddr.sin_addr.s_addr = inet_addr("130.233.123.190");
         }
 
-        this->_robot.automaticErrorRecovery();
+        this->_robot->automaticErrorRecovery();
         
         try {
 
@@ -587,15 +586,13 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
             if(loop_iter == 0){
                 remove(error_file.c_str());
             }
-
             loop_iter++;
-
             if(bool(robot_state.current_errors)){
                 this->_robot->stop();
                 sendto(sockfd, (const char *)flag, strlen(flag),
                 0, (const struct sockaddr *) &servaddr,
                     sizeof(servaddr));
-                std::cout << std::endl << "error found" << std::endl;
+                std::cout << std::endl << "error found" << "errors are: " << std::string(robot_state.current_errors) << std::endl;
             }
 
             //std::cout<<"Robot stop message sent"<<std::endl;
