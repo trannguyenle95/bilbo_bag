@@ -6,36 +6,16 @@ addpath('utils/');
 import_gmp_lib();
 import_io_lib();
 
-addpath('/home/erichannus/catkin_ws/src/MatlabPreProcess/')
+addpath('/home/erichannus/catkin_ws/src/SupportScripts/')
 addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 %% Load training data
-% fid = FileIO('data/pos_data.bin', FileIO.in);
-% Timed = fid.read('Timed');
-% Pd_data = fid.read('Pd_data');
-% dPd_data = fid.read('dPd_data');
-% ddPd_data = fid.read('ddPd_data');
-% fid.close();
-%NOTE ^^ skip FileIO above and just import own data in shape of Pd, dPd and
-%ddPd data!
-%Each is an array of doubles, size DOF*timesteps
-
-
-
-%NOTE -- small changes to source code marked by comments <<< can have this
-%file here as well...
 filename = '10l_bag_flip.csv';
-%filename = 'd10_flip.csv';
-%filename = 'd8_flip.csv';
 
 version = 4 % 3 = vel, 4 = pos, select which optimization version to export
 
 D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
-%D = preprocess(filename, false, 0.56, 0.00, 0.00, 1, 'ori2', 0.38);
-%D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori2');
-%D = preprocess(filename, false, 0.60, 0, 0, 1);
-%D = preprocess(filename, false, 0.05, -0.05, 0.05, 1);
-Dsmooth = smoothdata(D, 1, "gaussian",35); %still noisy after IK
+Dsmooth = smoothdata(D, 1, "gaussian",35); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 [q, jacobians] = InverseKinematics(Dsmooth);
 demo_traj = generateDemo(q', 1/120);
@@ -45,14 +25,12 @@ Pd_data = demo_traj.pos;
 dPd_data = demo_traj.vel;
 ddPd_data = demo_traj.acc;
 
-%Ts = Timed(2)-Timed(1); %NOTE: why isn't TS used?
-
 %% initialize and train GMP
-train_method = 'LS'; %NOTE: I can also try LWR
-N_kernels = 30; %Originally 30, difference in MSE but not noticable in plots
+train_method = 'LS';
+N_kernels = 200; %Originally 30, difference in MSE but not noticable in plots
 kernels_std_scaling = 1.5;
 n_dof = size(Pd_data,1);
-gmp = GMP(n_dof, N_kernels, kernels_std_scaling); %NOTE: there is also GMPo for Cartesian pose
+gmp = GMP(n_dof, N_kernels, kernels_std_scaling);
 tic
 offline_train_mse = gmp.train(train_method, Timed/Timed(end), Pd_data);
 offline_train_mse
@@ -64,95 +42,81 @@ taud = Timed(end);
 yd0 = gmp.getYd(0); %Pd_data(1);
 ygd = gmp.getYd(1); %Pd_data(end);
 
-%kt = 1.5; % temporal scaling %NOTE <<<<<<<<<<<<<<<<< CHECK THIS originally 1.5
-kt = 1; %Disables temporal scaling of demo traj
+kt = 1; %no temporal scaling of demo traj
 %ks = diag([1 1 1]); % spatial scaling
 tau = taud/kt;
-y0 = yd0 + 0;
-% yg = ks*(ygd - yd0) + y0;
-% yg = ygd + [0.1; -0.1; 0.23]; view_ = [171.5301, -2.3630];
-%yg = ygd + [0.7; -0.7; 0.05];  view_ = [171.9421, -3.0690]; %NOTE: SHIFT GOAL - original
-yg = ygd; %Rollout goal is now same as demo goal!
+y0 = yd0; %intial state same as as in demo
+yg = ygd; %rollout goal is same as demo goal
 
 
 %% ======== Limits ==========
-%            lower limit     upper limit
-%pos_lim = [[-1.2 -1.2 0.22]' [1.2 1.2 0.5]'];
-%vel_lim = repmat([-0.3 0.3], 3,1);  % lower and upper limit, same for all DoFs
-%accel_lim = repmat([-0.4 0.4], 3,1);
 
+%limits are chosen to be worst case between Franka Panda and Franka
+%Research 3
 pos_lim = [[-2.7437; -1.7628; -2.8973; -3.0421; -2.8065; 0.5445; -2.8973] [2.7437; 1.7628; 2.8973; -0.1518; 2.8065; 3.7525; 2.8973]];
-vel_lim = [-[2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100] [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100]];  % lower and upper limit, same for all DoFs
+vel_lim = [-[2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100] [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100]];
 accel_lim = [-[10; 7.5; 10; 10; 10; 10; 10] [10; 7.5; 10; 10; 10; 10; 10]];
 
+%use the actual robot limits for plotting
 actual_pos_lim = pos_lim;
 actual_vel_lim = vel_lim;
 actual_accel_lim = accel_lim;
 
-%use stricter limits than the actual ones
+%use stricter limits than the actual ones for trajectory generation to have
+%some margin
 pos_lim = 0.98 * pos_lim;
 vel_lim = 0.98 * vel_lim;
-accel_lim = 0.80 * accel_lim;
+accel_lim = 0.98 * accel_lim;
 
 %% ======== Generate trajectories ==========
 
 qp_solver_type = 1; % matlab-quadprog:0 , osqp:1, Goldfarb-Idnani: 2
-
 data = {};
 
 %% --------- Demo -----------
 data{length(data)+1} = ...
-    struct('Time',Timed/kt, 'Pos',Pd_data, 'Vel',dPd_data*kt, 'Accel',ddPd_data*kt^2, 'linestyle','--', ...
+    struct('Time',Timed, 'Pos',Pd_data, 'Vel',dPd_data, 'Accel',ddPd_data, 'linestyle','--', ...
     'color',[0.7 0.7 0.7], 'legend','demo', 'plot3D',true, 'plot2D',true);
 
-%NOTE: Figure out if dPd and ddPd are actual vel/acc or just diff... <<<
-%seems to be actual vel/acc same as in previous DMP codes
-
-%% --------- Proportional scaling -----------
+%% --------- Unconstrained DMP -----------
 gmp2 = gmp.deepCopy();
-gmp2.setScaleMethod( TrajScale_Prop(n_dof) );
 [Time, P_data, dP_data, ddP_data] = getGMPTrajectory(gmp2, tau, y0, yg);
 data{length(data)+1} = ...
     struct('Time',Time, 'Pos',P_data, 'Vel',dP_data, 'Accel',ddP_data, 'linestyle',':', ...
     'color','blue', 'legend','DMP', 'plot3D',true, 'plot2D',true);
 
-%NOTE: this produces normal DMP (blue in paper)
-
-w1 = gmp2.W;
+%save standard DMP traj
+writematrix(data{2}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('nominalDMP3_joint_',filename)))
+writematrix(data{2}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('nominalDMP3_joint_vel_',filename)))
 
 %% --------- Optimized DMP -> VEL -----------
-[Time, P_data, dP_data, ddP_data, w2] = offlineGMPweightsOpt(gmp, tau, y0, yg, pos_lim, vel_lim, accel_lim, 0, 1, [], qp_solver_type); %getOptGMPTrajectory(gmp, tau, y0, yg, pos_lim, vel_lim, accel_lim, false, true);
+[Time, P_data, dP_data, ddP_data, w2] = offlineGMPweightsOpt(gmp, tau, y0, yg, pos_lim, vel_lim, accel_lim, 0, 1, [], qp_solver_type);
 data{length(data)+1} = ...
     struct('Time',Time, 'Pos',P_data, 'Vel',dP_data, 'Accel',ddP_data, 'linestyle','-', ...
     'color',[0 0.9 0], 'legend','$DMP^*_v$', 'plot3D',true, 'plot2D',true);
 
-%w2 = gmp.W;
-
 %% --------- Optimized DMP -> POS -----------
-[Time, P_data, dP_data, ddP_data, w3] = offlineGMPweightsOpt(gmp, tau, y0, yg, pos_lim, vel_lim, accel_lim, 1, 0, [], qp_solver_type); %getOptGMPTrajectory(gmp, tau, y0, yg, pos_lim, vel_lim, accel_lim, true, false);
+[Time, P_data, dP_data, ddP_data, w3] = offlineGMPweightsOpt(gmp, tau, y0, yg, pos_lim, vel_lim, accel_lim, 1, 0, [], qp_solver_type);
 data{length(data)+1} = ...
     struct('Time',Time, 'Pos',P_data, 'Vel',dP_data, 'Accel',ddP_data, 'linestyle','-', ...
     'color',[0.72 0.27 1], 'legend','$DMP^*_p$', 'plot3D',true, 'plot2D',true);
-
-%w3 = gmp.W;
 
 %% NOTE about solver output
 % "Solved inaccurate" is explained here https://osqp.org/docs/interfaces/status_values.html
 
 %% ======== Plot Results ==========
-
-%title_ = {'x coordinate', 'y coordinate', 'z coordinate'};
 label_font = 17;
 ax_fontsize = 14;
 
-ind = [1 2 3 4 5 6 7]; % choose DoFs to plot, e.g. [1 2 3] for [x y z]
+ind = [1 2 3 4 5 6 7]; % choose DoFs to plot
 for k=1:length(ind)
     i = ind(k);
     fig = figure;
+    sgtitle(strcat('joint',int2str(i)))
 
+    % plot joint positions
     ax = subplot(3,1,1);
     hold on;
-    % plot position trajectory
     legend_ = {};
     for k=1:length(data)
         if (~data{k}.plot2D), continue; end
@@ -160,22 +124,14 @@ for k=1:length(ind)
         legend_ = [legend_ data{k}.legend];
     end
     axis tight;
-    % plot start and final positions - NOTE: commented out as it is not
-    % needed at the moment
-    %plot(0, y0(i), 'LineWidth', 4, 'LineStyle','none', 'Color','green','Marker','o', 'MarkerSize',10);
-    %plot(tau, yg(i), 'LineWidth', 4, 'LineStyle','none', 'Color','red','Marker','x', 'MarkerSize',10);
-    %plot(tau, ygd(i), 'LineWidth', 4, 'LineStyle','none', 'Color','magenta','Marker','x', 'MarkerSize',10);
-    % plot bounds
     plot(ax.XLim, [actual_pos_lim(i,1) actual_pos_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
     plot(ax.XLim, [actual_pos_lim(i,2) actual_pos_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    % labels, title ...
-    %ylabel('pos [$m$]', 'interpreter','latex', 'fontsize',label_font);
     ylabel('pos [$rad$]', 'interpreter','latex', 'fontsize',label_font);
-%     title(title_{i}, 'interpreter','latex', 'fontsize',18);
     legend(legend_, 'interpreter','latex', 'fontsize',17, 'Position',[0.2330 0.9345 0.5520 0.0294], 'Orientation', 'horizontal');
     ax.FontSize = ax_fontsize;
     hold off;
 
+    % plot joint velocities
     ax = subplot(3,1,2);
     hold on;
     for k=1:length(data)
@@ -183,14 +139,13 @@ for k=1:length(ind)
         plot(data{k}.Time, data{k}.Vel(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
     end
     axis tight;
-    % plot bounds
     plot(ax.XLim, [actual_vel_lim(i,1) actual_vel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
     plot(ax.XLim, [actual_vel_lim(i,2) actual_vel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    %ylabel('vel [$m/s$]', 'interpreter','latex', 'fontsize',label_font);
     ylabel('vel [$rad/s$]', 'interpreter','latex', 'fontsize',label_font);
     ax.FontSize = ax_fontsize;
     hold off;
 
+    % plot joint velocities
     ax = subplot(3,1,3);
     hold on;
     for k=1:length(data)
@@ -198,20 +153,17 @@ for k=1:length(ind)
         plot(data{k}.Time, data{k}.Accel(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
     end
     axis tight;
-    % plot bounds
     plot(ax.XLim, [actual_accel_lim(i,1) actual_accel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
     plot(ax.XLim, [actual_accel_lim(i,2) actual_accel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    %ylabel('accel [$m/s^2$]', 'interpreter','latex', 'fontsize',label_font);
     ylabel('accel [$rad/s^2$]', 'interpreter','latex', 'fontsize',label_font);
     xlabel('time [$s$]', 'interpreter','latex', 'fontsize',label_font);
     ax.FontSize = ax_fontsize;
     hold off;
-
 end
 
 % ======================================================
 
-%Plot demo in cartesian and constrained DMP result
+%Plot demo in cartesian and unconstrained DMP result
 poseDMP = ForwardKinematics(data{2}.Pos'); %index2 = DMP without constraints
 figure('Name','Cartesian Pose')
 subplot(2,1,1)
@@ -309,8 +261,6 @@ legend
 hold off
 
 
-
-
 %display whether limits are exceeded
 min_joint_pos = (min(data{version}.Pos, [], 2) < actual_pos_lim(:,1))'
 max_joint_pos = (max(data{version}.Pos, [], 2) > actual_pos_lim(:,2))'
@@ -323,80 +273,29 @@ max_joint_acc = (max(data{version}.Accel, [], 2) > actual_accel_lim(:,2))'
 
 
 
-%% distance metric
-% poseDMP = ForwardKinematics(data{version}.Pos');
-% 
-% 
-% D_new = interpolate(D, poseDMP, false);
-% 
-% d_pos = mean(abs(D_new(:,1:3) - poseDMP(:,1:3)), "all")
-% 
-% %calculate quatenrion distance as in the paper
-% % "Ude, Aleš, et al. "Orientation in cartesian space dynamic movement
-% % primitives." 2014 IEEE International Conference on Robotics and Automation (ICRA). IEEE, 2014."
-% 
-% %quaternion product
-% d_ori = zeros(length(poseDMP),4);
-% 
-% qw2 = poseDMP(:,7);
-% qx2 = poseDMP(:,4);
-% qy2 = poseDMP(:,5);
-% qz2 = poseDMP(:,6);
-% 
-% qx1 = -D_new(:,4);
-% qy1 = -D_new(:,5);
-% qz1 = -D_new(:,6);
-% qw1 = D_new(:,7);
-% 
-% d_ori(:,1) = qw1 .* qx2 + qx1 .* qw2 + qy1 .* qz2 - qz1 .* qy2; 
-% d_ori(:,2) = qw1 .* qy2 - qx1 .* qz2 + qy1 .* qw2 + qz1 .* qx2;
-% d_ori(:,3) = qw1 .* qz2 + qx1 .* qy2 - qy1 .* qx2 + qz1 .* qw2;
-% d_ori(:,4) = qw1 .* qw2 - qx1 .* qx2 - qy1 .* qy2 - qz1 .* qz2; %w
-% %d_ori
-
-%WIP <<< go from quaternion representation to single value? Use quat_log
-%metric like in paper? Or just calculate distance in joint space similar to
-%constrained DMP optimization? Or just care about cartesian distance as
-%average distance between points (in meters) is easy to interpret?
-
-%NOTE: distance metric calculated like this would not be comparable for
-%demos with different length of time BEFROE the motion starts >> some will
-%have longer time of almost zero difference between traj and demo!!
-
+%% difference in joint velocity
+%Calculate the difference between joint velocities in the demonstration and
+%in the constrained DMP for the 1000 timesteps (1s total) with highest error. This way
+%demonstrations with different lenght can be compared too.
 demoVel = interpolate(data{1}.Vel', data{version}.Vel', false);
 d_jointVel = mean(maxk(abs(demoVel - data{version}.Vel'), 1000), "all") %use max 1000 timesteps (total 1s time anywhere over the traj) 
 
-%%
-
-%also do this for both robots and let controller do sign flips
-%NOTE: later change controller to use Franka3 as default and these values
-%would not need to be flipped? Note jonint7 is not just a flip but also
-%some offset (see controller code)
+%% export
+%Flip these joint signs so that output DMP runs on Franka2 in the lab
+%wihtout sign flips, and flip signs back for Franka3 in the controller code
 data{version}.Pos(1,:) = -data{version}.Pos(1,:);
 data{version}.Pos(3,:) = -data{version}.Pos(3,:);
 data{version}.Pos(5,:) = -data{version}.Pos(5,:);
 data{version}.Pos(7,:) = -data{version}.Pos(7,:);
-
-%Run Forward Kinematics for plotting and playback with cartesian control
-%do this again so that pose with flipped joints is saved for pose
-%trajectory
-poseDMP = ForwardKinematics(data{version}.Pos');
-
-%save joint angles to file
-%writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_',filename)))
-%writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('pose_',filename)))
-
-%use general filename for to easily switch between demos when generating
-%from new files above
-writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_demoDMP.csv'))
-writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','pose_demoDMP.csv'))
-
+writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('DMP3_joint_',filename)))
 
 data{version}.Vel(1,:) = -data{version}.Vel(1,:);
 data{version}.Vel(3,:) = -data{version}.Vel(3,:);
 data{version}.Vel(5,:) = -data{version}.Vel(5,:);
 data{version}.Vel(7,:) = -data{version}.Vel(7,:);
+writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('DMP3_joint_vel_',filename)))
 
-%writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('joint_vel_',filename)))
-writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories','joint_vel_demoDMP.csv'))
-
+%run forward kinematics again after sign flips so that cartesian trajectory
+%can be plotted for comparison in control scripts
+poseDMP = ForwardKinematics(data{version}.Pos');
+writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('DMP3_pose_',filename)))

@@ -8,7 +8,7 @@ addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 % Create demonstration trajectory
 filename = '10l_bag_flip.csv';
-D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori2', 0.38);
+D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
 Dsmooth = smoothdata(D, 1, "gaussian",35); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 [q, jacobians] = InverseKinematics(Dsmooth);
@@ -19,7 +19,7 @@ demo_traj = generateDemo(q', 1/120);
 % Nominal trajectory functions
 dmp_params.D = 20;
 dmp_params.K = dmp_params.D^2/4;
-dmp_params.n_kernel = 200; %default 100
+dmp_params.n_kernel = 800; %default 100
 %Originally 100, better fit with 200 - with 100 some peaks from demo are reduced by smoothing
 %BUT 200 can overfit and give acceleration that exceeds limits slightly,
 %not enough smooothing effect in that case...
