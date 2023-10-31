@@ -15,7 +15,7 @@ filename = '10l_bag_flip.csv';
 version = 4 % 3 = vel, 4 = pos, select which optimization version to export
 
 D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
-Dsmooth = smoothdata(D, 1, "gaussian",35); %smooth demo before calculating IK
+Dsmooth = smoothdata(D, 1, "gaussian",50); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 [q, jacobians] = InverseKinematics(Dsmooth);
 demo_traj = generateDemo(q', 1/120);
@@ -27,7 +27,7 @@ ddPd_data = demo_traj.acc;
 
 %% initialize and train GMP
 train_method = 'LS';
-N_kernels = 200; %Originally 30, difference in MSE but not noticable in plots
+N_kernels = 60; %Originally 30, difference in MSE but not noticable in plots
 kernels_std_scaling = 1.5;
 n_dof = size(Pd_data,1);
 gmp = GMP(n_dof, N_kernels, kernels_std_scaling);
@@ -105,160 +105,73 @@ data{length(data)+1} = ...
 % "Solved inaccurate" is explained here https://osqp.org/docs/interfaces/status_values.html
 
 %% ======== Plot Results ==========
-label_font = 17;
-ax_fontsize = 14;
 
-ind = [1 2 3 4 5 6 7]; % choose DoFs to plot
-for k=1:length(ind)
-    i = ind(k);
-    fig = figure;
-    sgtitle(strcat('joint',int2str(i)))
+%Plot demo in cartesian and unconstrained DMP result
+poseDMP2 = ForwardKinematics(data{2}.Pos'); %index 2 = DMP without constraints
+poseDMP3 = ForwardKinematics(data{3}.Pos'); %index 3 = vel optimization
+poseDMP4 = ForwardKinematics(data{4}.Pos'); %index 4 = pos optimization
 
-    % plot joint positions
-    ax = subplot(3,1,1);
-    hold on;
-    legend_ = {};
-    for k=1:length(data)
-        if (~data{k}.plot2D), continue; end
-        plot(data{k}.Time, data{k}.Pos(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
-        legend_ = [legend_ data{k}.legend];
-    end
-    axis tight;
-    plot(ax.XLim, [actual_pos_lim(i,1) actual_pos_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    plot(ax.XLim, [actual_pos_lim(i,2) actual_pos_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    ylabel('pos [$rad$]', 'interpreter','latex', 'fontsize',label_font);
-    legend(legend_, 'interpreter','latex', 'fontsize',17, 'Position',[0.2330 0.9345 0.5520 0.0294], 'Orientation', 'horizontal');
-    ax.FontSize = ax_fontsize;
-    hold off;
+own_plots
 
-    % plot joint velocities
-    ax = subplot(3,1,2);
-    hold on;
-    for k=1:length(data)
-        if (~data{k}.plot2D), continue; end
-        plot(data{k}.Time, data{k}.Vel(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
-    end
-    axis tight;
-    plot(ax.XLim, [actual_vel_lim(i,1) actual_vel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    plot(ax.XLim, [actual_vel_lim(i,2) actual_vel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    ylabel('vel [$rad/s$]', 'interpreter','latex', 'fontsize',label_font);
-    ax.FontSize = ax_fontsize;
-    hold off;
-
-    % plot joint velocities
-    ax = subplot(3,1,3);
-    hold on;
-    for k=1:length(data)
-        if (~data{k}.plot2D), continue; end
-        plot(data{k}.Time, data{k}.Accel(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
-    end
-    axis tight;
-    plot(ax.XLim, [actual_accel_lim(i,1) actual_accel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    plot(ax.XLim, [actual_accel_lim(i,2) actual_accel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-    ylabel('accel [$rad/s^2$]', 'interpreter','latex', 'fontsize',label_font);
-    xlabel('time [$s$]', 'interpreter','latex', 'fontsize',label_font);
-    ax.FontSize = ax_fontsize;
-    hold off;
-end
+%Plot DMP, both constrained DMPs and Demo in same plot, like in the paper
+%code comes from
+% label_font = 17;
+% ax_fontsize = 14;
+% ind = [1 2 3 4 5 6 7]; % choose DoFs to plot
+% for k=1:length(ind)
+%     i = ind(k);
+%     fig = figure;
+%     sgtitle(strcat('joint',int2str(i)))
+% 
+%     % plot joint positions
+%     ax = subplot(3,1,1);
+%     hold on;
+%     legend_ = {};
+%     for k=1:length(data)
+%         if (~data{k}.plot2D), continue; end
+%         plot(data{k}.Time, data{k}.Pos(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
+%         legend_ = [legend_ data{k}.legend];
+%     end
+%     axis tight;
+%     plot(ax.XLim, [actual_pos_lim(i,1) actual_pos_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+%     plot(ax.XLim, [actual_pos_lim(i,2) actual_pos_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+%     ylabel('pos [$rad$]', 'interpreter','latex', 'fontsize',label_font);
+%     legend(legend_, 'interpreter','latex', 'fontsize',17, 'Position',[0.2330 0.9345 0.5520 0.0294], 'Orientation', 'horizontal');
+%     ax.FontSize = ax_fontsize;
+%     hold off;
+% 
+%     % plot joint velocities
+%     ax = subplot(3,1,2);
+%     hold on;
+%     for k=1:length(data)
+%         if (~data{k}.plot2D), continue; end
+%         plot(data{k}.Time, data{k}.Vel(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
+%     end
+%     axis tight;
+%     plot(ax.XLim, [actual_vel_lim(i,1) actual_vel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+%     plot(ax.XLim, [actual_vel_lim(i,2) actual_vel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+%     ylabel('vel [$rad/s$]', 'interpreter','latex', 'fontsize',label_font);
+%     ax.FontSize = ax_fontsize;
+%     hold off;
+% 
+%     % plot joint velocities
+%     ax = subplot(3,1,3);
+%     hold on;
+%     for k=1:length(data)
+%         if (~data{k}.plot2D), continue; end
+%         plot(data{k}.Time, data{k}.Accel(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
+%     end
+%     axis tight;
+%     plot(ax.XLim, [actual_accel_lim(i,1) actual_accel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+%     plot(ax.XLim, [actual_accel_lim(i,2) actual_accel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
+%     ylabel('accel [$rad/s^2$]', 'interpreter','latex', 'fontsize',label_font);
+%     xlabel('time [$s$]', 'interpreter','latex', 'fontsize',label_font);
+%     ax.FontSize = ax_fontsize;
+%     hold off;
+% end
 
 % ======================================================
 
-%Plot demo in cartesian and unconstrained DMP result
-poseDMP = ForwardKinematics(data{2}.Pos'); %index2 = DMP without constraints
-figure('Name','Cartesian Pose')
-subplot(2,1,1)
-hold on
-plot(0:1/120:1/120*(length(D)-1), D(:,1),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_x')
-plot(0:1/120:1/120*(length(D)-1), D(:,2),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_y')
-plot(0:1/120:1/120*(length(D)-1), D(:,3),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_z')
-
-plot(data{2}.Time,poseDMP(:,1),'color','#2016E9','LineWidth',1.5, 'DisplayName','DMP_x')
-plot(data{2}.Time,poseDMP(:,2),'color','#FF00E4','LineWidth',1.5, 'DisplayName','DMP_y')
-plot(data{2}.Time,poseDMP(:,3),'color','#B65649','LineWidth',1.5, 'DisplayName','DMP_z')
-xlabel('$t$', 'Interpreter','latex','Fontsize',30)
-legend
-hold off
-
-subplot(2,1,2)
-hold on
-plot(0:1/120:1/120*(length(D)-1), D(:,4),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_{qx}')
-plot(0:1/120:1/120*(length(D)-1), D(:,5),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_{qy}')
-plot(0:1/120:1/120*(length(D)-1), D(:,6),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_{qz}')
-plot(0:1/120:1/120*(length(D)-1), D(:,7),'color','#7A364F','LineWidth',2.5, 'DisplayName','demo_{qw}')
-
-plot(data{2}.Time,poseDMP(:,4),'color','#2016E9','LineWidth',1.5, 'DisplayName','DMP_{qx}')
-plot(data{2}.Time,poseDMP(:,5),'color','#FF00E4','LineWidth',1.5, 'DisplayName','DMP_{qy}')
-plot(data{2}.Time,poseDMP(:,6),'color','#B65649','LineWidth',1.5, 'DisplayName','DMP_{qz}')
-plot(data{2}.Time,poseDMP(:,7),'color','#367A62','LineWidth',1.5, 'DisplayName','DMP_{qw}')
-
-xlabel('$t$', 'Interpreter','latex','Fontsize',30)
-legend
-hold off
-
-
-%Plot demo in cartesian and constrained DMP result
-poseDMP = ForwardKinematics(data{3}.Pos'); %index 3 = vel optimization
-figure('Name','Cartesian Pose')
-subplot(2,1,1)
-hold on
-plot(0:1/120:1/120*(length(D)-1), D(:,1),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_x')
-plot(0:1/120:1/120*(length(D)-1), D(:,2),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_y')
-plot(0:1/120:1/120*(length(D)-1), D(:,3),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_z')
-
-plot(data{3}.Time,poseDMP(:,1),'color','#2016E9','LineWidth',1.5, 'DisplayName','DMPv_x')
-plot(data{3}.Time,poseDMP(:,2),'color','#FF00E4','LineWidth',1.5, 'DisplayName','DMPv_y')
-plot(data{3}.Time,poseDMP(:,3),'color','#B65649','LineWidth',1.5, 'DisplayName','DMPv_z')
-xlabel('$t$', 'Interpreter','latex','Fontsize',30)
-legend
-hold off
-
-subplot(2,1,2)
-hold on
-plot(0:1/120:1/120*(length(D)-1), D(:,4),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_{qx}')
-plot(0:1/120:1/120*(length(D)-1), D(:,5),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_{qy}')
-plot(0:1/120:1/120*(length(D)-1), D(:,6),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_{qz}')
-plot(0:1/120:1/120*(length(D)-1), D(:,7),'color','#7A364F','LineWidth',2.5, 'DisplayName','demo_{qw}')
-
-plot(data{3}.Time,poseDMP(:,4),'color','#2016E9','LineWidth',1.5, 'DisplayName','DMPv_{qx}')
-plot(data{3}.Time,poseDMP(:,5),'color','#FF00E4','LineWidth',1.5, 'DisplayName','DMPv_{qy}')
-plot(data{3}.Time,poseDMP(:,6),'color','#B65649','LineWidth',1.5, 'DisplayName','DMPv_{qz}')
-plot(data{3}.Time,poseDMP(:,7),'color','#367A62','LineWidth',1.5, 'DisplayName','DMPv_{qw}')
-
-xlabel('$t$', 'Interpreter','latex','Fontsize',30)
-legend
-hold off
-
-%Plot demo in cartesian and constrained DMP result
-poseDMP = ForwardKinematics(data{4}.Pos'); %index 4 = pos optimization
-figure('Name','Cartesian Pose')
-subplot(2,1,1)
-hold on
-plot(0:1/120:1/120*(length(D)-1), D(:,1),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_x')
-plot(0:1/120:1/120*(length(D)-1), D(:,2),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_y')
-plot(0:1/120:1/120*(length(D)-1), D(:,3),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_z')
-
-plot(data{4}.Time,poseDMP(:,1),'color','#2016E9','LineWidth',1.5, 'DisplayName','DMPp_x')
-plot(data{4}.Time,poseDMP(:,2),'color','#FF00E4','LineWidth',1.5, 'DisplayName','DMPp_y')
-plot(data{4}.Time,poseDMP(:,3),'color','#B65649','LineWidth',1.5, 'DisplayName','DMPp_z')
-xlabel('$t$', 'Interpreter','latex','Fontsize',30)
-legend
-hold off
-
-subplot(2,1,2)
-hold on
-plot(0:1/120:1/120*(length(D)-1), D(:,4),'color','#DFE916','LineWidth',2.5, 'DisplayName','demo_{qx}')
-plot(0:1/120:1/120*(length(D)-1), D(:,5),'color','#00FF1B','LineWidth',2.5, 'DisplayName','demo_{qy}')
-plot(0:1/120:1/120*(length(D)-1), D(:,6),'color','#49A9B6','LineWidth',2.5, 'DisplayName','demo_{qz}')
-plot(0:1/120:1/120*(length(D)-1), D(:,7),'color','#7A364F','LineWidth',2.5, 'DisplayName','demo_{qw}')
-
-plot(data{4}.Time,poseDMP(:,4),'color','#2016E9','LineWidth',1.5, 'DisplayName','DMPp_{qx}')
-plot(data{4}.Time,poseDMP(:,5),'color','#FF00E4','LineWidth',1.5, 'DisplayName','DMPp_{qy}')
-plot(data{4}.Time,poseDMP(:,6),'color','#B65649','LineWidth',1.5, 'DisplayName','DMPp_{qz}')
-plot(data{4}.Time,poseDMP(:,7),'color','#367A62','LineWidth',1.5, 'DisplayName','DMPp_{qw}')
-
-xlabel('$t$', 'Interpreter','latex','Fontsize',30)
-legend
-hold off
 
 
 %display whether limits are exceeded

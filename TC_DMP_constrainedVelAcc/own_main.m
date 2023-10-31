@@ -9,7 +9,7 @@ addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 % Create demonstration trajectory
 filename = '10l_bag_flip.csv';
 D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
-Dsmooth = smoothdata(D, 1, "gaussian",35); %smooth demo before calculating IK
+Dsmooth = smoothdata(D, 1, "gaussian",50); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 [q, jacobians] = InverseKinematics(Dsmooth);
 
@@ -19,7 +19,7 @@ demo_traj = generateDemo(q', 1/120);
 % Nominal trajectory functions
 dmp_params.D = 20;
 dmp_params.K = dmp_params.D^2/4;
-dmp_params.n_kernel = 800; %default 100
+dmp_params.n_kernel = 400; %default 100
 %Originally 100, better fit with 200 - with 100 some peaks from demo are reduced by smoothing
 %BUT 200 can overfit and give acceleration that exceeds limits slightly,
 %not enough smooothing effect in that case...
@@ -69,7 +69,8 @@ max_joint_vel = (max(res.ref_vel, [], 2) > sim_params.v_max)'
 min_joint_acc = (min(res.ref_acc, [], 2) < -sim_params.a_max)'
 max_joint_acc = (max(res.ref_acc, [], 2) > sim_params.a_max)'
 
-slowdown = res.t(end) - demo_traj.t(end) %how much longer runtime (in seconds) does the constrained DMP have compared to the demonstrated trajectory
+slowdown = (res.t(end) - demo_traj.t(end)) / demo_traj.t(end); %how much longer runtime (%) does the constrained DMP have compared to the demonstrated trajectory
+disp(strcat('slowdown: ', num2str(slowdown), ' %'))
 
 %calculate the corresponding cartesian trajectory for plotting
 poseDMP = ForwardKinematics(res.ref_pos');

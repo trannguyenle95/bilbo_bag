@@ -15,9 +15,32 @@ addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 % Create demonstration trajectory
 filename = '10l_bag_flip.csv';
 D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
-Dsmooth = smoothdata(D, 1, "gaussian",35); %smooth demo before calculating IK
+Dsmooth = smoothdata(D, 1, "gaussian",50); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 [q, jacobians] = InverseKinematics(Dsmooth);
+
+% D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
+% Dsmooth = smoothdata(D, 1, "gaussian",35); %smooth demo before calculating IK
+% Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
+% [q, jacobians] = InverseKinematics(Dsmooth);
+% 
+% Dsmooth2 = smoothdata(D, 1, "gaussian",50); %smooth demo before calculating IK
+% Dsmooth2(:,4:7) = Dsmooth2(:,4:7) ./ sqrt(sum(Dsmooth2(:,4:7).^2,2)); %Make sure quaternion is still unit
+% 
+% Dsmooth3 = smoothdata(D, 1, "gaussian",65); %smooth demo before calculating IK
+% Dsmooth3(:,4:7) = Dsmooth3(:,4:7) ./ sqrt(sum(Dsmooth3(:,4:7).^2,2)); %Make sure quaternion is still unit
+
+% for DOF = 1:7
+%     figure('Name',strcat('DOF',int2str(DOF)))
+%     hold on
+%     demo = plot(0:1/120:1/120*(length(D)-1),D(:,DOF),'g-','LineWidth',4.5, 'DisplayName','demo');
+%     smoothed = plot(0:1/120:1/120*(length(Dsmooth)-1),Dsmooth(:,DOF),'r-','LineWidth',3.5, 'DisplayName','35 smooth demo');
+%     smoothed2 = plot(0:1/120:1/120*(length(Dsmooth2)-1),Dsmooth2(:,DOF),'b-','LineWidth',2.5, 'DisplayName','50 smooth demo demo');
+%     smoothed3 = plot(0:1/120:1/120*(length(Dsmooth3)-1),Dsmooth3(:,DOF),'k-','LineWidth',1.5, 'DisplayName','65 smooth demo demo');
+%     legend([demo, smoothed, smoothed2, smoothed3])
+% end
+
+
 
 %generate demo struct
 demo_traj = generateDemo(q', 1/120);
