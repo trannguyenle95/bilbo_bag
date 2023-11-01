@@ -7,10 +7,25 @@ addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 
 % Create demonstration trajectory
+
+bag = 'B';
 filename = '10l_bag_flip.csv';
-D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
-Dsmooth = smoothdata(D, 1, "gaussian",50); %smooth demo before calculating IK
-Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
+
+if strcmp('A', bag)
+    bagwidth = 0.44
+elseif strcmp('B', bag)
+    bagwidth = 0.37
+elseif strcmp('C', bag)
+    bagwidth = 0.55
+elseif strcmp('D', bag)
+    bagwidth = 0.49
+elseif strcmp('E', bag)
+    bagwidth = 0.40
+end
+
+D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', bagwidth);
+Dsmooth = smoothdata(D, 1, "gaussian", 50); %smooth demo before calculating IK
+Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion still has unit norm
 [q, jacobians] = InverseKinematics(Dsmooth);
 
 %generate demo struct
@@ -19,7 +34,7 @@ demo_traj = generateDemo(q', 1/120);
 % Nominal trajectory functions
 dmp_params.D = 20;
 dmp_params.K = dmp_params.D^2/4;
-dmp_params.n_kernel = 400; %default 100
+dmp_params.n_kernel = 500; %default 100
 %Originally 100, better fit with 200 - with 100 some peaks from demo are reduced by smoothing
 %BUT 200 can overfit and give acceleration that exceeds limits slightly,
 %not enough smooothing effect in that case...
@@ -31,10 +46,11 @@ sim_params.dt = 1/1000; %frequency of Franka robots
 sim_params.T_max = 100; %maximum duration after slowdown due to constraints - original value 100s is much longer than demonstrated trajectory lengths so this value is fine
 
 %Unconstrained DMP
-nominalTraj = dmp.rollout(sim_params.dt);
-writematrix(nominalTraj.pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('nominalDMP2_joint_',filename)))
-writematrix(nominalTraj.vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('nominalDMP2_joint_vel_',filename)))
+nominalTraj = dmp.rollout(sim_params.dt, 1);
 
+%output unconstrained DMP for parameter comparison
+writematrix(nominalTraj.pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_UC_TC_DMP_joint_',filename)))
+writematrix(nominalTraj.vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_UC_TC_DMP_joint_vel_',filename)))
 
 %limits are chosen to be worst case between Franka Panda and Franka
 %Research 3
@@ -69,14 +85,15 @@ max_joint_vel = (max(res.ref_vel, [], 2) > sim_params.v_max)'
 min_joint_acc = (min(res.ref_acc, [], 2) < -sim_params.a_max)'
 max_joint_acc = (max(res.ref_acc, [], 2) > sim_params.a_max)'
 
-slowdown = (res.t(end) - demo_traj.t(end)) / demo_traj.t(end); %how much longer runtime (%) does the constrained DMP have compared to the demonstrated trajectory
+slowdown = (res.t(end) - demo_traj.t(end)) / demo_traj.t(end)*100; %how much longer runtime (%) does the constrained DMP have compared to the demonstrated trajectory
 disp(strcat('slowdown: ', num2str(slowdown), ' %'))
 
 %calculate the corresponding cartesian trajectory for plotting
+poseUnconstrainedDMP = ForwardKinematics(nominalTraj.pos');
 poseDMP = ForwardKinematics(res.ref_pos');
 
 % Plot result
-own_plot_result
+own_plot_TCDMP
 
 %Flip these joint signs so that output DMP runs on Franka2 in the lab
 %wihtout sign flips, and flip signs back for Franka3 in the controller code
@@ -84,15 +101,15 @@ res.ref_pos(1,:) = -res.ref_pos(1,:);
 res.ref_pos(3,:) = -res.ref_pos(3,:);
 res.ref_pos(5,:) = -res.ref_pos(5,:);
 res.ref_pos(7,:) = -res.ref_pos(7,:);
-writematrix(res.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('DMP2_joint_',filename)))
+writematrix(res.ref_pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_TC_DMP_joint_',filename)))
 
 res.ref_vel(1,:) = -res.ref_vel(1,:);
 res.ref_vel(3,:) = -res.ref_vel(3,:);
 res.ref_vel(5,:) = -res.ref_vel(5,:);
 res.ref_vel(7,:) = -res.ref_vel(7,:);
-writematrix(res.ref_vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('DMP2_joint_vel_',filename)))
+writematrix(res.ref_vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_TC_DMP_joint_vel_',filename)))
 
 %run forward kinematics again after sign flips so that cartesian trajectory
 %can be plotted for comparison in control scripts
 poseDMP = ForwardKinematics(res.ref_pos');
-writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('DMP2_pose_',filename)))
+writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_TC_DMP_pose_',filename)))

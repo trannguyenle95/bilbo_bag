@@ -24,8 +24,6 @@ while t < T_max
     res.sys_acc(:,k) = sys.acc;
     res.tau(k) = dmp.tau;
 
-    %NOTE: might not need this? Can just let it run for T_max?
-    % Final position convergence condition
     if norm(dmp.ref_pos()-dmp.g) < 1e-2
         break;
     end

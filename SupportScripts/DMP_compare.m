@@ -3,18 +3,18 @@ clc
 close all 
 
 addpath('/home/erichannus/catkin_ws/src/Data/trajectories/')
-DMP2pos = csvread('nominalDMP2_joint_10l_bag_flip.csv');
-DMP2vel = csvread('nominalDMP2_joint_vel_10l_bag_flip.csv');
-DMP3pos = csvread('nominalDMP3_joint_10l_bag_flip.csv');
-DMP3vel = csvread('nominalDMP3_joint_vel_10l_bag_flip.csv');
-
+TC_DMPpos = csvread('B_UC_TC_DMP_joint_10l_bag_flip.csv');
+TC_DMPvel = csvread('B_UC_TC_DMP_joint_vel_10l_bag_flip.csv');
+Opt_DMPpos = csvread('B_UC_Opt_joint_10l_bag_flip.csv');
+Opt_DMPvel = csvread('B_UC_Opt_joint_vel_10l_bag_flip.csv');
+%NOTE: change bag width below to match bag!
 
 addpath('/home/erichannus/catkin_ws/src/SupportScripts/')
 addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 % Create demonstration trajectory
 filename = '10l_bag_flip.csv';
-D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
+D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.37); %NOTE: CHANGE ACCORDING TO BAG
 Dsmooth = smoothdata(D, 1, "gaussian",50); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 [q, jacobians] = InverseKinematics(Dsmooth);
@@ -41,30 +41,21 @@ Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure qu
 % end
 
 
-
 %generate demo struct
 demo_traj = generateDemo(q', 1/120);
 %no sign flips as normal DMPs are exported before sign flips in DMP
 %scripts!
 
 
-%test that IK produces same result
-% for i = 1:10
-%     [q, jacobians] = InverseKinematics(Dsmooth);
-%     demo_traj = generateDemo(q', 1/120);
-%     figure('Name',strcat('iter',int2str(i)))
-%     plot(demo_traj.t,demo_traj.pos(2,:),'g-','LineWidth',3.5, 'DisplayName','demo');
-% end
-
 
 %% Joint plots
 % for joint = 1:7
-%     figure('Name',strcat('joint',int2str(joint)))
+%     figure('Name',strcat('joint vel',int2str(joint)))
 %     hold on
-%     demo = plot(demo_traj.t,demo_traj.pos(joint,:),'g-','LineWidth',4.5, 'DisplayName','demo');
-%     dmp2 = plot(0:1/1000:1/1000*(length(DMP2pos)-1),DMP2pos(:,joint),'b-','LineWidth',3.5, 'DisplayName','DMP2');
-%     dmp3 = plot(0:1/1000:1/1000*(length(DMP3pos)-1),DMP3pos(:,joint),'r-','LineWidth',2.5, 'DisplayName','DMP3');
-%     legend([demo, dmp2, dmp3])
+%     plot_demo = plot(demo_traj.t,demo_traj.pos(joint,:),'g-','LineWidth',4.5, 'DisplayName','demo');
+%     plot_TC_DMPpos = plot(0:1/1000:1/1000*(length(TC_DMPpos)-1),TC_DMPpos(:,joint),'b-','LineWidth',3.5, 'DisplayName','UC-TC-DMP');
+%     plot_Opt_DMPpos = plot(0:1/1000:1/1000*(length(Opt_DMPpos)-1),Opt_DMPpos(:,joint),'r-','LineWidth',2.5, 'DisplayName','UC-Opt-DMP');
+%     legend([plot_demo, plot_TC_DMPpos, plot_Opt_DMPpos])
 % end
 
 
@@ -72,27 +63,26 @@ demo_traj = generateDemo(q', 1/120);
 for joint = 1:7
     figure('Name',strcat('joint vel',int2str(joint)))
     hold on
-    demo = plot(demo_traj.t,demo_traj.vel(joint,:),'g-','LineWidth',4.5, 'DisplayName','demo');
-    dmp2 = plot(0:1/1000:1/1000*(length(DMP2vel)-1),DMP2vel(:,joint),'b-','LineWidth',3.5, 'DisplayName','DMP2');
-    dmp3 = plot(0:1/1000:1/1000*(length(DMP3vel)-1),DMP3vel(:,joint),'r-','LineWidth',2.5, 'DisplayName','DMP3');
-    legend([demo, dmp2, dmp3])
+    plot_demo = plot(demo_traj.t,demo_traj.vel(joint,:),'g-','LineWidth',4.5, 'DisplayName','demo');
+    plot_TC_DMPvel = plot(0:1/1000:1/1000*(length(TC_DMPvel)-1),TC_DMPvel(:,joint),'b-','LineWidth',3.5, 'DisplayName','UC-TC-DMP');
+    plot_Opt_DMPvel = plot(0:1/1000:1/1000*(length(Opt_DMPvel)-1),Opt_DMPvel(:,joint),'r-','LineWidth',2.5, 'DisplayName','UC-Opt-DMP');
+    legend([plot_demo, plot_TC_DMPvel, plot_Opt_DMPvel])
 end
+
 
 %% Pose plots
 % 
 % poseDemo = ForwardKinematics(demo_traj.pos');
-% poseDMP2 = ForwardKinematics(DMP2pos);
-% poseDMP3 = ForwardKinematics(DMP3pos);
-% 
-% 
+% poseTC_DMP = ForwardKinematics(TC_DMPpos);
+% poseOpt_DMP = ForwardKinematics(Opt_DMPpos);
 % 
 % for DOF = 1:7
 %     figure('Name',strcat('DOF',int2str(DOF)))
 %     hold on
 %     demo = plot(demo_traj.t,poseDemo(:,DOF),'g-','LineWidth',3.5, 'DisplayName','demo');
-%     dmp2 = plot(0:1/1000:1/1000*(length(poseDMP2)-1),poseDMP2(:,DOF),'b-','LineWidth',2.5, 'DisplayName','DMP2');
-%     dmp3 = plot(0:1/1000:1/1000*(length(poseDMP3)-1),poseDMP3(:,DOF),'r-','LineWidth',1.5, 'DisplayName','DMP3');
-%     legend([demo, dmp2, dmp3])
+%     plot_TC_DMP = plot(0:1/1000:1/1000*(length(poseTC_DMP)-1),poseTC_DMP(:,DOF),'b-','LineWidth',2.5, 'DisplayName','TC_DMP');
+%     plot_Opt_DMPvel = plot(0:1/1000:1/1000*(length(poseOpt_DMP)-1),poseOpt_DMP(:,DOF),'r-','LineWidth',1.5, 'DisplayName','Opt_DMP');
+%     legend([demo, plot_TC_DMP, plot_Opt_DMPvel])
 % end
 
 

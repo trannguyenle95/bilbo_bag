@@ -12,11 +12,8 @@ if size(D, 2) == 9
 else
     demoType = 'dual'; %two hands tracked
     
-    x_dist = min(abs(D(:,7) - D(:,14)), bag_width-0.03); 
+    x_dist = min(abs(D(:,7) - D(:,14)), bag_width-0.03); %decrease distance slightly to make space for grippers
 
-    %x_dist = max(min(abs(D(:,7) - D(:,14)), bag_width), 0.25); %offset between both hands
-    %added max( , 0.25) so that distance between grippers is at least 0.25
-    %- 2*0.10 = 5cm which leaves some margin after DMP distortion
 end
 
 %Make quaternion representation consistent qw always positive
@@ -120,29 +117,15 @@ if strcmp(demoType,'dual')
         %short side of grippers ~10cm
         %Gripper with short side towards eachother = larger max distance 
         %min distance between grippers is (0.75-0.625)*2 - 0.10 = 0.15 between outer parts of grippers.
-        %Set maximum distance between grippers to (0.75 - 0.50)*2 = 0.50.
-        D(:,1) = max(min(0.75 - (x_dist/2), 0.625),0.50); %x previously (0.50, 0.625)
-        %D(:,1) = max(min(0.75 - (x_dist/2), 0.575),0.50); %x
+        D(:,1) = min(0.75 - (x_dist/2), 0.625);
 else
-        %D(:,1) = 0.625; %x - made DMP diverge from demo in x direction
-        D(:,1) = 0.575; %x
+        D(:,1) = 0.575;
 end
 
 %add offsets
-D(:,1) = D(:,1) + dx; %ADDED extra displacement to x
-%D(:,1) = dx; %OVERWRITE to only set dx from input!
+D(:,1) = D(:,1) + dx;
 D(:,2) = D(:,2) + dy;
 D(:,3) = D(:,3) + dz;
-%D(:,3) = D(:,3) + 0.20; %z
-%D(:,3) = D(:,3) - 0.20;
-
-%Flip y direction
-%D(:,2) = -D(:,2); %position
-%D(:,5) = -D(:,5); %rotation - is zero unless ee is rotated
-
-%%Flip rotation around x! > causes extra problems, maybe not mathematically
-%%sound
-%D(:,4) = -D(:,4); %flip rotation direction
 
 %plot
 if displayplot == true

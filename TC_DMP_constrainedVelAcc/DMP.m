@@ -72,14 +72,20 @@ classdef DMP
             hVal = obj.K*(obj.g-obj.y()) - obj.D*obj.z() + obj.w*psi' ./ max(sum(psi),1e-8) .* (obj.g-obj.y0)*obj.s();
         end
         
-        function traj = rollout(obj,dt)
+        %NOTE: modified to include tau scaling in rollout
+        %NOTE: modified to stop rollout only when (scaled) demo duration is
+        %reached
+        function traj = rollout(obj,dt,tau_scale)
             dmp = obj.init();
+            dmp.nominal_tau = dmp.nominal_tau * tau_scale; %added this as modification
+            dmp.tau = dmp.nominal_tau; %added this as modification
             traj.t = 0;
             traj.pos = dmp.y();
             traj.vel = dmp.z()/dmp.nominal_tau;
             traj.acc = dmp.h()/dmp.nominal_tau^2;
             traj.s = dmp.s();
-            while norm(abs(dmp.y()-dmp.g)) > 1e-2
+            while( traj.t < dmp.demo_traj.t(end) * tau_scale) %changed stopping condition
+            %while norm(abs(dmp.y()-dmp.g)) > 1e-2 %original stopping condition
                 dmp = dmp.step(0,dt);
                 traj.t = [traj.t traj.t(end)+dt];
                 traj.pos = [traj.pos dmp.ref_pos()];

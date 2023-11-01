@@ -1,3 +1,6 @@
+%NOTE: modifications also to other files, e.g. in offlineGMPweigths number
+%of DMP kernels are no longer reset to 30
+
 clc;
 close all;
 clear;
@@ -10,13 +13,27 @@ addpath('/home/erichannus/catkin_ws/src/SupportScripts/')
 addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 %% Load training data
+bag = 'B';
 filename = '10l_bag_flip.csv';
+
+if strcmp('A', bag)
+    bagwidth = 0.44
+elseif strcmp('B', bag)
+    bagwidth = 0.37
+elseif strcmp('C', bag)
+    bagwidth = 0.55
+elseif strcmp('D', bag)
+    bagwidth = 0.49
+elseif strcmp('E', bag)
+    bagwidth = 0.40
+end
+
 
 version = 4 % 3 = vel, 4 = pos, select which optimization version to export
 
-D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
-Dsmooth = smoothdata(D, 1, "gaussian",50); %smooth demo before calculating IK
-Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
+D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', bagwidth);
+Dsmooth = smoothdata(D, 1, "gaussian", 50); %smooth demo before calculating IK
+Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion still has unit norm
 [q, jacobians] = InverseKinematics(Dsmooth);
 demo_traj = generateDemo(q', 1/120);
 
@@ -64,9 +81,9 @@ actual_accel_lim = accel_lim;
 
 %use stricter limits than the actual ones for trajectory generation to have
 %some margin
-pos_lim = 0.98 * pos_lim;
-vel_lim = 0.98 * vel_lim;
-accel_lim = 0.98 * accel_lim;
+pos_lim = 1.0 * pos_lim; %no margin for position limit, so it is similar to TC-DMP which doesn't constrain pos but instead just fits DMP to position demo
+vel_lim = 0.95 * vel_lim;
+accel_lim = 0.95 * accel_lim;
 
 %% ======== Generate trajectories ==========
 
@@ -85,9 +102,9 @@ data{length(data)+1} = ...
     struct('Time',Time, 'Pos',P_data, 'Vel',dP_data, 'Accel',ddP_data, 'linestyle',':', ...
     'color','blue', 'legend','DMP', 'plot3D',true, 'plot2D',true);
 
-%save standard DMP traj
-writematrix(data{2}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('nominalDMP3_joint_',filename)))
-writematrix(data{2}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('nominalDMP3_joint_vel_',filename)))
+%output unconstrained DMP for parameter comparison
+writematrix(data{2}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_UC_Opt_joint_',filename)))
+writematrix(data{2}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_UC_Opt_joint_vel_',filename)))
 
 %% --------- Optimized DMP -> VEL -----------
 [Time, P_data, dP_data, ddP_data, w2] = offlineGMPweightsOpt(gmp, tau, y0, yg, pos_lim, vel_lim, accel_lim, 0, 1, [], qp_solver_type);
@@ -107,72 +124,10 @@ data{length(data)+1} = ...
 %% ======== Plot Results ==========
 
 %Plot demo in cartesian and unconstrained DMP result
-poseDMP2 = ForwardKinematics(data{2}.Pos'); %index 2 = DMP without constraints
-poseDMP3 = ForwardKinematics(data{3}.Pos'); %index 3 = vel optimization
-poseDMP4 = ForwardKinematics(data{4}.Pos'); %index 4 = pos optimization
+poseDMP = ForwardKinematics(data{version}.Pos');
+poseUnconstrainedDMP = ForwardKinematics(data{2}.Pos');
 
 own_plots
-
-%Plot DMP, both constrained DMPs and Demo in same plot, like in the paper
-%code comes from
-% label_font = 17;
-% ax_fontsize = 14;
-% ind = [1 2 3 4 5 6 7]; % choose DoFs to plot
-% for k=1:length(ind)
-%     i = ind(k);
-%     fig = figure;
-%     sgtitle(strcat('joint',int2str(i)))
-% 
-%     % plot joint positions
-%     ax = subplot(3,1,1);
-%     hold on;
-%     legend_ = {};
-%     for k=1:length(data)
-%         if (~data{k}.plot2D), continue; end
-%         plot(data{k}.Time, data{k}.Pos(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
-%         legend_ = [legend_ data{k}.legend];
-%     end
-%     axis tight;
-%     plot(ax.XLim, [actual_pos_lim(i,1) actual_pos_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-%     plot(ax.XLim, [actual_pos_lim(i,2) actual_pos_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-%     ylabel('pos [$rad$]', 'interpreter','latex', 'fontsize',label_font);
-%     legend(legend_, 'interpreter','latex', 'fontsize',17, 'Position',[0.2330 0.9345 0.5520 0.0294], 'Orientation', 'horizontal');
-%     ax.FontSize = ax_fontsize;
-%     hold off;
-% 
-%     % plot joint velocities
-%     ax = subplot(3,1,2);
-%     hold on;
-%     for k=1:length(data)
-%         if (~data{k}.plot2D), continue; end
-%         plot(data{k}.Time, data{k}.Vel(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
-%     end
-%     axis tight;
-%     plot(ax.XLim, [actual_vel_lim(i,1) actual_vel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-%     plot(ax.XLim, [actual_vel_lim(i,2) actual_vel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-%     ylabel('vel [$rad/s$]', 'interpreter','latex', 'fontsize',label_font);
-%     ax.FontSize = ax_fontsize;
-%     hold off;
-% 
-%     % plot joint velocities
-%     ax = subplot(3,1,3);
-%     hold on;
-%     for k=1:length(data)
-%         if (~data{k}.plot2D), continue; end
-%         plot(data{k}.Time, data{k}.Accel(i,:), 'LineWidth',2.5, 'LineStyle',data{k}.linestyle, 'Color',data{k}.color);
-%     end
-%     axis tight;
-%     plot(ax.XLim, [actual_accel_lim(i,1) actual_accel_lim(i,1)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-%     plot(ax.XLim, [actual_accel_lim(i,2) actual_accel_lim(i,2)], 'LineWidth',2, 'LineStyle','--', 'Color',[1 0 1]);
-%     ylabel('accel [$rad/s^2$]', 'interpreter','latex', 'fontsize',label_font);
-%     xlabel('time [$s$]', 'interpreter','latex', 'fontsize',label_font);
-%     ax.FontSize = ax_fontsize;
-%     hold off;
-% end
-
-% ======================================================
-
-
 
 %display whether limits are exceeded
 min_joint_pos = (min(data{version}.Pos, [], 2) < actual_pos_lim(:,1))'
@@ -187,11 +142,11 @@ max_joint_acc = (max(data{version}.Accel, [], 2) > actual_accel_lim(:,2))'
 
 
 %% difference in joint velocity
-%Calculate the difference between joint velocities in the demonstration and
+%Calculate the difference between joint velocities in the unconstrained DMP and
 %in the constrained DMP for the 1000 timesteps (1s total) with highest error. This way
 %demonstrations with different lenght can be compared too.
-demoVel = interpolate(data{1}.Vel', data{version}.Vel', false);
-d_jointVel = mean(maxk(abs(demoVel - data{version}.Vel'), 1000), "all") %use max 1000 timesteps (total 1s time anywhere over the traj) 
+
+d_jointVel = mean(maxk(abs(data{2}.Vel' - data{version}.Vel'), 1000), "all") %use max 1000 timesteps (total 1s time anywhere over the traj)
 
 %% export
 %Flip these joint signs so that output DMP runs on Franka2 in the lab
@@ -200,15 +155,15 @@ data{version}.Pos(1,:) = -data{version}.Pos(1,:);
 data{version}.Pos(3,:) = -data{version}.Pos(3,:);
 data{version}.Pos(5,:) = -data{version}.Pos(5,:);
 data{version}.Pos(7,:) = -data{version}.Pos(7,:);
-writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('DMP3_joint_',filename)))
+writematrix(data{version}.Pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_Opt_DMP_joint_',filename)))
 
 data{version}.Vel(1,:) = -data{version}.Vel(1,:);
 data{version}.Vel(3,:) = -data{version}.Vel(3,:);
 data{version}.Vel(5,:) = -data{version}.Vel(5,:);
 data{version}.Vel(7,:) = -data{version}.Vel(7,:);
-writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('DMP3_joint_vel_',filename)))
+writematrix(data{version}.Vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_Opt_DMP_joint_vel_',filename)))
 
 %run forward kinematics again after sign flips so that cartesian trajectory
 %can be plotted for comparison in control scripts
 poseDMP = ForwardKinematics(data{version}.Pos');
-writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat('DMP3_pose_',filename)))
+writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_Opt_DMP_pose_',filename)))
