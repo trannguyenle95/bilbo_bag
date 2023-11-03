@@ -38,7 +38,8 @@ classdef TemporalCoupling
             tau_dot_val = obj.gamma_nominal*(obj.nominal_tau-dmp.tau) + dmp.tau*obj.sigma(dmp);
             
             % Saturate
-            tau_dot_min = max([tau_dot_min_a,tau_dot_min_v,tau_dot_min_f,tau_dot_min_nominal]);
+            %tau_dot_min = max([tau_dot_min_a,tau_dot_min_v,tau_dot_min_f,tau_dot_min_nominal]);
+            tau_dot_min = max([tau_dot_min_a,tau_dot_min_v,tau_dot_min_f]); %MODIFIED to allow faster path traversal speed
             if tau_dot_val > tau_dot_max_a
                 tau_dot_val = tau_dot_max_a;
             end

@@ -36,7 +36,6 @@ if __name__ == '__main__':
    datafolder = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data')
 
    parser = argparse.ArgumentParser()
-   parser.add_argument('OptiTrack', type=str, help='Gather OptiTrack metrics (Y/N)')
    parser.add_argument('Bag', type=str, help='Select bag: A-E')
    parser.add_argument('DMP', type=str, help='Select DMP version: tau_DMP / TC_DMP / Opt_DMP')
    parser.add_argument('Demo', type=str, help='Write name of demo file')
@@ -84,85 +83,92 @@ if __name__ == '__main__':
    if os.path.exists(pose_file):
       os.remove(pose_file)
 
-   if args.OptiTrack == 'Y':
-      A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
-      print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
 
+   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
+   print("Vol (l): ", Vol, " E_rim :", E_rim)
 
-      data = {
-      "A_CH_rim": [A_CH_rim],
-      "Vol": [Vol],
-      "E_rim": [E_rim],
-      "Action": ["initial state"]
-      }
-      df = pd.DataFrame(data)
+   data = {
+   "A_CH_rim": [A_CH_rim],
+   "Vol": [Vol],
+   "E_rim": [E_rim],
+   "Action": ["initial state"]
+   }
+   df = pd.DataFrame(data)
 
 
    input("Perform dynamic primitive")
+   time.sleep(5.0) #add 5s sleep to manually move bag
    actions += 1
    #time.sleep(10) #sleep 10s when operating robots alone
    franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
    time.sleep(tf) #let motion finish before plotting and closing grippers
    real_pose = np.genfromtxt(pose_file, delimiter=',') #used to know the xdist at the end of a flip
-
-   if args.OptiTrack == 'Y':
-      A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
-      print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
+   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
+   print("Vol (l): ", Vol, " E_rim :", E_rim)
    new_pose = real_pose[-1]
    x_min = real_pose[-1][0]
    x_max = 0.65
 
    print("actions: ", actions)
 
+   df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, "F"] 
 
-   if args.OptiTrack == 'Y':
-      df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, "F"] 
- 
-
-
-   action = input("Repeat flip (F), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
-
-
-
-   print("action: ", action)
-   while action == 'F' or action == 'DI' or action == 'DD':
+   while actions <= max_actions:
       actions += 1
-      if action == 'F':
-         joint_ori = traj[0]
+      if Vol < 0.5*V_max:
+         action = "F"
+         print("ACTION: ", action)
          franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
          time.sleep(3.0)
          franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
          time.sleep(tf)
          real_pose = np.genfromtxt(pose_file, delimiter=',')
          new_pose = real_pose[-1]
-      elif action == 'DI':
+
+      elif E_rim < 0.8:
          delta = 0.01 #how many cm movement in x direction
          if new_pose[0] + delta < x_max:
+            action = "DI"
+            print("ACTION: ", action)
             franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
             new_pose[0] = new_pose[0] + delta
          else:
+            #TODO: <<< Fix this so robot doesnt go through actions quickly here!!
             print("max xdist reached")
             print("pose: ", new_pose)
-      elif action == 'DD':
+   
+      elif E_rim > 1.2:
          delta = -0.01 #how many cm movement in x direction
          if new_pose[0] - delta > x_min:
+            action = "DD"
+            print("ACTION: ", action)
             franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
             new_pose[0] = new_pose[0] + delta
          else:
-            print("min xdist reached")
+            #TODO: <<< Fix this so robot doesnt go through actions quickly here!!
+            print("max xdist reached")
             print("pose: ", new_pose)
 
-      if args.OptiTrack == 'Y':
-         A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
-         print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
+      else:
+         print("sufficient bag state reached in ", actions, "actions")
+         break
+      
+      A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
+      print("Vol (l): ", Vol, " E_rim :", E_rim)
       print("actions: ", actions)
 
-      if args.OptiTrack == 'Y':
-         df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, action] 
-      action = input("Repeat flip (F), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
+      df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, action] 
+      time.sleep(5.0) #add 5s sleep to manually move bag
+      
+   print("final state:")
+   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=True)
+   print("Vol (l): ", Vol, " E_rim :", E_rim)
+   #NOTE: previous loop breaks when sufficient state is reached, so get final state here + SHOW PLOT
 
-   if args.OptiTrack == 'Y':
-      path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')
-      df.to_csv(path)
+   path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')
+   df.to_csv(path)
+
 
    franka.open_grippers_middle()
