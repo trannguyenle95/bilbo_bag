@@ -84,11 +84,12 @@ if __name__ == '__main__':
       os.remove(pose_file)
 
 
-   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
-   print("Vol (l): ", Vol, " E_rim :", E_rim)
+   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=True)
+   print("Area (cm2): ", A_poly_rim, "Vol (l): ", Vol, " E_rim :", E_rim)
 
    data = {
    "A_CH_rim": [A_CH_rim],
+   "A_poly_rim": [A_poly_rim],
    "Vol": [Vol],
    "E_rim": [E_rim],
    "Action": ["initial state"]
@@ -103,19 +104,19 @@ if __name__ == '__main__':
    franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
    time.sleep(tf) #let motion finish before plotting and closing grippers
    real_pose = np.genfromtxt(pose_file, delimiter=',') #used to know the xdist at the end of a flip
-   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
-   print("Vol (l): ", Vol, " E_rim :", E_rim)
+   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=True)
+   print("Area (cm2): ", A_poly_rim, "Vol (l): ", Vol, " E_rim :", E_rim)
    new_pose = real_pose[-1]
    x_min = real_pose[-1][0]
    x_max = 0.65
 
    print("actions: ", actions)
 
-   df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, "F"] 
+   df.loc[len(df.index)] = [A_CH_rim, A_poly_rim, Vol, E_rim, "F"] 
 
    while actions <= max_actions:
       actions += 1
-      if Vol < 0.5*V_max:
+      if (Vol < 0.5*V_max) or (A_poly_rim < 0.5*A_max):
          action = "F"
          print("ACTION: ", action)
          franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
@@ -155,11 +156,11 @@ if __name__ == '__main__':
          print("sufficient bag state reached in ", actions, "actions")
          break
       
-      A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
-      print("Vol (l): ", Vol, " E_rim :", E_rim)
+      A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=True)
+      print("Area (cm2): ", A_poly_rim, "Vol (l): ", Vol, " E_rim :", E_rim)
       print("actions: ", actions)
 
-      df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, action] 
+      df.loc[len(df.index)] = [A_CH_rim, A_poly_rim,  Vol, E_rim, action] 
       time.sleep(5.0) #add 5s sleep to manually move bag
       
    print("final state:")

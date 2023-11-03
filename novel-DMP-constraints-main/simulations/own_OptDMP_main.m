@@ -32,7 +32,7 @@ end
 version = 4 % 3 = vel, 4 = pos, select which optimization version to export
 
 D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', bagwidth);
-Dsmooth = smoothdata(D, 1, "gaussian", 50); %smooth demo before calculating IK
+Dsmooth = smoothdata(D, 1, "gaussian", 35); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion still has unit norm
 [q, jacobians] = InverseKinematics(Dsmooth);
 demo_traj = generateDemo(q', 1/120);
@@ -44,7 +44,7 @@ ddPd_data = demo_traj.acc;
 
 %% initialize and train GMP
 train_method = 'LS';
-N_kernels = 60; %Originally 30, difference in MSE but not noticable in plots
+N_kernels = 40; %Originally 30, difference in MSE but not noticable in plots
 kernels_std_scaling = 1.5;
 n_dof = size(Pd_data,1);
 gmp = GMP(n_dof, N_kernels, kernels_std_scaling);

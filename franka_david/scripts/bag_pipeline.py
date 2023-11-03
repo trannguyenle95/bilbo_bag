@@ -89,6 +89,7 @@ if __name__ == '__main__':
 
    data = {
    "A_CH_rim": [A_CH_rim],
+   "A_poly_rim": [A_poly_rim],
    "Vol": [Vol],
    "E_rim": [E_rim],
    "Action": ["initial state"]
@@ -110,7 +111,7 @@ if __name__ == '__main__':
 
    print("actions: ", actions)
 
-   df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, "F"] 
+   df.loc[len(df.index)] = [A_CH_rim, A_poly_rim,  Vol, E_rim, action] 
 
    while actions <= max_actions:
       actions += 1
@@ -157,7 +158,7 @@ if __name__ == '__main__':
       print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
       print("actions: ", actions)
 
-      df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, action] 
+      df.loc[len(df.index)] = [A_CH_rim, A_poly_rim,  Vol, E_rim, action] 
 
    print("final state:")
    A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=True)

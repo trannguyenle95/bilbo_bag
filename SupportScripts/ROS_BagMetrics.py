@@ -152,7 +152,7 @@ def calculate_metrics(width, displayPlot = False):
         for p in points3d:
             plt.plot(p[0], p[2], 'go')
 
-        plt.show()
+        #plt.show()
 
         ch_points = points3d[hull3d.vertices]
         bottom_points = points3d[np.logical_not(rim_point_mask)]

@@ -91,6 +91,7 @@ if __name__ == '__main__':
 
       data = {
       "A_CH_rim": [A_CH_rim],
+      "A_poly_rim": [A_poly_rim],
       "Vol": [Vol],
       "E_rim": [E_rim],
       "Action": ["initial state"]
@@ -116,7 +117,7 @@ if __name__ == '__main__':
 
 
    if args.OptiTrack == 'Y':
-      df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, "F"] 
+      df.loc[len(df.index)] = [A_CH_rim, A_poly_rim,  Vol, E_rim, action] 
  
 
 
@@ -158,7 +159,7 @@ if __name__ == '__main__':
       print("actions: ", actions)
 
       if args.OptiTrack == 'Y':
-         df.loc[len(df.index)] = [A_CH_rim, Vol, E_rim, action] 
+         df.loc[len(df.index)] = [A_CH_rim, A_poly_rim,  Vol, E_rim, action] 
       action = input("Repeat flip (F), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
 
    if args.OptiTrack == 'Y':
