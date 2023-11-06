@@ -626,6 +626,10 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
 
           } catch (const franka::Exception& e)
           {
+            this->_robot->stop();
+            sendto(sockfd, (const char *)flag, strlen(flag),
+            0, (const struct sockaddr *) &servaddr,
+                sizeof(servaddr));
             std::cout << "error catch" << std::endl;
             std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
             std::cout << e.what() << std::endl;
@@ -1193,8 +1197,8 @@ void CartesianRemoteController::runControl(math::Transform3D* trajectory, int N)
 
 int main(int argc, char **argv)
 {
-    //ros::init(argc, argv, "remote_franka2");
-    ros::init(argc, argv, "remote_franka3");
+    ros::init(argc, argv, "remote_franka2");
+    //ros::init(argc, argv, "remote_franka3");
     CartesianRemoteController controller;
 
     ros::spin();
