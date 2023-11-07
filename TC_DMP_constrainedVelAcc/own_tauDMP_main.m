@@ -23,7 +23,7 @@ elseif strcmp('E', bag)
 end
 
 D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', bagwidth);
-Dsmooth = smoothdata(D, 1, "gaussian", 50); %smooth demo before calculating IK
+Dsmooth = smoothdata(D, 1, "gaussian", 35); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion still has unit norm
 [q, jacobians] = InverseKinematics(Dsmooth);
 

@@ -15,7 +15,7 @@ addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 % Create demonstration trajectory
 filename = '10l_bag_flip.csv';
 D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.37); %NOTE: CHANGE ACCORDING TO BAG
-Dsmooth = smoothdata(D, 1, "gaussian",50); %smooth demo before calculating IK
+Dsmooth = smoothdata(D, 1, "gaussian",35); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
 [q, jacobians] = InverseKinematics(Dsmooth);
 
@@ -50,7 +50,7 @@ demo_traj = generateDemo(q', 1/120);
 
 %% Joint plots
 % for joint = 1:7
-%     figure('Name',strcat('joint vel',int2str(joint)))
+%     figure('Name',strcat('joint POSITION',int2str(joint)))
 %     hold on
 %     plot_demo = plot(demo_traj.t,demo_traj.pos(joint,:),'g-','LineWidth',4.5, 'DisplayName','demo');
 %     plot_TC_DMPpos = plot(0:1/1000:1/1000*(length(TC_DMPpos)-1),TC_DMPpos(:,joint),'b-','LineWidth',3.5, 'DisplayName','UC-TC-DMP');

@@ -24,7 +24,7 @@ elseif strcmp('E', bag)
 end
 
 D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', bagwidth);
-Dsmooth = smoothdata(D, 1, "gaussian", 50); %smooth demo before calculating IK
+Dsmooth = smoothdata(D, 1, "gaussian", 35); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion still has unit norm
 [q, jacobians] = InverseKinematics(Dsmooth);
 
@@ -34,7 +34,7 @@ demo_traj = generateDemo(q', 1/120);
 % Nominal trajectory functions
 dmp_params.D = 20;
 dmp_params.K = dmp_params.D^2/4;
-dmp_params.n_kernel = 500; %default 100
+dmp_params.n_kernel = 1200; %default 100
 %Originally 100, better fit with 200 - with 100 some peaks from demo are reduced by smoothing
 %BUT 200 can overfit and give acceleration that exceeds limits slightly,
 %not enough smooothing effect in that case...
@@ -65,7 +65,7 @@ sim_params.a_max = [10; 7.5; 10; 10; 10; 10; 10];
 tc_params.nominal_tau = dmp.nominal_tau;
 tc_params.eps = 1e-3;
 tc_params.gamma_nominal = 1;
-tc_params.gamma_a = 0.5; %originally 0.5, higher should reducde overshoots but increase runtime
+tc_params.gamma_a = 0.43; %originally 0.5, higher should reducde overshoots but increase runtime
 tc_params.a_max = sim_params.a_max * 0.98; %added scaling here to have some margin as acc limits are not guaranteed
 tc_params.v_max = sim_params.v_max * 0.98; %use same scaling for vel limits as for acc
 

@@ -29,7 +29,7 @@ function [Time, P_data, dP_data, ddP_data, W] = offlineGMPweightsOpt(gmp0, tau, 
         end
     end
     
-    n_points = 200;
+    n_points = 400; %originally 200
     % position constr
     gmp_opt.setPosBounds(pos_lim(:,1), pos_lim(:,2), n_points);
     gmp_opt.setPosConstr([],[],[], pos_constr.s, pos_constr.value);
