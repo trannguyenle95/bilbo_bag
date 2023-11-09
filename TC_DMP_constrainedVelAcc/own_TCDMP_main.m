@@ -8,28 +8,12 @@ addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 % Create demonstration trajectory
 
-bag = 'B';
+bag = 'A';
 filename = '10l_bag_flip.csv';
+gamma_a = 0.43; %originally 0.5, higher should reducde overshoots but increase runtime
 
-if strcmp('A', bag)
-    bagwidth = 0.44
-elseif strcmp('B', bag)
-    bagwidth = 0.37
-elseif strcmp('C', bag)
-    bagwidth = 0.55
-elseif strcmp('D', bag)
-    bagwidth = 0.49
-elseif strcmp('E', bag)
-    bagwidth = 0.40
-end
-
-D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', bagwidth);
-Dsmooth = smoothdata(D, 1, "gaussian", 35); %smooth demo before calculating IK
-Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion still has unit norm
-[q, jacobians] = InverseKinematics(Dsmooth);
-
-%generate demo struct
-demo_traj = generateDemo(q', 1/120);
+%get demo_traj from this script
+generateJointDemo
 
 % Nominal trajectory functions
 dmp_params.D = 20;
@@ -65,7 +49,7 @@ sim_params.a_max = [10; 7.5; 10; 10; 10; 10; 10];
 tc_params.nominal_tau = dmp.nominal_tau;
 tc_params.eps = 1e-3;
 tc_params.gamma_nominal = 1;
-tc_params.gamma_a = 0.43; %originally 0.5, higher should reducde overshoots but increase runtime
+tc_params.gamma_a = gamma_a; %originally 0.5, higher should reducde overshoots but increase runtime
 tc_params.a_max = sim_params.a_max * 0.98; %added scaling here to have some margin as acc limits are not guaranteed
 tc_params.v_max = sim_params.v_max * 0.98; %use same scaling for vel limits as for acc
 

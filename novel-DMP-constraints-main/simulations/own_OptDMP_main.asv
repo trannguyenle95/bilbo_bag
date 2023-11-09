@@ -14,25 +14,24 @@ addpath('/home/erichannus/catkin_ws/src/SupportScripts/')
 addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 %% Load training data
-bag = 'B';
+bag = 'C';
 filename = '10l_bag_flip.csv';
 
 if strcmp('A', bag)
-    bagwidth = 0.44
+    bagwidth = 0.38
 elseif strcmp('B', bag)
-    bagwidth = 0.37
+    bagwidth = 0.40
 elseif strcmp('C', bag)
-    bagwidth = 0.55
+    bagwidth = 0.42
 elseif strcmp('D', bag)
     bagwidth = 0.49
 elseif strcmp('E', bag)
-    bagwidth = 0.40
+    bagwidth = 0.53
 end
-
 
 version = 4 % 3 = vel, 4 = pos, select which optimization version to export
 
-D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', bagwidth);
+D = preprocess(filename, true, 0.00, 0.05, 0.00, 1, 'ori1', bagwidth);
 Dsmooth = smoothdata(D, 1, "gaussian", 35); %smooth demo before calculating IK
 Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion still has unit norm
 [q, jacobians] = InverseKinematics(Dsmooth);
@@ -45,7 +44,7 @@ ddPd_data = demo_traj.acc;
 
 %% initialize and train GMP
 train_method = 'LS';
-N_kernels = 100; %Originally 30, difference in MSE but not noticable in plots
+N_kernels = 80; %Originally 30, difference in MSE but not noticable in plots
 kernels_std_scaling = 4.0; %originally 1.5
 n_dof = size(Pd_data,1);
 gmp = GMP(n_dof, N_kernels, kernels_std_scaling);

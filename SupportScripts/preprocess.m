@@ -11,9 +11,8 @@ if size(D, 2) == 9
     demoType = 'single'; %single hand tracked
 else
     demoType = 'dual'; %two hands tracked
-    
-    x_dist = min(abs(D(:,7) - D(:,14)), bag_width-0.03); %decrease distance slightly to make space for grippers
-
+    x_dist = abs(D(:,7) - D(:,14));
+    x_dist = x_dist/max(x_dist) * (bag_width - 0.02); %set x_dist as a percentage of bag size, decrease bagwidth slightly to make space for grippers
 end
 
 %Make quaternion representation consistent qw always positive

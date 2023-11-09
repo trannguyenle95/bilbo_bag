@@ -9,26 +9,10 @@ addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 % Create demonstration trajectory
 bag = 'B';
 filename = '10l_bag_flip.csv';
+tau_scale = 2.7;
 
-if strcmp('A', bag)
-    bagwidth = 0.44
-elseif strcmp('B', bag)
-    bagwidth = 0.37
-elseif strcmp('C', bag)
-    bagwidth = 0.55
-elseif strcmp('D', bag)
-    bagwidth = 0.49
-elseif strcmp('E', bag)
-    bagwidth = 0.40
-end
-
-D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', bagwidth);
-Dsmooth = smoothdata(D, 1, "gaussian", 35); %smooth demo before calculating IK
-Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion still has unit norm
-[q, jacobians] = InverseKinematics(Dsmooth);
-
-%generate demo struct
-demo_traj = generateDemo(q', 1/120);
+%get demo_traj from this script
+generateJointDemo
 
 % Nominal trajectory functions
 dmp_params.D = 20;
@@ -47,7 +31,7 @@ dt = 1/1000; %frequency of Franka robots
 nominalTraj = dmp.rollout(dt, 1);
 
 %DMP constrained by manually setting tau
-res = dmp.rollout(dt, 2.7);
+res = dmp.rollout(dt, tau_scale);
 
 %limits for plotting and checking if they are exceeded
 p_max = [2.7437; 1.7628; 2.8973; -0.1518; 2.8065; 3.7525; 2.8973]; %not used in sim, added for plotting
