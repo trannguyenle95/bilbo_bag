@@ -112,6 +112,14 @@ CartesianRemoteController::CartesianRemoteController()
         "/franka/move_relative", 20, &CartesianRemoteController::moveRelativeCallback, this,
         ros::TransportHints().reliable().tcpNoDelay());
 
+    //separate trajectories for fr2 and fr3:
+    this->_sub_diff_joint_vel_traj = control_py_node.subscribe(
+        "/franka/diff_joint_vel_trajectory", 20, &CartesianRemoteController::diffJointVelocityTrajectoryCallback, this,
+        ros::TransportHints().reliable().tcpNoDelay());
+        
+    this->_sub_diff_joint = control_py_node.subscribe(
+        "/franka/diff_jointmotion", 20, &CartesianRemoteController::diffJointMotionCallback, this,
+        ros::TransportHints().reliable().tcpNoDelay());
 
     // set collision behavior
     this->_robot->setCollisionBehavior(
@@ -299,6 +307,41 @@ void CartesianRemoteController::jointMotionCallback(const franka_david::JointMot
 }
 
 
+void CartesianRemoteController::diffJointMotionCallback(const franka_david::DiffJointMotionPyPtr& msg)
+{
+    double joint0 = msg->Fr2joint0;
+    double joint1 = msg->Fr2joint1;
+    double joint2 = msg->Fr2joint2;
+    double joint3 = msg->Fr2joint3;
+    double joint4 = msg->Fr2joint4;
+    double joint5 = msg->Fr2joint5;
+    double joint6 = msg->Fr2joint6;
+
+    if (this->_franka3)
+    {
+        joint0 = -msg->Fr3joint0;
+        joint1 = msg->Fr3joint1;
+        joint2 = -msg->Fr3joint2;
+        joint3 = msg->Fr3joint3;
+        joint4 = -msg->Fr3joint4;
+        joint5 = msg->Fr3joint5;
+        joint6 = -msg->Fr3joint6 + M_PI/2;
+    }
+    bool enable = msg->enable;
+
+
+    if (enable)
+    {
+        std::cout<< "Received message" << std::endl;
+        std::array<double, 7> q_goal = {{joint0, joint1, joint2, joint3, joint4, joint5, joint6}};
+        MotionGenerator motion_generator(0.2, q_goal);
+
+        this->_robot->control(motion_generator);
+    }
+
+}
+
+
 void CartesianRemoteController::jointTrajectoryCallback(const franka_david::JointTrajPyPtr& msg)
 {
     std::vector<double> joint0 =  msg->joint0; //list of joint0 values
@@ -467,6 +510,217 @@ void CartesianRemoteController::jointVelocityTrajectoryCallback(const franka_dav
     //FLIP JOINTS 0, 2, 4 and 6 SIGNS and modify joint7 FOR FRANKA3
     if (this->_franka3)
     {
+        std::transform(joint0.cbegin(),joint0.cend(),joint0.begin(),std::negate<double>());
+        std::transform(joint2.cbegin(),joint2.cend(),joint2.begin(),std::negate<double>());
+        std::transform(joint4.cbegin(),joint4.cend(),joint4.begin(),std::negate<double>());
+
+        std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::negate<double>());
+        //std::transform(joint6.cbegin(),joint6.cend(),joint6.begin(),std::bind2nd(std::plus<double>(), M_PI/2));
+    }
+
+    std::cout << "Trajectory duration " << duration << std::endl;
+    int N = int(duration / this->_dt);
+    size_t loop_iter = 0;
+    double time = 0.0;
+
+    //files for checking error in other robot
+    std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+    std:string error_file = HOME + "/catkin_ws/src/Data/fr3_error.txt";
+    if (this->_franka3){
+        error_file = HOME + "/catkin_ws/src/Data/fr2_error.txt";
+    }
+
+    if (enable)
+    {
+        //BASED ON https://petercorke.com/robotics/franka-emika-control-interface-libfranka/
+        // and https://frankaemika.github.io/libfranka/joint_impedance_control_8cpp-example.html
+        //FOR VELOCITY: https://frankaemika.github.io/libfranka/generate_joint_velocity_motion_8cpp-example.html
+
+        //UDP stopper based on https://www.geeksforgeeks.org/udp-server-client-implementation-c/
+        int sockfd;
+        const char *flag = "0"; //just send something to indicate stopping
+        struct sockaddr_in servaddr;
+
+        // Creating socket file descriptor
+        if ( (sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0 ) {
+            perror("socket creation failed");
+            exit(EXIT_FAILURE);
+        }
+        memset(&servaddr, 0, sizeof(servaddr));
+
+        servaddr.sin_family = AF_INET;
+        servaddr.sin_port = htons(8080);
+        servaddr.sin_addr.s_addr = inet_addr("130.233.123.182");
+        if (this->_franka3){
+            servaddr.sin_addr.s_addr = inet_addr("130.233.123.190");
+        }
+
+        this->_robot->automaticErrorRecovery();
+        
+        try {
+
+            this->_robot->control([&](const franka::RobotState& robot_state,
+                                                    franka::Duration period) -> franka::JointVelocities {
+
+            //std::cout << "j1:" << joint0[loop_iter] << " j2:" << joint1[loop_iter] << " j3:" << joint2[loop_iter] << " j4:" << joint3[loop_iter] << " j5:" << joint4[loop_iter] << " j6:" << joint5[loop_iter] << " j7:" << joint6[loop_iter] <<  std::endl;
+            franka::JointVelocities output = {{joint0[loop_iter], joint1[loop_iter], joint2[loop_iter],
+                joint3[loop_iter], joint4[loop_iter], joint5[loop_iter], joint6[loop_iter]}};
+
+            //std::cout << "iter: " << loop_iter << std::endl;
+
+            //ADDED TO PRINT FOLLOWED TRAJ TO FILE
+            //get actual joint values as in https://frankaemika.github.io/libfranka/cartesian_impedance_control_8cpp-example.html#a12
+            Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_q(robot_state.q.data());
+
+            std::string const HOME = std::getenv("HOME") ? std::getenv("HOME") : ".";
+            std::ofstream out_file(HOME + "/catkin_ws/src/Data/executed_joint_trajectory.csv", ios::app);
+            out_file << actual_q[0] << "," << actual_q[1] << "," << actual_q[2] << "," << actual_q[3] << "," << actual_q[4]<< "," << actual_q[5] << "," << actual_q[6] << std::endl;
+            //out_file << joint0[loop_iter] << "," << joint1[loop_iter] << "," << joint2[loop_iter] << "," << joint3[loop_iter] << "," << joint4[loop_iter] << "," << joint5[loop_iter] << "," << joint6[loop_iter] << std::endl;
+
+
+            //joint velocities
+            Eigen::Map<const Eigen::Matrix<double, 7, 1>> actual_dq(robot_state.dq.data());
+
+            std::ofstream vel_out_file(HOME + "/catkin_ws/src/Data/executed_joint_velocities.csv", ios::app);
+            vel_out_file << actual_dq[0] << "," << actual_dq[1] << "," << actual_dq[2] << "," << actual_dq[3] << "," << actual_dq[4]<< "," << actual_dq[5] << "," << actual_dq[6] << std::endl;
+
+            //Cartesian pose during joint control
+            Eigen::Affine3d transform(Eigen::Matrix4d::Map(robot_state.O_T_EE.data()));
+            Eigen::Vector3d position(transform.translation());
+            Eigen::Quaterniond orientation(transform.linear()); // transform.linear() extracts the rotation matrix
+
+            std::ofstream pose_out_file(HOME + "/catkin_ws/src/Data/joint_control_pose.csv", ios::app);
+            pose_out_file << position[0] << "," << position[1] << "," << position[2] << "," << orientation.x() << "," << orientation.y() << "," << orientation.z() << "," << orientation.w() << std::endl;
+
+
+            //write force to file
+            // Eigen::Map<const Eigen::Matrix<double, 6, 1>> wrench(robot_state.O_F_ext_hat_K.data());
+            // std::ofstream force_out_file(HOME + "/catkin_ws/src/Data/joint_control_force.csv", ios::app);
+            // force_out_file << wrench[0] << "," << wrench[1] << "," << wrench[2] << "," << wrench[3] << "," << wrench[4] << "," << wrench[5] << "," << sqrt(pow(wrench[0],2) +  pow(wrench[1],2) + pow(wrench[2],2)) << std::endl;
+
+            time += period.toSec();
+            //std::cout << "Time "<< double(time) << std::endl;
+            //loop_iter = int(time / this->_dt) + 1;
+
+
+            //std::cout << "before send" << std::endl;
+            //std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
+            //send message to signal that robot is still running
+            // sendto(sockfd, (const char *)flag, strlen(flag),
+            //     MSG_CONFIRM, (const struct sockaddr *) &servaddr,
+            //         sizeof(servaddr));
+
+            //default flags!
+
+            // if(loop_iter == 0){
+            //     remove(error_file.c_str());
+            //     const char *reset_flag = "1";
+            //     sendto(sockfd, (const char *)reset_flag, strlen(reset_flag),
+            //     0, (const struct sockaddr *) &servaddr,
+            //         sizeof(servaddr));
+            //     std::cout << std::endl << "sent reset flag" << std::endl;
+            // }
+            // else{
+            //     sendto(sockfd, (const char *)flag, strlen(flag),
+            //     0, (const struct sockaddr *) &servaddr,
+            //         sizeof(servaddr));
+            // }
+
+            if(loop_iter == 0){
+                remove(error_file.c_str());
+            }
+            loop_iter++;
+            if(bool(robot_state.current_errors)){
+                this->_robot->stop();
+                sendto(sockfd, (const char *)flag, strlen(flag),
+                0, (const struct sockaddr *) &servaddr,
+                    sizeof(servaddr));
+                std::cout << std::endl << "error found" << "errors are: " << std::string(robot_state.current_errors) << std::endl;
+            }
+
+            //std::cout<<"Robot stop message sent"<<std::endl;
+
+            //check if file exists like here https://stackoverflow.com/questions/12774207/fastest-way-to-check-if-a-file-exists-using-standard-c-c11-14-17-c
+            if ( access( error_file.c_str(), F_OK ) != -1 ){
+                this->_robot->stop();
+                //return franka::MotionFinished(output);
+            }
+
+            //Test _robot->stop()
+            // if (loop_iter == 2950){
+            // if ((wrench[2] < -3) && (wrench[0] < -3)){
+            //     // sendto(sockfd, (const char *)flag, strlen(flag),
+            //     // 0, (const struct sockaddr *) &servaddr,
+            //     //     sizeof(servaddr));
+            //     std::cout << std::endl << "STOPPING" << std::endl;
+            //     this->_robot->stop();
+            //     //return franka::MotionFinished(output);
+            // }
+
+            //std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
+
+            if (loop_iter > N-1) {
+                std::cout << std::endl << "Finished motion, shutting down example" << std::endl;
+                return franka::MotionFinished(output);
+            }
+
+            return output;
+            });
+
+          } catch (const franka::Exception& e)
+          {
+            this->_robot->stop();
+            sendto(sockfd, (const char *)flag, strlen(flag),
+            0, (const struct sockaddr *) &servaddr,
+                sizeof(servaddr));
+            std::cout << "error catch" << std::endl;
+            std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
+            std::cout << e.what() << std::endl;
+            this->_robot->automaticErrorRecovery();
+            std::cout << "error recovery" << std::endl;
+
+            // std_msgs::Bool robot_exception;
+            // robot_exception.data = true;
+            // if (this->_franka3)
+            // {
+            //     this->_franka_3_state.publish(robot_exception);
+            //     std::cout << "Error in Franka3" << std::endl;
+            // }
+            // else
+            // {
+            //     this->_franka_2_state.publish(robot_exception);
+            //     std::cout << "Error in Franka2" << std::endl;
+            //     std::cout << std::chrono::duration_cast< std::chrono::milliseconds >(std::chrono::system_clock::now().time_since_epoch()).count() << std::endl;
+            // }
+        }
+
+    }
+}
+
+
+void CartesianRemoteController::diffJointVelocityTrajectoryCallback(const franka_david::DiffJointVelTrajPyPtr& msg)
+{   
+    std::vector<double> joint0 =  msg->Fr2joint0; //list of joint0 values
+    std::vector<double> joint1 =  msg->Fr2joint1; //list of joint1 values
+    std::vector<double> joint2 =  msg->Fr2joint2; //list of joint2 values
+    std::vector<double> joint3 =  msg->Fr2joint3; //list of joint3 values
+    std::vector<double> joint4 =  msg->Fr2joint4; //list of joint4 values
+    std::vector<double> joint5 =  msg->Fr2joint5; //list of joint5 values
+    std::vector<double> joint6 =  msg->Fr2joint6; //list of joint6 values
+    bool enable = msg->enable;
+    double duration = msg->duration;
+
+    //FLIP JOINTS 0, 2, 4 and 6 SIGNS and modify joint7 FOR FRANKA3
+    if (this->_franka3)
+    {
+        std::vector<double> joint0 =  msg->Fr3joint0; //list of joint0 values
+        std::vector<double> joint1 =  msg->Fr3joint1; //list of joint1 values
+        std::vector<double> joint2 =  msg->Fr3joint2; //list of joint2 values
+        std::vector<double> joint3 =  msg->Fr3joint3; //list of joint3 values
+        std::vector<double> joint4 =  msg->Fr3joint4; //list of joint4 values
+        std::vector<double> joint5 =  msg->Fr3joint5; //list of joint5 values
+        std::vector<double> joint6 =  msg->Fr3joint6; //list of joint6 values
+
         std::transform(joint0.cbegin(),joint0.cend(),joint0.begin(),std::negate<double>());
         std::transform(joint2.cbegin(),joint2.cend(),joint2.begin(),std::negate<double>());
         std::transform(joint4.cbegin(),joint4.cend(),joint4.begin(),std::negate<double>());

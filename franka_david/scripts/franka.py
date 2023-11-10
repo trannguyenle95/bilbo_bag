@@ -17,6 +17,10 @@ from franka_david.msg import JointVelTrajPy #ADDED 26.09
 
 from franka_david.msg import MoveRelativePy #ADDED 12.10
 
+#added different demoms in each robot 10.11
+from franka_david.msg import DiffJointMotionPy
+from franka_david.msg import DiffJointTrajPy #ADDED 29.08
+
 
 from primitives import get_xyz_coordinates_given_mid_theta_ref_real
 
@@ -106,6 +110,12 @@ class Franka:
 
         self.ros_moveRelative_pub = rospy.Publisher(topic+'move_relative', MoveRelativePy,
                                         queue_size=10) #ADDED 12.10
+
+
+        self.ros_diffJointTraj_pub = rospy.Publisher(topic+'diff_joint_trajectory', DiffJointTrajPy,
+                                             queue_size=10) #ADDED 10.11
+        self.ros_diffJointVelTraj_pub = rospy.Publisher(topic+'diff_joint_vel_trajectory', DiffJointVelTrajPy,
+                                        queue_size=10) #ADDED 10.11
 
         if init_node:
             rospy.init_node(node_name, anonymous=True)
@@ -471,3 +481,94 @@ class Franka:
         rospy.sleep(0.5)
         self.ros_moveRelative_pub.publish(pose_msg)
         sleep(traj_duration)
+
+    
+    def moveDiffJvt(self, paramsFr2, paramsFr3, traj_duration: float):
+            assert traj_duration != 0.0
+            pose_msgFr2 = JointVelTrajPy()
+            pose_msgFr2.duration = traj_duration
+            pose_msgFr2.enable = True
+            for i in range(paramsFr2.shape[0]):
+                pose_msgFr2.joint0.append(paramsFr2[i,0])
+                pose_msgFr2.joint1.append(paramsFr2[i,1])
+                pose_msgFr2.joint2.append(paramsFr2[i,2])
+                pose_msgFr2.joint3.append(paramsFr2[i,3])
+                pose_msgFr2.joint4.append(paramsFr2[i,4])
+                pose_msgFr2.joint5.append(paramsFr2[i,5])
+                pose_msgFr2.joint6.append(paramsFr2[i,6])
+
+            pose_msgFr3 = JointVelTrajPy()
+            pose_msgFr3.duration = traj_duration
+            pose_msgFr3.enable = True
+            for i in range(paramsFr3.shape[0]):
+                pose_msgFr3.joint0.append(paramsFr3[i,0])
+                pose_msgFr3.joint1.append(paramsFr3[i,1])
+                pose_msgFr3.joint2.append(paramsFr3[i,2])
+                pose_msgFr3.joint3.append(paramsFr3[i,3])
+                pose_msgFr3.joint4.append(paramsFr3[i,4])
+                pose_msgFr3.joint5.append(paramsFr3[i,5])
+                pose_msgFr3.joint6.append(paramsFr3[i,6])
+
+            print("Sending new joint velocity trajectory")
+            rospy.sleep(0.5)
+            self.ros_Fr2jvt_pub.publish(pose_msgFr2)
+            self.ros_Fr3jvt_pub.publish(pose_msgFr3)
+            sleep(2)
+            
+
+    def diff_move(self, move_type, Fr2params, Fr3params, traj_duration: float, **kwargs):
+
+        if move_type == 'jt': #ADDED 10.11
+            assert traj_duration != 0.0
+            pose_msg = DiffJointTrajPy()
+            pose_msg.duration = traj_duration
+            pose_msg.enable = True
+            for i in range(Fr2params.shape[0]):
+                pose_msg.Fr2joint0.append(Fr2params[i,0])
+                pose_msg.Fr2joint1.append(Fr2params[i,1])
+                pose_msg.Fr2joint2.append(Fr2params[i,2])
+                pose_msg.Fr2joint3.append(Fr2params[i,3])
+                pose_msg.Fr2joint4.append(Fr2params[i,4])
+                pose_msg.Fr2joint5.append(Fr2params[i,5])
+                pose_msg.Fr2joint6.append(Fr2params[i,6])
+            for i in range(paramsFr3.shape[0]):
+                pose_msg.Fr3joint0.append(Fr3params[i,0])
+                pose_msg.Fr3joint1.append(Fr3params[i,1])
+                pose_msg.Fr3joint2.append(Fr3params[i,2])
+                pose_msg.Fr3joint3.append(Fr3params[i,3])
+                pose_msg.Fr3joint4.append(Fr3params[i,4])
+                pose_msg.Fr3joint5.append(Fr3params[i,5])
+                pose_msg.Fr3joint6.append(Fr3params[i,6])
+            print("Sending new joint trajectory")
+            rospy.sleep(0.5)
+            self.ros_diffJointTraj_pub.publish(pose_msg)
+            sleep(2)
+
+        elif move_type == 'jvt': #ADDED 10.11
+            assert traj_duration != 0.0
+            pose_msg = DiffJointVelTrajPy()
+            pose_msg.duration = traj_duration
+            pose_msg.enable = True
+            for i in range(Fr2params.shape[0]):
+                pose_msg.Fr2joint0.append(Fr2params[i,0])
+                pose_msg.Fr2joint1.append(Fr2params[i,1])
+                pose_msg.Fr2joint2.append(Fr2params[i,2])
+                pose_msg.Fr2joint3.append(Fr2params[i,3])
+                pose_msg.Fr2joint4.append(Fr2params[i,4])
+                pose_msg.Fr2joint5.append(Fr2params[i,5])
+                pose_msg.Fr2joint6.append(Fr2params[i,6])
+            for i in range(Fr3params.shape[0]):
+                pose_msg.Fr3joint0.append(Fr3params[i,0])
+                pose_msg.Fr3joint1.append(Fr3params[i,1])
+                pose_msg.Fr3joint2.append(Fr3params[i,2])
+                pose_msg.Fr3joint3.append(Fr3params[i,3])
+                pose_msg.Fr3joint4.append(Fr3params[i,4])
+                pose_msg.Fr3joint5.append(Fr3params[i,5])
+                pose_msg.Fr3joint6.append(Fr3params[i,6])
+            print("Sending new joint velocity trajectory")
+            rospy.sleep(0.5)
+            self.ros_diffJointVelTraj_pub.publish(pose_msg)
+            sleep(2)
+
+
+        self.rate.sleep()

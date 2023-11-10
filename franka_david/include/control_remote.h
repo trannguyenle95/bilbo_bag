@@ -32,6 +32,8 @@
 
 #include <franka_david/MoveRelativePy.h>
 
+#include <franka_david/DiffJointVelTrajPy.h>
+#include <franka_david/DiffJointMotionPy.h>
 
 class CartesianRemoteController
 {
@@ -67,6 +69,10 @@ public:
     
     // Subscriber joint velocity trajectory added 26.09
     ros::Subscriber _sub_joint_vel_traj;
+    
+    // Subscriber with separate trajectories for each robot added 10.11
+    ros::Subscriber _sub_diff_joint_vel_traj;
+    ros::Subscriber _sub_diff_joint;
     
     // Subscriber relative position added 12.10
     ros::Subscriber _sub_move_relative;
@@ -107,6 +113,10 @@ public:
     
     // Method that subscribes to a joint velocity trajectory, ADDED 26.09
     void jointVelocityTrajectoryCallback(const franka_david::JointVelTrajPyPtr& msg);
+    
+    // separate joint velocity trajectory for franka2 and franka3
+    void diffJointVelocityTrajectoryCallback(const franka_david::DiffJointVelTrajPyPtr& msg);
+    void diffJointMotionCallback(const franka_david::DiffJointMotionPyPtr& msg);
     
     // Method that subscribes to gripper
     void gripperMoveCallback(const franka_david::GripperPyPtr& msg);
