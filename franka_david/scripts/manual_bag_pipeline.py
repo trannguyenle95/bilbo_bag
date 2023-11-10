@@ -99,6 +99,11 @@ if __name__ == '__main__':
       df = pd.DataFrame(data)
 
 
+   #for plotting
+   # filepath = os.path.join(datafolder+"/"+"executed_joint_trajectory.csv") #NOTE: new file for joint traj!
+   # if os.path.exists(filepath):
+   #    os.remove(filepath) 
+
    input("Perform dynamic primitive")
    actions += 1
    #time.sleep(10) #sleep 10s when operating robots alone
@@ -120,9 +125,33 @@ if __name__ == '__main__':
       df.loc[len(df.index)] = [A_CH_rim, A_poly_rim,  Vol, E_rim, action] 
  
 
+   #plotting
+   # real_traj = np.genfromtxt(filepath, delimiter=',') #NOTE: set name here!
 
-   action = input("Repeat flip (F), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
+   # plt.figure(1)
+   # plt.plot(traj[:, 0], '-', label="j1")
+   # plt.plot(traj[:, 1],'-', label="j2")
+   # plt.plot(traj[:, 2], '-', label="j3")
+   # plt.plot(traj[:, 3], '-', label="j4")
+   # plt.plot(traj[:, 4], '-', label="j5")
+   # plt.plot(traj[:, 5], '-', label="j6")
+   # plt.plot(traj[:, 6], '-', label="j7")
+   # plt.title("Position components")
+   # plt.plot(real_traj[:, 0], '--', label="j1")
+   # plt.plot(real_traj[:, 1], '--', label="j2")
+   # plt.plot(real_traj[:, 2], '--', label="j3")
+   # plt.plot(real_traj[:, 3], '--', label="j4")
+   # plt.plot(real_traj[:, 4], '--', label="j5")
+   # plt.plot(real_traj[:, 5], '--', label="j6")
+   # plt.plot(real_traj[:, 6], '--', label="j7")
+   # plt.legend()
+   # plt.show()
 
+   # input("continue")
+
+
+   #action = input("Repeat flip (F), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
+   action = 'F'
 
 
    print("action: ", action)
@@ -160,7 +189,8 @@ if __name__ == '__main__':
 
       if args.OptiTrack == 'Y':
          df.loc[len(df.index)] = [A_CH_rim, A_poly_rim,  Vol, E_rim, action] 
-      action = input("Repeat flip (F), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
+      #action = input("Repeat flip (F), increase distance (DI), decrease distance (DD), or stop (any other key)?").upper()
+      action = 'F'
 
    if args.OptiTrack == 'Y':
       path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')

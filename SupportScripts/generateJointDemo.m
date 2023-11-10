@@ -3,13 +3,13 @@
 if strcmp('A', bag)
     bagwidth = 0.38
 elseif strcmp('B', bag)
-    bagwidth = 0.40
+    bagwidth = 0.41
 elseif strcmp('C', bag)
     bagwidth = 0.42
 elseif strcmp('D', bag)
     bagwidth = 0.49
 elseif strcmp('E', bag)
-    bagwidth = 0.53
+    bagwidth = 0.54
 end
 
 D = preprocess(filename, false, 0.00, 0.05, 0.00, 1, 'ori1', bagwidth);

@@ -130,7 +130,7 @@ public:
 // private:
     franka::Robot* _robot;
     franka::Gripper* _gripper;
-    bool _franka3 = true; //change this to match current robot (2 or 3)
+    bool _franka3 = false; //change this to match current robot (2 or 3)
         /// \brief Thread running the rosPublishQueue.
     std::thread _franka2statethread;
     std::thread _franka3statethread;
