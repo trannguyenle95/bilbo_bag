@@ -713,13 +713,13 @@ void CartesianRemoteController::diffJointVelocityTrajectoryCallback(const franka
     //FLIP JOINTS 0, 2, 4 and 6 SIGNS and modify joint7 FOR FRANKA3
     if (this->_franka3)
     {
-        std::vector<double> joint0 =  msg->Fr3joint0; //list of joint0 values
-        std::vector<double> joint1 =  msg->Fr3joint1; //list of joint1 values
-        std::vector<double> joint2 =  msg->Fr3joint2; //list of joint2 values
-        std::vector<double> joint3 =  msg->Fr3joint3; //list of joint3 values
-        std::vector<double> joint4 =  msg->Fr3joint4; //list of joint4 values
-        std::vector<double> joint5 =  msg->Fr3joint5; //list of joint5 values
-        std::vector<double> joint6 =  msg->Fr3joint6; //list of joint6 values
+        joint0 =  msg->Fr3joint0; //list of joint0 values
+        joint1 =  msg->Fr3joint1; //list of joint1 values
+        joint2 =  msg->Fr3joint2; //list of joint2 values
+        joint3 =  msg->Fr3joint3; //list of joint3 values
+        joint4 =  msg->Fr3joint4; //list of joint4 values
+        joint5 =  msg->Fr3joint5; //list of joint5 values
+        joint6 =  msg->Fr3joint6; //list of joint6 values
 
         std::transform(joint0.cbegin(),joint0.cend(),joint0.begin(),std::negate<double>());
         std::transform(joint2.cbegin(),joint2.cend(),joint2.begin(),std::negate<double>());
