@@ -3,21 +3,22 @@ clc
 close all 
 
 addpath('/home/erichannus/catkin_ws/src/Data/trajectories/')
-TC_DMPpos = csvread('B_UC_TC_DMP_joint_10l_bag_flip.csv');
-TC_DMPvel = csvread('B_UC_TC_DMP_joint_vel_10l_bag_flip.csv');
-Opt_DMPpos = csvread('B_UC_Opt_joint_10l_bag_flip.csv');
-Opt_DMPvel = csvread('B_UC_Opt_joint_vel_10l_bag_flip.csv');
-%NOTE: change bag width below to match bag!
-
 addpath('/home/erichannus/catkin_ws/src/SupportScripts/')
 addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 % Create demonstration trajectory
+bag = 'E'
 filename = '10l_bag_flip.csv';
-D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.37); %NOTE: CHANGE ACCORDING TO BAG
-Dsmooth = smoothdata(D, 1, "gaussian",35); %smooth demo before calculating IK
-Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure quaternion is still unit
-[q, jacobians] = InverseKinematics(Dsmooth);
+
+TC_DMPpos = csvread(strcat(bag, '_UC_TC_DMP_joint_10l_bag_flip.csv'));
+TC_DMPvel = csvread(strcat(bag, '_UC_TC_DMP_joint_vel_10l_bag_flip.csv'));
+Opt_DMPpos = csvread(strcat(bag, '_UC_Opt_joint_10l_bag_flip.csv'));
+Opt_DMPvel = csvread(strcat(bag, '_UC_Opt_joint_vel_10l_bag_flip.csv'));
+
+
+generateJointDemo
+%no sign flips as normal DMPs are exported before sign flips in DMP
+%scripts!
 
 % D = preprocess(filename, false, 0.00, 0.00, 0.00, 1, 'ori1', 0.38);
 % Dsmooth = smoothdata(D, 1, "gaussian",35); %smooth demo before calculating IK
@@ -41,10 +42,6 @@ Dsmooth(:,4:7) = Dsmooth(:,4:7) ./ sqrt(sum(Dsmooth(:,4:7).^2,2)); %Make sure qu
 % end
 
 
-%generate demo struct
-demo_traj = generateDemo(q', 1/120);
-%no sign flips as normal DMPs are exported before sign flips in DMP
-%scripts!
 
 
 

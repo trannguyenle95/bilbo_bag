@@ -93,18 +93,12 @@ def calculate_metrics(width, displayPlot = False):
     pca.fit(points2d[hull2d.vertices])
     pca_axes = pca.components_
 
-    print("major axis: ", pca_axes[0])
-    print("minor axis: ", pca_axes[1])
-
     pca_magnitude = pca.explained_variance_
 
-    elongation = np.sqrt(pca_magnitude[1]) / np.sqrt(pca_magnitude[0]) 
-    #short over long axis in my implementation (maybe other in AutoBag) > this way elongation is 1 if opening is perfectly round and a smaller value for worse cases
-
-    if abs(pca_axes[0][0] > abs(pca_axes[1][0])): #major axis is mostly aligned with x-axis
+    if abs(pca_axes[0][0]) > abs(pca_axes[1][0]): #major axis is mostly aligned with x-axis
         elongation = np.sqrt(pca_magnitude[1]) / np.sqrt(pca_magnitude[0]) 
     else: #major axis is mostly aligned with y-axis
-        elongation = np.sqrt(pca_magnitude[0]) / np.sqrt(pca_magnitude[1]) 
+        elongation = np.sqrt(pca_magnitude[0]) / np.sqrt(pca_magnitude[1])
     #elongation is now <1 if ellipse is too long along x axis, >1 if ellipse is too long along y axis, and 1 if ellipse is perfectly round
 
 
@@ -112,10 +106,10 @@ def calculate_metrics(width, displayPlot = False):
     if displayPlot:
         #Print here so that metrics are visible without having to close pyplot figures first
         #print("Convex Hull area ratio: ", area_ratio)
-        print("Convex Hull elongation: ", elongation)
-        print("Rim area (cm2): ", rim_area_CH)
-        print("3d hull volume (liters): ", volume3d)
-        print("Non-convex rim area (cm2): ",  rim_area_poly)
+        #print("Convex Hull elongation: ", elongation)
+        #print("Rim area (cm2): ", rim_area_CH)
+        #print("3d hull volume (liters): ", volume3d)
+        #print("Non-convex rim area (cm2): ",  rim_area_poly)
 
 
         convex_hull_plot_2d(hull2d) #plot 2d convex hull
