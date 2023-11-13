@@ -9,6 +9,7 @@ import plotly.express as px
 import rospy
 from sensor_msgs.msg import PointCloud
 from shapely.geometry import Polygon
+import time
 
 
 
@@ -65,7 +66,7 @@ def calculate_metrics(width, displayPlot = False):
                 rim_point_mask[i] = 1
                 
     rim_points = points3d[rim_point_mask, :]
-    points2d = rim_points[:, [2,0]] #use x and z axis and reorder so plot is oriented same way as bag in lab
+    points2d = rim_points[:, [2,0]] #use x and z axis and reorder so plot is oriented same way as bag in lab (robot x is optitrack z, robot y is optitrack x)
 
     hull2d = ConvexHull(points2d)
 
@@ -105,11 +106,10 @@ def calculate_metrics(width, displayPlot = False):
     #Plotting
     if displayPlot:
         #Print here so that metrics are visible without having to close pyplot figures first
-        #print("Convex Hull area ratio: ", area_ratio)
-        #print("Convex Hull elongation: ", elongation)
-        #print("Rim area (cm2): ", rim_area_CH)
-        #print("3d hull volume (liters): ", volume3d)
-        #print("Non-convex rim area (cm2): ",  rim_area_poly)
+        print("Convex Hull elongation: ", elongation)
+        print("Rim area (cm2): ", rim_area_CH)
+        print("3d hull volume (liters): ", volume3d)
+        print("Non-convex rim area (cm2): ",  rim_area_poly)
 
 
         convex_hull_plot_2d(hull2d) #plot 2d convex hull
@@ -151,18 +151,21 @@ def calculate_metrics(width, displayPlot = False):
         ch_points = points3d[hull3d.vertices]
         bottom_points = points3d[np.logical_not(rim_point_mask)]
 
-        fig = go.Figure(data=[go.Scatter3d(x=rim_points[:, 0],
-                                y=rim_points[:, 2], #change y and z so that z points upwards
-                                z=rim_points[:, 1], #change y and z so that z points upwards
+
+        #In robot coordinte system x is z from optitrack, y is x from optitrack, and z is y from optitrack 
+
+        fig = go.Figure(data=[go.Scatter3d(x=rim_points[:, 2],
+                                y=rim_points[:, 0],
+                                z=rim_points[:, 1],
                                 mode='markers')]).update_traces(marker=dict(color='red'))
-        fig.add_trace(go.Mesh3d(x=ch_points[:, 0], 
-                         y=ch_points[:, 2], #change y and z so that z points upwards
-                         z=ch_points[:, 1], #change y and z so that z points upwards
+        fig.add_trace(go.Mesh3d(x=ch_points[:, 2], 
+                         y=ch_points[:, 0],
+                         z=ch_points[:, 1],
                          color="blue", 
                          opacity=0.2,
                          alphahull=0))
         
-        fig.add_trace(go.Scatter3d(x=bottom_points[:, 0], y=bottom_points[:, 2], z=bottom_points[:, 1],
+        fig.add_trace(go.Scatter3d(x=bottom_points[:, 2], y=bottom_points[:, 0], z=bottom_points[:, 1],
                                    mode='markers', marker=dict(
         #size=12,
         color="blue",                # set color to an array/list of desired values
@@ -177,4 +180,5 @@ def calculate_metrics(width, displayPlot = False):
 
 if __name__ == '__main__':
     rospy.init_node('listener', anonymous=True)
+    time.sleep(5.0) #wait 5s for time to adjust bag
     A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics(0.3, displayPlot=True)
