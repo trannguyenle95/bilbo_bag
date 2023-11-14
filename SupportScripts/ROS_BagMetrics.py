@@ -59,6 +59,15 @@ def calculate_metrics(bag, displayPlot = False):
     outlier_points = points3d[i_outliers]
     points3d = np.delete(points3d, i_outliers, axis = 0)
 
+    #now filter points that are further than 7 cm form any other point
+    pairdist = cdist(points3d, points3d, 'euclidean')
+    pairdist += np.eye(pairdist.shape[0])#add large value to diagonal, so that distance from point to itself is ignored
+    dist_closest = pairdist.min(axis=0) #distance to closest point
+    print("print cdist:", dist_closest)
+    i_outliers = np.where(dist_closest > 0.07) #points that have distance > 7 cm to nearest neighbour
+    print("outliers filter:", i_outliers)
+    outlier_points = np.concatenate((outlier_points, points3d[i_outliers]))
+    points3d = np.delete(points3d, i_outliers, axis = 0)
 
     #filter out points that are too close
     pairdist = cdist(points3d, points3d, 'euclidean')
@@ -66,7 +75,7 @@ def calculate_metrics(bag, displayPlot = False):
 
     #remove rows in points3d that correspond to duplicate points so that only one is perserved
     #NOTE: define a good threshold - bag opening is flexible so markers can move closer and further appart!
-    threshold = 0.001 #markers within this distance (in meters) are treated as the same
+    threshold = 0.005 #markers within this distance (in meters) are treated as the same - 0.5cm
     
     filter = np.where(pairdist < threshold, 1, 0)
     filter = np.tril(filter) #take lower triangular matrix to remove double references to same pairs
@@ -77,7 +86,6 @@ def calculate_metrics(bag, displayPlot = False):
     #require that bag is not tilted so that projection directly onto xz plane gives area.
     #this should correspond to using the area as viewed by a top-down camera, and it would be unnecesarily complicated to deal 
     #with tilted planes
-
 
     #get ponints from the 3D cloud belonging to the rim
     if np.max(points3d[:,1]) - np.min(points3d[:,1]) < 0.10: #if spread is less than 10cm then it is assumed only rim point are visible in initial state
@@ -175,7 +183,7 @@ def calculate_metrics(bag, displayPlot = False):
         for p in points3d:
             plt.plot(p[0], p[2], 'go')
 
-        #plt.show()
+        plt.show()
 
         ch_points = points3d[hull3d.vertices]
         bottom_points = points3d[np.logical_not(rim_point_mask)]
