@@ -63,9 +63,9 @@ def calculate_metrics(bag, displayPlot = False):
     pairdist = cdist(points3d, points3d, 'euclidean')
     pairdist += np.eye(pairdist.shape[0])#add large value to diagonal, so that distance from point to itself is ignored
     dist_closest = pairdist.min(axis=0) #distance to closest point
-    print("print cdist:", dist_closest)
+    #print("print cdist:", dist_closest)
     i_outliers = np.where(dist_closest > 0.07) #points that have distance > 7 cm to nearest neighbour
-    print("outliers filter:", i_outliers)
+    #print("outliers filter:", i_outliers)
     outlier_points = np.concatenate((outlier_points, points3d[i_outliers]))
     points3d = np.delete(points3d, i_outliers, axis = 0)
 
@@ -109,15 +109,15 @@ def calculate_metrics(bag, displayPlot = False):
 
     #area when approximating rim with potentially non-convex polygon using alpha shapes https://pypi.org/project/alphashape/
     alpha = k*rim_area_CH + b
-    print("alpha value: ", alpha)
+    #print("alpha value: ", alpha)
     alpha_shape = alphashape.alphashape(points2d, alpha)
     if isinstance(alpha_shape, Polygon):
-        rim_area_poly = alpha_shape.area /  0.0001 #convert from m2 to cm2
+        rim_area_alpha = alpha_shape.area /  0.0001 #convert from m2 to cm2
     elif isinstance(alpha_shape, MultiPolygon):
         Polygons = list(alpha_shape.geoms)
-        rim_area_poly = 0
+        rim_area_alpha = 0
         for poly in Polygons:
-            rim_area_poly += poly.area /  0.0001 #convert from m2 to cm2
+            rim_area_alpha += poly.area /  0.0001 #convert from m2 to cm2
 
 
     #Use PCA major and minor axes for elongation measure (like in the AutoBag paper by Chen et al. 2023 https://doi.org/10.48550/arXiv.2210.17217)
@@ -142,7 +142,7 @@ def calculate_metrics(bag, displayPlot = False):
         print("Convex Hull elongation: ", elongation)
         print("Rim area (cm2): ", rim_area_CH)
         print("3d hull volume (liters): ", volume3d)
-        print("Non-convex rim area (cm2): ",  rim_area_poly)
+        print("Alpha poly rim area (cm2): ",  rim_area_alpha)
 
 
         convex_hull_plot_2d(hull2d) #plot 2d convex hull
@@ -213,7 +213,7 @@ def calculate_metrics(bag, displayPlot = False):
 
         fig.show()
 
-    return rim_area_CH, rim_area_poly, volume3d, elongation
+    return rim_area_CH, rim_area_alpha, volume3d, elongation
 
 if __name__ == '__main__':
     rospy.init_node('listener', anonymous=True)

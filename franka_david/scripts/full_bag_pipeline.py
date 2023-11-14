@@ -43,14 +43,20 @@ if __name__ == '__main__':
    args = parser.parse_args()
 
    if args.Bag == "A":
-      width = 0.44
-      V_max = 17.7
-      A_max = 462
+      V_max = 6.2
+      A_max = 220
    elif args.Bag == "B":
-      width = 0.37
-      V_max = 17.7 #TODO: change
-      A_max = 462 #TODO: change
-   #TODO: add other bags (maybe used pandas df?)
+      V_max = 7.5
+      A_max = 380
+   elif args.Bag == "C":
+      V_max = 16.0
+      A_max = 420
+   elif args.Bag == "D":
+      V_max = 16.0
+      A_max = 590
+   elif args.Bag == "E":
+      V_max = 23.5
+      A_max = 420
    max_actions = 20
    actions = 0
 
@@ -84,12 +90,12 @@ if __name__ == '__main__':
       os.remove(pose_file)
 
 
-   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
-   print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
+   A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
+   print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
 
    data = {
    "A_CH_rim": [A_CH_rim],
-   "A_poly_rim": [A_poly_rim],
+   "A_alpha_rim": [A_alpha_rim],
    "Vol": [Vol],
    "E_rim": [E_rim],
    "Action": ["initial state"]
@@ -99,24 +105,24 @@ if __name__ == '__main__':
 
    input("Perform dynamic primitive")
    actions += 1
-   #time.sleep(10) #sleep 10s when operating robots alone
    franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
    time.sleep(tf) #let motion finish before plotting and closing grippers
+   action = "F"
    real_pose = np.genfromtxt(pose_file, delimiter=',') #used to know the xdist at the end of a flip
-   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
-   print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
+   A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
+   print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
    new_pose = real_pose[-1]
    x_min = real_pose[-1][0]
    x_max = 0.65
 
    print("actions: ", actions)
+   action = "F"
+   df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
-   df.loc[len(df.index)] = [A_CH_rim, A_poly_rim,  Vol, E_rim, action] 
-
-   while actions <= max_actions:
+   while actions < max_actions:
       actions += 1
-      if Vol < 0.5*V_max:
-         print("redoing flip")
+      if ((A_alpha_rim < 0.5*A_max) or (Vol < 0.5*V_max)):
+         print("action: F")
          action = "F"
          joint_ori = traj[0]
          franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
@@ -129,43 +135,43 @@ if __name__ == '__main__':
       elif E_rim < 0.8:
          delta = 0.01 #how many cm movement in x direction
          if new_pose[0] + delta < x_max:
+            print("action: DI")
             action = "DI"
             franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
             time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
             new_pose[0] = new_pose[0] + delta
          else:
-            #TODO: <<< Fix this so robot doesnt go through actions quickly here!!
-            print("max xdist reached")
+            print("MAX xdist reached")
             print("pose: ", new_pose)
    
       elif E_rim > 1.2:
          delta = -0.01 #how many cm movement in x direction
          if new_pose[0] - delta > x_min:
+            print("action: DD")
             action = "DD"
             franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
             time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
             new_pose[0] = new_pose[0] + delta
          else:
-            #TODO: <<< Fix this so robot doesnt go through actions quickly here!!
-            print("max xdist reached")
+            print("MIN xdist reached")
             print("pose: ", new_pose)
 
       else:
          print("sufficient bag state reached in ", actions, "actions")
          break
       
-      A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=False)
-      print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
+      A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
+      print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
       print("actions: ", actions)
 
-      df.loc[len(df.index)] = [A_CH_rim, A_poly_rim,  Vol, E_rim, action] 
+      df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
    print("final state:")
-   A_CH_rim, A_poly_rim, Vol, E_rim = BagMetrics.calculate_metrics(width, displayPlot=True)
-   print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
+   print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
+   A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=True)
    #NOTE: previous loop breaks when sufficient state is reached, so get final state here + SHOW PLOT
 
-   path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')
+   path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'full_pipeline', args.Bag, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')
    df.to_csv(path)
 
 
