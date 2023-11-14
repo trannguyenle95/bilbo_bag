@@ -9,11 +9,34 @@ import plotly.express as px
 import rospy
 from sensor_msgs.msg import PointCloud
 from shapely.geometry import Polygon
+from shapely.geometry import MultiPolygon
 import time
+import alphashape
 
 
-
-def calculate_metrics(width, displayPlot = False):
+def calculate_metrics(bag, displayPlot = False):
+    #Set widths and parameters for setting alpha.
+    #Parameters k and b in "alpha = kx + b" are fitted from measured convex hull values "x" and manually selected appropriate alpha values.
+    if bag == "A":
+        width = 0.38
+        k = -0.0443
+        b = 24.281
+    elif bag == "B":
+        width = 0.41
+        k = -0.0263
+        b = 20.083
+    elif bag == "C":
+        width = 0.42
+        k = -0.0226
+        b = 18.917
+    elif bag == "D":
+        width = 0.49
+        k = -0.0290
+        b = 24.371
+    elif bag == "E":
+        width = 0.53
+        k = -0.0131
+        b = 15.092
 
     #Get points from NatNet rostopic
     cloud = rospy.wait_for_message("/natnet_ros/pointcloud", PointCloud, timeout=None)
@@ -76,16 +99,18 @@ def calculate_metrics(width, displayPlot = False):
     rim_area_CH = hull2d.volume #Convex Hull area, volume" for 2D hull is actual area, and "area" is actual perimeter
     rim_area_CH /= 0.0001 #convert from m2 to cm2
 
-    #area when approximating rim with potentially non-convex polygon.
-    #Polygon is created from unsorted points like here: https://pavcreations.com/clockwise-and-counterclockwise-sorting-of-coordinates/
-    center = np.mean(points2d, axis=0)
-    diff = points2d - center
-    angles = np.arctan2(diff[:,0], diff[:,1]) #angles in same order as points in points2d
-    sorted_points = points2d[np.argsort(angles)]
-    #create potentially non-convex polygon
-    rim_poly = Polygon(sorted_points)
-    rim_area_poly = rim_poly.area
-    rim_area_poly /= 0.0001 #convert from m2 to cm2
+    #area when approximating rim with potentially non-convex polygon using alpha shapes https://pypi.org/project/alphashape/
+    alpha = k*rim_area_CH + b
+    print("alpha value: ", alpha)
+    alpha_shape = alphashape.alphashape(points2d, alpha)
+    if isinstance(alpha_shape, Polygon):
+        rim_area_poly = alpha_shape.area /  0.0001 #convert from m2 to cm2
+    elif isinstance(alpha_shape, MultiPolygon):
+        Polygons = list(alpha_shape.geoms)
+        rim_area_poly = 0
+        for poly in Polygons:
+            rim_area_poly += poly.area /  0.0001 #convert from m2 to cm2
+
 
     #Use PCA major and minor axes for elongation measure (like in the AutoBag paper by Chen et al. 2023 https://doi.org/10.48550/arXiv.2210.17217)
     #If bounding box was used instead there would be problems if the bag is e.g. slim but diagonal wrt. the coordinate axes like so: / , 
@@ -124,9 +149,13 @@ def calculate_metrics(width, displayPlot = False):
         plt.plot((data_mean[0], data_mean[0]-pca_axes[0,0]*np.sqrt(pca_magnitude[0])), (data_mean[1], data_mean[1]-pca_axes[0,1]*np.sqrt(pca_magnitude[0]))) #Plot major axis - note sqrt() to get standard deviation from variance for plotting
         plt.plot((data_mean[0], data_mean[0]-pca_axes[1,0]*np.sqrt(pca_magnitude[1])), (data_mean[1], data_mean[1]-pca_axes[1,1]*np.sqrt(pca_magnitude[1]))) #Plot minor axis - note sqrt() to get standard deviation from variance for plotting
         
-        x,y = rim_poly.exterior.xy
-        plt.plot(x,y, '--r')
-
+        #plot potentially non-convex polygon too
+        if isinstance(alpha_shape, Polygon):
+            plt.plot(*alpha_shape.exterior.xy, '--r')
+        elif isinstance(alpha_shape, MultiPolygon):
+            Polygons = list(alpha_shape.geoms)
+            for poly in Polygons:
+                plt.plot(*poly.exterior.xy, '--r')
         plt.show()
 
         #plot median point
@@ -181,4 +210,4 @@ def calculate_metrics(width, displayPlot = False):
 if __name__ == '__main__':
     rospy.init_node('listener', anonymous=True)
     time.sleep(5.0) #wait 5s for time to adjust bag
-    A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics(0.3, displayPlot=True)
+    A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics('E', displayPlot=True)
