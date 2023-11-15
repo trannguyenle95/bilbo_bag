@@ -70,17 +70,18 @@ generateJointDemo
 
 figure('Name', 'Unconstrained DMP joint positions')
 for joint = 1:7
-    if joint < 5
+    if joint ~= 7
         subplot(2,4,joint)
     else
-        subplot(2,4,joint+0.5)
+        disp(')
+        subplot(2,4,6.5)
     end
     title(strcat('joint', num2str(joint), ' position'))
     hold on
     plot_demo = plot(demo_traj.t,demo_traj.pos(joint,:),'g-','LineWidth',7.5, 'DisplayName','demo');
-    plot_TC_DMPpos = plot(0:1/1000:1/1000*(length(TC_DMPpos)-1),TC_DMPpos(:,joint),'b-','LineWidth',4.5, 'DisplayName','UC-TC-DMP');
-    plot_Opt_DMPpos = plot(0:1/1000:1/1000*(length(Opt_DMPpos)-1),Opt_DMPpos(:,joint),'r-','LineWidth',1.5, 'DisplayName','UC-Opt-DMP');
-    legend([plot_demo, plot_TC_DMPpos, plot_Opt_DMPpos], 'Location','northwest')
+    plot_TC_DMPvel = plot(0:1/1000:1/1000*(length(TC_DMPpos)-1),TC_DMPpos(:,joint),'b-','LineWidth',5.5, 'DisplayName','UC-TC-DMP');
+    plot_Opt_DMPvel = plot(0:1/1000:1/1000*(length(Opt_DMPpos)-1),Opt_DMPpos(:,joint),'r-','LineWidth',3.5, 'DisplayName','UC-Opt-DMP');
+    legend([plot_demo, plot_TC_DMPvel, plot_Opt_DMPvel])
 end
 
 
@@ -96,21 +97,6 @@ end
 %     plot_Opt_DMPvel = plot(0:1/1000:1/1000*(length(Opt_DMPvel)-1),Opt_DMPvel(:,joint),'r-','LineWidth',1.5, 'DisplayName','UC-Opt-DMP');
 %     legend([plot_demo, plot_TC_DMPvel, plot_Opt_DMPvel])
 % end
-
-figure('Name', 'Unconstrained DMP joint velocities')
-for joint = 1:7
-    if joint < 5
-        subplot(2,4,joint)
-    else
-        subplot(2,4,joint+0.5)
-    end
-    title(strcat('joint', num2str(joint), ' velocity'))
-    hold on
-    plot_demo = plot(demo_traj.t,demo_traj.vel(joint,:),'g-','LineWidth',7.5, 'DisplayName','demo');
-    plot_TC_DMPvel = plot(0:1/1000:1/1000*(length(TC_DMPvel)-1),TC_DMPvel(:,joint),'b-','LineWidth',4.5, 'DisplayName','UC-TC-DMP');
-    plot_Opt_DMPvel = plot(0:1/1000:1/1000*(length(Opt_DMPvel)-1),Opt_DMPvel(:,joint),'r-','LineWidth',1.5, 'DisplayName','UC-Opt-DMP');
-    legend([plot_demo, plot_TC_DMPvel, plot_Opt_DMPvel], 'Location','northwest')
-end
 
 
 %% Pose plots

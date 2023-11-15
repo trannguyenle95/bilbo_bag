@@ -8,9 +8,9 @@ addpath('/home/erichannus/catkin_ws/src/Data/demos/')
 
 % Create demonstration trajectory
 
-bag = 'A';
+bag = 'E';
 filename = '10l_bag_flip.csv';
-gamma_a = 0.43; %originally 0.5, higher should reducde overshoots but increase runtime
+gamma_a = 0.66; %originally 0.5, higher should reducde overshoots but increase runtime
 
 %get demo_traj from this script
 generateJointDemo
@@ -18,7 +18,7 @@ generateJointDemo
 % Nominal trajectory functions
 dmp_params.D = 20;
 dmp_params.K = dmp_params.D^2/4;
-dmp_params.n_kernel = 1200; %default 100
+dmp_params.n_kernel = 800; %default 100
 %Originally 100, better fit with 200 - with 100 some peaks from demo are reduced by smoothing
 %BUT 200 can overfit and give acceleration that exceeds limits slightly,
 %not enough smooothing effect in that case...

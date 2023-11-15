@@ -65,10 +65,9 @@ actual_accel_lim = accel_lim;
 
 %use stricter limits than the actual ones for trajectory generation to have
 %some margin
-pos_lim = 0.98 * pos_lim; %no margin for position limit, so it is similar to TC-DMP which doesn't constrain pos but instead just fits DMP to position demo
+pos_lim = 0.98 * pos_lim;
 vel_lim = 0.98 * vel_lim;
 accel_lim = 0.98 * accel_lim;
-
 %% ======== Generate trajectories ==========
 
 qp_solver_type = 1; % matlab-quadprog:0 , osqp:1, Goldfarb-Idnani: 2
