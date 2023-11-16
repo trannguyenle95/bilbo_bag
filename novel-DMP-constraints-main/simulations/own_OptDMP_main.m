@@ -29,7 +29,7 @@ ddPd_data = demo_traj.acc;
 %% initialize and train GMP
 train_method = 'LS';
 N_kernels = 80; %Originally 30, difference in MSE but not noticable in plots
-kernels_std_scaling = 2.6; %originally 1.5
+kernels_std_scaling = 4.0; %originally 1.5
 n_dof = size(Pd_data,1);
 gmp = GMP(n_dof, N_kernels, kernels_std_scaling);
 tic
