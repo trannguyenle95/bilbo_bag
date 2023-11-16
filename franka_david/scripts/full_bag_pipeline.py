@@ -75,11 +75,15 @@ if __name__ == '__main__':
    joint_ori = traj[0]
    franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
 
+   open_grippers_msg = input("Open grippers (Y/N)?").upper()
+   if(open_grippers_msg == "Y"):
+      franka.release_grippers()
 
    #franka.close_grippers_middle()
    input("Close grippers")
    franka.close_grippers()
    print("CLOSING GRIPPERS IN (10s FR2 / 20s FR3)")
+   time.sleep(20)
 
    tf = traj.shape[0] * dt
    print('tf:', tf)
