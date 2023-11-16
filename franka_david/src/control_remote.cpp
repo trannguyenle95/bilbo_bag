@@ -198,6 +198,12 @@ void CartesianRemoteController::gripperGraspCallback(const franka_david::Gripper
         }
         else
         {
+            sleep(10);
+            if (this->_franka3)
+            {
+                sleep(10);
+            }
+
             std::cout << "Grasping with force " << force << "N and distance" << distance << std::endl;
             this->_gripper->grasp(distance, speed, force);
         }

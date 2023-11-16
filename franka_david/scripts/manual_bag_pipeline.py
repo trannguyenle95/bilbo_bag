@@ -78,9 +78,10 @@ if __name__ == '__main__':
    franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
 
 
-   franka.close_grippers_middle()
+   #franka.close_grippers_middle()
    input("Close grippers")
    franka.close_grippers()
+   print("CLOSING GRIPPERS IN (10s FR2 / 20s FR3)")
 
    tf = traj.shape[0] * dt
    print('tf:', tf)
@@ -203,4 +204,9 @@ if __name__ == '__main__':
       path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')
       df.to_csv(path)
 
-   franka.open_grippers_middle()
+   #franka.open_grippers_middle()
+
+   
+   open_grippers_msg = input("Open grippers (Y/N)?").upper()
+   if("open_grippers_msg" == "Y"):
+      franka.release_grippers()
