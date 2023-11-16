@@ -184,5 +184,5 @@ if __name__ == '__main__':
 
    #franka.open_grippers_middle()
    open_grippers_msg = input("Open grippers (Y/N)?").upper()
-   if("open_grippers_msg" == "Y"):
+   if(open_grippers_msg == "Y"):
       franka.release_grippers()
