@@ -44,13 +44,20 @@ if __name__ == '__main__':
    args = parser.parse_args()
 
    if args.Bag == "A":
-      width = 0.44
-      V_max = 17.7
-      A_max = 462
+      V_max = 6.2
+      A_max = 220
    elif args.Bag == "B":
-      width = 0.37
-      V_max = 17.7 #TODO: change
-      A_max = 462 #TODO: change
+      V_max = 7.5
+      A_max = 360
+   elif args.Bag == "C":
+      V_max = 12.5
+      A_max = 370
+   elif args.Bag == "D":
+      V_max = 14.0
+      A_max = 530
+   elif args.Bag == "E":
+      V_max = 22.0
+      A_max = 350
    #TODO: add other bags (maybe used pandas df?)
    max_actions = 20
    actions = 0

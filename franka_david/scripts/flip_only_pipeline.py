@@ -39,6 +39,7 @@ if __name__ == '__main__':
    parser.add_argument('Bag', type=str, help='Select bag: A-E')
    parser.add_argument('DMP', type=str, help='Select DMP version: tau_DMP / TC_DMP / Opt_DMP')
    parser.add_argument('Demo', type=str, help='Write name of demo file')
+   parser.add_argument('InitialState', type=str, help='Select whether initial state is "Easy" (not crumpled) or "Hard" (crumpled)?')
    parser.add_argument('Run', type=int, help='Write index of run with this bag/dmp/demo combination')
    args = parser.parse_args()
 
@@ -57,7 +58,7 @@ if __name__ == '__main__':
    elif args.Bag == "E":
       V_max = 22.0
       A_max = 350
-   max_actions = 20
+   max_actions = 10
    actions = 0
 
    #Import traj and duration from CSV
@@ -132,30 +133,6 @@ if __name__ == '__main__':
          real_pose = np.genfromtxt(pose_file, delimiter=',')
          new_pose = real_pose[-1]
 
-      elif E_rim < 0.8:
-         delta = 0.01 #how many cm movement in x direction
-         if new_pose[0] + delta < x_max:
-            print("action: DI")
-            action = "DI"
-            franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-            new_pose[0] = new_pose[0] + delta
-         else:
-            print("MAX xdist reached")
-            print("pose: ", new_pose)
-   
-      elif E_rim > 1.2:
-         delta = -0.01 #how many cm movement in x direction
-         if new_pose[0] - delta > x_min:
-            print("action: DD")
-            action = "DD"
-            franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-            new_pose[0] = new_pose[0] + delta
-         else:
-            print("MIN xdist reached")
-            print("pose: ", new_pose)
-
       else:
          print("sufficient bag state reached in ", actions, "actions")
          break
@@ -171,7 +148,7 @@ if __name__ == '__main__':
    A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=True)
    #NOTE: previous loop breaks when sufficient state is reached, so get final state here + SHOW PLOT
 
-   path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'full_pipeline', args.Bag, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')
+   path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'flip', args.Demo,args.Bag, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+args.InitialState+str(args.Run)+'.csv')
    df.to_csv(path)
 
 

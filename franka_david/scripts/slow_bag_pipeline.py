@@ -47,16 +47,16 @@ if __name__ == '__main__':
       A_max = 220
    elif args.Bag == "B":
       V_max = 7.5
-      A_max = 380
+      A_max = 360
    elif args.Bag == "C":
-      V_max = 16.0
-      A_max = 420
+      V_max = 12.5
+      A_max = 370
    elif args.Bag == "D":
-      V_max = 16.0
-      A_max = 590
+      V_max = 14.0
+      A_max = 530
    elif args.Bag == "E":
-      V_max = 23.5
-      A_max = 420
+      V_max = 22.0
+      A_max = 350
    max_actions = 20
    actions = 0
 
