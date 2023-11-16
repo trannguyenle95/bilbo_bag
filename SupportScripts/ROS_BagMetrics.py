@@ -59,12 +59,12 @@ def calculate_metrics(bag, displayPlot = False):
     outlier_points = points3d[i_outliers]
     points3d = np.delete(points3d, i_outliers, axis = 0)
 
-    #now filter points that are further than 7 cm form any other point
+    #now filter points that are further than 6 cm form any other point
     pairdist = cdist(points3d, points3d, 'euclidean')
     pairdist += np.eye(pairdist.shape[0])#add large value to diagonal, so that distance from point to itself is ignored
     dist_closest = pairdist.min(axis=0) #distance to closest point
     #print("print cdist:", dist_closest)
-    i_outliers = np.where(dist_closest > 0.07) #points that have distance > 7 cm to nearest neighbour
+    i_outliers = np.where(dist_closest > 0.06) #points that have distance > 6 cm to nearest neighbour
     #print("outliers filter:", i_outliers)
     outlier_points = np.concatenate((outlier_points, points3d[i_outliers]))
     points3d = np.delete(points3d, i_outliers, axis = 0)
@@ -118,6 +118,9 @@ def calculate_metrics(bag, displayPlot = False):
         rim_area_alpha = 0
         for poly in Polygons:
             rim_area_alpha += poly.area /  0.0001 #convert from m2 to cm2
+    else:
+        print("Alpha shape error")
+        print("Alpha shape type: ", type(alpha_shape))
 
 
     #Use PCA major and minor axes for elongation measure (like in the AutoBag paper by Chen et al. 2023 https://doi.org/10.48550/arXiv.2210.17217)
@@ -218,4 +221,4 @@ def calculate_metrics(bag, displayPlot = False):
 if __name__ == '__main__':
     rospy.init_node('listener', anonymous=True)
     time.sleep(5.0) #wait 5s for time to adjust bag
-    A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics('E', displayPlot=True)
+    A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics('C', displayPlot=True)

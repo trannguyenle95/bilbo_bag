@@ -79,12 +79,11 @@ if __name__ == '__main__':
    open_grippers_msg = input("Open grippers (Y/N)?").upper()
    if(open_grippers_msg == "Y"):
       franka.release_grippers()
-
-   #franka.close_grippers_middle()
-   input("Close grippers")
-   franka.close_grippers()
-   print("CLOSING GRIPPERS IN (10s FR2 / 20s FR3)")
-   time.sleep(20)
+      #franka.close_grippers_middle()
+      input("Close grippers")
+      franka.close_grippers()
+      print("CLOSING GRIPPERS IN (10s FR2 / 20s FR3)")
+      time.sleep(20)
 
    tf = traj.shape[0] * dt
    print('tf:', tf)
@@ -126,8 +125,8 @@ if __name__ == '__main__':
    df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
    while actions < max_actions:
-      actions += 1
       if ((A_alpha_rim < 0.6*A_max) or (Vol < 0.7*V_max)):
+         actions += 1
          print("action: F")
          action = "F"
          joint_ori = traj[0]
@@ -139,7 +138,7 @@ if __name__ == '__main__':
          new_pose = real_pose[-1]
 
       else:
-         print("sufficient bag state reached in ", actions, "actions")
+         print("Sufficient bag state reached in ", actions, "actions. Final state: ")
          break
       
       A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
@@ -148,12 +147,10 @@ if __name__ == '__main__':
 
       df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
-   print("final state:")
-   print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
    A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=True)
    #NOTE: previous loop breaks when sufficient state is reached, so get final state here + SHOW PLOT
 
-   path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'flip',args.Bag, args.InitialState, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+args.InitialState+str(args.Run)+'.csv')
+   path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'flip',args.DMP, args.Bag, args.InitialState, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+args.InitialState+str(args.Run)+'.csv')
    df.to_csv(path)
 
 

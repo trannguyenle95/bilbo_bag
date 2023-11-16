@@ -78,12 +78,11 @@ if __name__ == '__main__':
    open_grippers_msg = input("Open grippers (Y/N)?").upper()
    if(open_grippers_msg == "Y"):
       franka.release_grippers()
-
-   #franka.close_grippers_middle()
-   input("Close grippers")
-   franka.close_grippers()
-   print("CLOSING GRIPPERS IN (10s FR2 / 20s FR3)")
-   time.sleep(20)
+      #franka.close_grippers_middle()
+      input("Close grippers")
+      franka.close_grippers()
+      print("CLOSING GRIPPERS IN (10s FR2 / 20s FR3)")
+      time.sleep(20)
 
    tf = traj.shape[0] * dt
    print('tf:', tf)
@@ -126,8 +125,8 @@ if __name__ == '__main__':
    df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
    while actions < max_actions:
-      actions += 1
       if ((A_alpha_rim < 0.5*A_max) or (Vol < 0.5*V_max)):
+         actions += 1
          print("action: F")
          time.sleep(5.0) #add 5.0 seconds wait to move the bag
          action = "F"
@@ -142,6 +141,7 @@ if __name__ == '__main__':
       elif E_rim < 0.8:
          delta = 0.01 #how many cm movement in x direction
          if new_pose[0] + delta < x_max:
+            actions += 1
             print("action: DI")
             action = "DI"
             time.sleep(5.0) #add 5.0 seconds wait to move the bag
@@ -156,6 +156,7 @@ if __name__ == '__main__':
       elif E_rim > 1.2:
          delta = -0.01 #how many cm movement in x direction
          if new_pose[0] - delta > x_min:
+            actions += 1
             print("action: DD")
             action = "DD"
             time.sleep(5.0) #add 5.0 seconds wait to move the bag

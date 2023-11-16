@@ -81,12 +81,11 @@ if __name__ == '__main__':
    open_grippers_msg = input("Open grippers (Y/N)?").upper()
    if(open_grippers_msg == "Y"):
       franka.release_grippers()
-
-   #franka.close_grippers_middle()
-   input("Close grippers")
-   franka.close_grippers()
-   print("CLOSING GRIPPERS IN (10s FR2 / 20s FR3)")
-   time.sleep(20)
+      #franka.close_grippers_middle()
+      input("Close grippers")
+      franka.close_grippers()
+      print("CLOSING GRIPPERS IN (10s FR2 / 20s FR3)")
+      time.sleep(20)
 
    tf = traj.shape[0] * dt
    print('tf:', tf)
@@ -169,8 +168,8 @@ if __name__ == '__main__':
 
    print("action: ", action)
    while action == 'F' or action == 'DI' or action == 'DD':
-      actions += 1
       if action == 'F':
+         actions += 1
          joint_ori = traj[0]
          franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
          time.sleep(3.0)
@@ -179,6 +178,7 @@ if __name__ == '__main__':
          real_pose = np.genfromtxt(pose_file, delimiter=',')
          new_pose = real_pose[-1]
       elif action == 'DI':
+         actions += 1
          delta = 0.01 #how many cm movement in x direction
          if new_pose[0] + delta < x_max:
             franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
@@ -187,6 +187,7 @@ if __name__ == '__main__':
             print("max xdist reached")
             print("pose: ", new_pose)
       elif action == 'DD':
+         actions += 1
          delta = -0.01 #how many cm movement in x direction
          if new_pose[0] - delta > x_min:
             franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
