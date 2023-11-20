@@ -44,7 +44,7 @@ if __name__ == '__main__':
    args = parser.parse_args()
 
    if args.Bag == "A":
-      V_max = 6.2
+      V_max = 6.0
       A_max = 220
    elif args.Bag == "B":
       V_max = 7.5
@@ -125,6 +125,14 @@ if __name__ == '__main__':
    df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
    while actions < max_actions:
+      if (args.Bag == "A" and args.DMP == "Opt_DMP"):
+         terminate = input("Did bag flip over (Y/N)?").upper()
+         if (terminate == "Y"):
+            path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'flip',args.DMP, args.Bag, args.InitialState, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+args.InitialState+str(args.Run)+'.csv')
+            df.to_csv(path)
+            sys.exit(0)
+
+
       if ((A_alpha_rim < 0.6*A_max) or (Vol < 0.7*V_max)):
          actions += 1
          print("action: F")

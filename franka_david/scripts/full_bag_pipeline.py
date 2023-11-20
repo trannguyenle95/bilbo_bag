@@ -43,7 +43,7 @@ if __name__ == '__main__':
    args = parser.parse_args()
 
    if args.Bag == "A":
-      V_max = 6.2
+      V_max = 6.0
       A_max = 220
    elif args.Bag == "B":
       V_max = 7.5

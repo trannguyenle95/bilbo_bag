@@ -44,7 +44,7 @@ if __name__ == '__main__':
    args = parser.parse_args()
 
    if args.Bag == "A":
-      V_max = 6.2
+      V_max = 6.0
       A_max = 220
    elif args.Bag == "B":
       V_max = 7.5
@@ -207,8 +207,9 @@ if __name__ == '__main__':
       action = 'F'
 
    if args.OptiTrack == 'Y':
-      path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')
-      df.to_csv(path)
+      #path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')
+      #df.to_csv(path)
+      print("writing to file disabled")
 
    #franka.open_grippers_middle()
 
