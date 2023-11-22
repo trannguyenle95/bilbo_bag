@@ -21,22 +21,27 @@ def calculate_metrics(bag, displayPlot = False):
         width = 0.38
         k = -0.0443
         b = 24.281
+        rim_spread = 0.16 #if pointcloud spread is less than this distance, then it is assumed only rim point are visible in initial state
     elif bag == "B":
         width = 0.41
         k = -0.0263
         b = 20.083
+        rim_spread = 0.13 #if pointcloud spread is less than this distance, then it is assumed only rim point are visible in initial state
     elif bag == "C":
         width = 0.42
         k = -0.0226
         b = 18.917
+        rim_spread = 0.17 #if pointcloud spread is less than this distance, then it is assumed only rim point are visible in initial state
     elif bag == "D":
         width = 0.49
         k = -0.0290
         b = 24.371
+        rim_spread = 0.18 #if pointcloud spread is less than this distance, then it is assumed only rim point are visible in initial state
     elif bag == "E":
         width = 0.53
         k = -0.0131
         b = 15.092
+        rim_spread = 0.24 #if pointcloud spread is less than this distance, then it is assumed only rim point are visible in initial state
 
     #Get points from NatNet rostopic
     cloud = rospy.wait_for_message("/natnet_ros/pointcloud", PointCloud, timeout=None)
@@ -88,7 +93,7 @@ def calculate_metrics(bag, displayPlot = False):
     #with tilted planes
 
     #get ponints from the 3D cloud belonging to the rim
-    if np.max(points3d[:,1]) - np.min(points3d[:,1]) < 0.10: #if spread is less than 10cm then it is assumed only rim point are visible in initial state
+    if np.max(points3d[:,1]) - np.min(points3d[:,1]) < rim_spread: #if pointcloud spread is less than this distance, then it is assumed only rim point are visible in initial state
         rim_point_mask = np.ones(points3d.shape[0], dtype=bool)
     else: #there are both rim and non-rim points
         rim_point_mask = np.zeros(points3d.shape[0], dtype=bool)
@@ -121,7 +126,7 @@ def calculate_metrics(bag, displayPlot = False):
     else:
         print("Alpha shape error")
         print("Alpha shape type: ", type(alpha_shape))
-
+        print("Alpha shape content: ", alpha_shape)
 
     #Use PCA major and minor axes for elongation measure (like in the AutoBag paper by Chen et al. 2023 https://doi.org/10.48550/arXiv.2210.17217)
     #If bounding box was used instead there would be problems if the bag is e.g. slim but diagonal wrt. the coordinate axes like so: / , 
@@ -220,5 +225,5 @@ def calculate_metrics(bag, displayPlot = False):
 
 if __name__ == '__main__':
     rospy.init_node('listener', anonymous=True)
-    time.sleep(5.0) #wait 5s for time to adjust bag
-    A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics('C', displayPlot=True)
+    time.sleep(10.0) #wait 5s for time to adjust bag
+    A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics('B', displayPlot=True)

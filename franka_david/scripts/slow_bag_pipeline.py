@@ -118,12 +118,13 @@ if __name__ == '__main__':
    print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
    new_pose = real_pose[-1]
    x_min = real_pose[-1][0]
-   x_max = 0.65
+   x_max = 0.68
 
    print("actions: ", actions)
    action = "F"
    df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
+   delta = 0.01 #how many cm movement in x direction
    while actions < max_actions:
       if ((A_alpha_rim < 0.5*A_max) or (Vol < 0.5*V_max)):
          actions += 1
@@ -139,7 +140,6 @@ if __name__ == '__main__':
          new_pose = real_pose[-1]
 
       elif E_rim < 0.8:
-         delta = 0.01 #how many cm movement in x direction
          if new_pose[0] + delta < x_max:
             actions += 1
             print("action: DI")
@@ -154,15 +154,14 @@ if __name__ == '__main__':
             time.sleep(5.0) #add 5.0 seconds wait to move the bag
    
       elif E_rim > 1.2:
-         delta = -0.01 #how many cm movement in x direction
          if new_pose[0] - delta > x_min:
             actions += 1
             print("action: DD")
             action = "DD"
             time.sleep(5.0) #add 5.0 seconds wait to move the bag
-            franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
             time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-            new_pose[0] = new_pose[0] + delta
+            new_pose[0] = new_pose[0] - delta
          else:
             print("MIN xdist reached")
             print("pose: ", new_pose)

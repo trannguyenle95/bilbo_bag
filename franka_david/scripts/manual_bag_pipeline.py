@@ -128,7 +128,7 @@ if __name__ == '__main__':
       print("A_CH_rim (cm2): ", A_CH_rim, "A_poly_rim (cm2): ", A_poly_rim, " Vol (l): ", Vol, " E_rim :", E_rim)
    new_pose = real_pose[-1]
    x_min = real_pose[-1][0]
-   x_max = 0.65
+   x_max = 0.68
 
    print("actions: ", actions)
 
@@ -167,6 +167,8 @@ if __name__ == '__main__':
 
 
    print("action: ", action)
+
+   delta = 0.01 #how many cm movement in x direction
    while action == 'F' or action == 'DI' or action == 'DD':
       if action == 'F':
          actions += 1
@@ -179,7 +181,6 @@ if __name__ == '__main__':
          new_pose = real_pose[-1]
       elif action == 'DI':
          actions += 1
-         delta = 0.01 #how many cm movement in x direction
          if new_pose[0] + delta < x_max:
             franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
             new_pose[0] = new_pose[0] + delta
@@ -188,10 +189,9 @@ if __name__ == '__main__':
             print("pose: ", new_pose)
       elif action == 'DD':
          actions += 1
-         delta = -0.01 #how many cm movement in x direction
          if new_pose[0] - delta > x_min:
-            franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-            new_pose[0] = new_pose[0] + delta
+            franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            new_pose[0] = new_pose[0] - delta
          else:
             print("min xdist reached")
             print("pose: ", new_pose)
