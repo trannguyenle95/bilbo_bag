@@ -57,7 +57,7 @@ if __name__ == '__main__':
       A_max = 530
    elif args.Bag == "E":
       V_max = 22.0
-      A_max = 350
+      A_max = 550
    max_actions = 10
    actions = 0
 

@@ -59,7 +59,7 @@ if __name__ == '__main__':
       init_dist = 0.5189 #0.5189 measured with franka_vizualization
    elif args.Bag == "E":
       V_max = 22.0
-      A_max = 350
+      A_max = 550
       init_dist  = 0.499 #0.499 measured with franka_vizualization
    max_actions = 20
    actions = 0

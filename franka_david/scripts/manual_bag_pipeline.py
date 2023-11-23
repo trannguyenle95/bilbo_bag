@@ -57,7 +57,7 @@ if __name__ == '__main__':
       A_max = 530
    elif args.Bag == "E":
       V_max = 22.0
-      A_max = 350
+      A_max = 550
    #TODO: add other bags (maybe used pandas df?)
    max_actions = 20
    actions = 0
