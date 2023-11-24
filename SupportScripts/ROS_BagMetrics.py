@@ -158,12 +158,12 @@ def calculate_metrics(bag, displayPlot = False):
         ax1.set_aspect('equal') #Set equal axes so that orthogonality of components can be verified
         data_mean = np.mean(points2d, axis=0) #get mean of data for plotting ellipoid axes at right point
 
-        plt.plot((data_mean[0], data_mean[0]+pca_axes[0,0]*np.sqrt(pca_magnitude[0])), (data_mean[1], data_mean[1]+pca_axes[0,1]*np.sqrt(pca_magnitude[0]))) #Plot major axis - note sqrt() to get standard deviation from variance for plotting
-        plt.plot((data_mean[0], data_mean[0]+pca_axes[1,0]*np.sqrt(pca_magnitude[1])), (data_mean[1], data_mean[1]+pca_axes[1,1]*np.sqrt(pca_magnitude[1]))) #Plot minor axis - note sqrt() to get standard deviation from variance for plotting
+        plt.plot((data_mean[0], data_mean[0]+pca_axes[0,0]*np.sqrt(pca_magnitude[0])), (data_mean[1], data_mean[1]+pca_axes[0,1]*np.sqrt(pca_magnitude[0])), color = 'tab:orange') #Plot major axis - note sqrt() to get standard deviation from variance for plotting
+        plt.plot((data_mean[0], data_mean[0]+pca_axes[1,0]*np.sqrt(pca_magnitude[1])), (data_mean[1], data_mean[1]+pca_axes[1,1]*np.sqrt(pca_magnitude[1])), color = 'tab:purple') #Plot minor axis - note sqrt() to get standard deviation from variance for plotting
 
         #Also plot negative directions to get better idea of ellipsoid fit
-        plt.plot((data_mean[0], data_mean[0]-pca_axes[0,0]*np.sqrt(pca_magnitude[0])), (data_mean[1], data_mean[1]-pca_axes[0,1]*np.sqrt(pca_magnitude[0]))) #Plot major axis - note sqrt() to get standard deviation from variance for plotting
-        plt.plot((data_mean[0], data_mean[0]-pca_axes[1,0]*np.sqrt(pca_magnitude[1])), (data_mean[1], data_mean[1]-pca_axes[1,1]*np.sqrt(pca_magnitude[1]))) #Plot minor axis - note sqrt() to get standard deviation from variance for plotting
+        plt.plot((data_mean[0], data_mean[0]-pca_axes[0,0]*np.sqrt(pca_magnitude[0])), (data_mean[1], data_mean[1]-pca_axes[0,1]*np.sqrt(pca_magnitude[0])), color = 'tab:orange') #Plot major axis - note sqrt() to get standard deviation from variance for plotting
+        plt.plot((data_mean[0], data_mean[0]-pca_axes[1,0]*np.sqrt(pca_magnitude[1])), (data_mean[1], data_mean[1]-pca_axes[1,1]*np.sqrt(pca_magnitude[1])), color = 'tab:purple') #Plot minor axis - note sqrt() to get standard deviation from variance for plotting
         
         #plot potentially non-convex polygon too
         if isinstance(alpha_shape, Polygon):
@@ -225,5 +225,5 @@ def calculate_metrics(bag, displayPlot = False):
 
 if __name__ == '__main__':
     rospy.init_node('listener', anonymous=True)
-    time.sleep(10.0) #wait 5s for time to adjust bag
+    #time.sleep(10.0) #wait 5s for time to adjust bag
     A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics('B', displayPlot=True)
