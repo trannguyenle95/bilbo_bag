@@ -150,12 +150,11 @@ if __name__ == '__main__':
    delta = 0.01 #how many cm movement in x direction
 
    while flip_actions < max_flips:
-      if (args.Bag == "A" and args.DMP == "Opt_DMP"):
-         terminate = input("Did bag flip over (Y/N)?").upper()
-         if (terminate == "Y"):
-            path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'full_pipeline',args.DMP, args.Bag, args.InitialState, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+args.InitialState+str(args.Run)+'.csv')
-            df.to_csv(path)
-            sys.exit(0)
+      terminate = input("Did bag flip over (Y/N)?").upper()
+      if (terminate == "Y"):
+         path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'full_pipeline',args.DMP, args.Bag, args.InitialState, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+args.InitialState+str(args.Run)+'.csv')
+         df.to_csv(path)
+         sys.exit(0)
 
       if ((A_alpha_rim < 0.6*A_max) or (Vol < 0.7*V_max)):
          flip_actions += 1
