@@ -195,7 +195,7 @@ if __name__ == '__main__':
             action, refinement_actions, new_pose = distance_decrease(refinement_actions, franka, new_pose, delta)
          else:
             action, refinement_actions, new_pose = distance_increase(refinement_actions, franka, new_pose, delta)
-         if refinement_actions = (max_refinement_actions - 1):
+         if refinement_actions == (max_refinement_actions - 1):
             #terminate run here so it is not risked that the final action moves back into a bad state if this one fixes it
             print("terminating so that the last action does not risk taking the bag to a worse state")
             A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
