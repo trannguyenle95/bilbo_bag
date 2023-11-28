@@ -30,6 +30,24 @@ import pandas as pd
 VELOCITY_TIME_MULTIPLIER = 1.0
 
 
+def distance_increase(refinement_actions, franka, x_curr, delta):
+   refinement_actions += 1
+   print("action: DI")
+   action = "DI"
+   franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+   time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
+   x_curr = x_curr + delta
+   return action, refinement_actions, x_curr
+
+def distance_decrease(refinement_actions, franka, x_curr, delta):
+   refinement_actions += 1
+   print("action: DD")
+   action = "DD"
+   franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+   time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
+   x_curr = x_curr - delta
+   return action, refinement_actions, x_curr
+
 if __name__ == '__main__':
    print(">>>>> REMEMBER TO RUN ROBOT STOPPER SCRIPTS <<<<<")
 
@@ -62,7 +80,7 @@ if __name__ == '__main__':
       A_max = 550
       init_dist  = 0.499 #0.499 measured with franka_vizualization
    max_actions = 20
-   actions = 0
+   refinement_actions = 0
 
    #Import traj and duration from CSV
    traj = np.genfromtxt(datafolder+"/trajectories/"+args.Bag+"_"+"Opt_DMP"+"_"+"joint_"+"10l_bag_flip.csv", delimiter=',')  #use this just for moving to origin!
@@ -115,48 +133,34 @@ if __name__ == '__main__':
    x_curr = init_dist
    x_min = init_dist
    x_max = 0.68
-   while actions < max_actions:
+
+
+   while refinement_actions < max_actions:
       print("current xdist: ", x_curr)
       if ((A_alpha_rim < 0.6*A_max) or (Vol < 0.7*V_max)):
 
-         if E_rim < 1.0:
-            actions += 1
+         if (E_rim) >= 0 and (E_rim < 1.0):
             if x_curr + delta < x_max:
-               print("action: DI")
-               action = "DI"
-               franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-               time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-               x_curr = x_curr + delta
+               action, refinement_actions, x_curr = distance_increase(refinement_actions, franka, x_curr, delta)
             else:
                print("MAX xdist reached - decreasing dist instead!")
-               print("action: DD")
-               action = "DD"
-               franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-               time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-               x_curr = x_curr - delta
+               action, refinement_actions, x_curr = distance_decrease(refinement_actions, franka, x_curr, delta)
       
          else:
-            actions += 1
             if x_curr - delta > x_min:
                print("action: DD")
-               action = "DD"
-               franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-               time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-               x_curr = x_curr - delta
+               action, refinement_actions, x_curr = distance_decrease(refinement_actions, franka, x_curr, delta)
             else:
                print("MIN xdist reached - increasing dist instead!")
-               action = "DI"
-               franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-               time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-               x_curr = x_curr + delta
+               action, refinement_actions, x_curr = distance_increase(refinement_actions, franka, x_curr, delta)
 
       else:
-         print("Sufficient bag state reached in ", actions, "actions. Final state: ")
+         print("Sufficient bag state reached in ", refinement_actions, "actions. Final state: ")
          break
       
       A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
       print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
-      print("actions: ", actions)
+      print("actions: ", refinement_actions)
 
       df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
