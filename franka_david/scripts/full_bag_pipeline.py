@@ -39,14 +39,17 @@ def distance_increase(refinement_actions, franka, new_pose, delta):
    new_pose[0] = new_pose[0] + delta
    return action, refinement_actions, new_pose
 
+
 def distance_decrease(refinement_actions, franka, new_pose, delta):
-   refinement_actions += 1
-   print("action: DD")
-   action = "DD"
-   franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-   time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-   new_pose[0] = new_pose[0] - delta
-   return action, refinement_actions, new_pose
+   if new_pose[0] - delta > x_min:
+      refinement_actions += 1
+      print("action: DD")
+      action = "DD"
+      franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+      time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
+      new_pose[0] = new_pose[0] - delta
+      return action, refinement_actions, new_pose
+
 
 if __name__ == '__main__':
    print(">>>>> REMEMBER TO RUN ROBOT STOPPER SCRIPTS <<<<<")
@@ -181,20 +184,30 @@ if __name__ == '__main__':
          else:
             print("MAX xdist reached")
             break
+
    
       elif ((A_alpha_rim >= 0.6*A_max) and (Vol >= 0.7*V_max) and (abs(E_rim) < 0.8) and (E_rim < 0)):
          if new_pose[0] - delta > x_min:
-            action, refinement_actions, new_pose = distance_decrease(refinement_actions, franka, new_pose, delta)
+               action, refinement_actions, new_pose = distance_decrease(refinement_actions, franka, new_pose, delta)
          else:
             print("MIN xdist reached")
             break
 
       elif ((A_alpha_rim < 0.6*A_max) or (Vol < 0.7*V_max)):
-         print("undoing previous refinement action")
          if action == "DI":
-            action, refinement_actions, new_pose = distance_decrease(refinement_actions, franka, new_pose, delta)
+            if new_pose[0] - 2*delta > x_min: #try to step back by 2*delta for larger margin to possible bad state
+               print("undoing previous refinement action with margin")
+               action, refinement_actions, new_pose = distance_decrease(refinement_actions, franka, new_pose, 2*delta)
+            else:
+               print("undoing previous refinement action")
+               action, refinement_actions, new_pose = distance_decrease(refinement_actions, franka, new_pose, delta)
          else:
-            action, refinement_actions, new_pose = distance_increase(refinement_actions, franka, new_pose, delta)
+            if new_pose[0] + 2*delta < x_max: #try to step back by 2*delta for larger margin to possible bad state
+               print("undoing previous refinement action with margin")
+               action, refinement_actions, new_pose = distance_increase(refinement_actions, franka, new_pose, 2*delta)
+            else:
+               print("undoing previous refinement action")
+               action, refinement_actions, new_pose = distance_increase(refinement_actions, franka, new_pose, delta)
          if refinement_actions == (max_refinement_actions - 1):
             #terminate run here so it is not risked that the final action moves back into a bad state if this one fixes it
             print("terminating so that the last action does not risk taking the bag to a worse state")
