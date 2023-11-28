@@ -137,11 +137,11 @@ def calculate_metrics(bag, displayPlot = False):
 
     pca_magnitude = pca.explained_variance_
 
-    if abs(pca_axes[0][0]) > abs(pca_axes[1][0]): #major axis is mostly aligned with x-axis
+    if abs(pca_axes[0][0]) >= abs(pca_axes[1][0]): #major axis is mostly aligned with x-axis
         elongation = np.sqrt(pca_magnitude[1]) / np.sqrt(pca_magnitude[0]) 
     else: #major axis is mostly aligned with y-axis
-        elongation = np.sqrt(pca_magnitude[0]) / np.sqrt(pca_magnitude[1])
-    #elongation is now <1 if ellipse is too long along x axis, >1 if ellipse is too long along y axis, and 1 if ellipse is perfectly round
+        elongation = -np.sqrt(pca_magnitude[1]) / np.sqrt(pca_magnitude[0]) 
+    #elongation is now 0<E<1 if ellipse is too long along x axis, -1<E<0 if ellipse is too long along y axis, and 1 if ellipse is perfectly round
 
 
     #Plotting
@@ -151,7 +151,6 @@ def calculate_metrics(bag, displayPlot = False):
         print("Rim area (cm2): ", rim_area_CH)
         print("3d hull volume (liters): ", volume3d)
         print("Alpha poly rim area (cm2): ",  rim_area_alpha)
-
 
         convex_hull_plot_2d(hull2d) #plot 2d convex hull
         ax1 = plt.gca()
@@ -172,6 +171,7 @@ def calculate_metrics(bag, displayPlot = False):
             Polygons = list(alpha_shape.geoms)
             for poly in Polygons:
                 plt.plot(*poly.exterior.xy, '--r')
+        plt.title("Elongation: "+str("%.3f" % round(elongation,3))) #leave this line uncommented if elongation is wanted as title
         plt.show()
 
         #plot median point
@@ -225,5 +225,5 @@ def calculate_metrics(bag, displayPlot = False):
 
 if __name__ == '__main__':
     rospy.init_node('listener', anonymous=True)
-    #time.sleep(10.0) #wait 5s for time to adjust bag
-    A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics('B', displayPlot=True)
+    #time.sleep(10.0) #wait so there is time to adjust bag
+    A_CH_rim, A_poly_rim, Vol, E_rim = calculate_metrics('C', displayPlot=True)
