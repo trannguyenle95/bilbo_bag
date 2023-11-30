@@ -37,36 +37,33 @@ if __name__ == '__main__':
 
    parser = argparse.ArgumentParser()
    parser.add_argument('Bag', type=str, help='Select bag: A-E')
-   parser.add_argument('InitialState', type=str, help='Select whether initial state is "Easy" (not crumpled) or "Hard" (crumpled)?')
+   parser.add_argument('DMP', type=str, help='Select DMP version: tau_DMP / TC_DMP / Opt_DMP')
+   parser.add_argument('Demo', type=str, help='Write name of demo file')
    parser.add_argument('Run', type=int, help='Write index of run with this bag/dmp/demo combination')
    args = parser.parse_args()
 
    if args.Bag == "A":
       V_max = 6.0
       A_max = 220
-      init_dist = 0.573 #0.573 measured with franka_vizualization
    elif args.Bag == "B":
       V_max = 7.5
       A_max = 360
-      init_dist = 0.558 # 0.558 measured with franka_vizualization
    elif args.Bag == "C":
       V_max = 12.5
       A_max = 370
-      init_dist = 0.553 #0.553 measured with franka_vizualization
    elif args.Bag == "D":
       V_max = 14.0
       A_max = 530
-      init_dist = 0.5189 #0.5189 measured with franka_vizualization
    elif args.Bag == "E":
       V_max = 22.0
       A_max = 550
-      init_dist  = 0.499 #0.499 measured with franka_vizualization
    max_actions = 20
    actions = 0
 
    #Import traj and duration from CSV
-   traj = np.genfromtxt(datafolder+"/trajectories/"+args.Bag+"_"+"Opt_DMP"+"_"+"joint_"+"10l_bag_flip.csv", delimiter=',')  #use this just for moving to origin!
-  
+   traj = np.genfromtxt(datafolder+"/trajectories/"+args.Bag+"_"+args.DMP+"_"+"joint_"+args.Demo, delimiter=',')
+   vel_traj = np.genfromtxt(datafolder+"/trajectories/"+args.Bag+"_"+args.DMP+"_"+"joint_vel_"+args.Demo, delimiter=',')
+
    rospy.init_node('franka3_talker', anonymous=True)
    franka = Franka(topic='/franka/', node_name='franka2_3_talker')
    franka.rate.sleep()
@@ -110,48 +107,68 @@ if __name__ == '__main__':
    df = pd.DataFrame(data)
 
 
-   input("Start adjustment")
-   delta = 0.01 #how many cm movement in x direction
-   x_curr = init_dist
-   x_min = init_dist
+   input("Perform dynamic primitive")
+   time.sleep(5.0) #add 5.0 seconds wait to move the bag
+   actions += 1
+   franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
+   time.sleep(tf) #let motion finish before plotting and closing grippers
+   action = "F"
+   real_pose = np.genfromtxt(pose_file, delimiter=',') #used to know the xdist at the end of a flip
+   A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
+   print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
+   new_pose = real_pose[-1]
+   x_min = real_pose[-1][0]
    x_max = 0.68
-   while actions < max_actions:
-      print("current xdist: ", x_curr)
-      if ((A_alpha_rim < 0.6*A_max) or (Vol < 0.7*V_max)):
 
-         if E_rim < 1.0:
+   print("actions: ", actions)
+   action = "F"
+   df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
+
+   delta = 0.01 #how many cm movement in x direction
+   while actions < max_actions:
+      if ((A_alpha_rim < 0.5*A_max) or (Vol < 0.5*V_max)):
+         actions += 1
+         print("action: F")
+         time.sleep(5.0) #add 5.0 seconds wait to move the bag
+         action = "F"
+         joint_ori = traj[0]
+         franka.move(move_type='j', params=joint_ori, traj_duration=3.0) #for joint movement to origin
+         time.sleep(3.0)
+         franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
+         time.sleep(tf)
+         real_pose = np.genfromtxt(pose_file, delimiter=',')
+         new_pose = real_pose[-1]
+
+      elif E_rim < 0.8:
+         if new_pose[0] + delta < x_max:
             actions += 1
-            if x_curr + delta < x_max:
-               print("action: DI")
-               action = "DI"
-               franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-               time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-               x_curr = x_curr + delta
-            else:
-               print("MAX xdist reached - decreasing dist instead!")
-               print("action: DD")
-               action = "DD"
-               franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-               time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-               x_curr = x_curr - delta
-      
+            print("action: DI")
+            action = "DI"
+            time.sleep(5.0) #add 5.0 seconds wait to move the bag
+            franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
+            new_pose[0] = new_pose[0] + delta
          else:
+            print("MAX xdist reached")
+            print("pose: ", new_pose)
+            time.sleep(5.0) #add 5.0 seconds wait to move the bag
+   
+      elif E_rim > 1.2:
+         if new_pose[0] - delta > x_min:
             actions += 1
-            if x_curr - delta > x_min:
-               print("action: DD")
-               action = "DD"
-               franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-               time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-               x_curr = x_curr - delta
-            else:
-               print("MIN xdist reached - increasing dist instead!")
-               action = "DI"
-               franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-               time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-               x_curr = x_curr + delta
+            print("action: DD")
+            action = "DD"
+            time.sleep(5.0) #add 5.0 seconds wait to move the bag
+            franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
+            new_pose[0] = new_pose[0] - delta
+         else:
+            print("MIN xdist reached")
+            print("pose: ", new_pose)
+            time.sleep(5.0) #add 5.0 seconds wait to move the bag
 
       else:
-         print("Sufficient bag state reached in ", actions, "actions. Final state: ")
+         print("sufficient bag state reached in ", actions, "actions")
          break
       
       A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
@@ -160,13 +177,16 @@ if __name__ == '__main__':
 
       df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
+   print("final state:")
+   print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
    A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=True)
    #NOTE: previous loop breaks when sufficient state is reached, so get final state here + SHOW PLOT
 
-   path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'refine', args.Bag+'_'+args.InitialState+str(args.Run)+'.csv')
+   path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+str(args.Run)+'.csv')
    df.to_csv(path)
 
 
+   #franka.open_grippers_middle()
    open_grippers_msg = input("Open grippers (Y/N)?").upper()
    if(open_grippers_msg == "Y"):
       franka.release_grippers()

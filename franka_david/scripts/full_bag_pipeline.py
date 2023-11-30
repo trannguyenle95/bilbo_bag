@@ -30,27 +30,6 @@ import pandas as pd
 VELOCITY_TIME_MULTIPLIER = 1.0
 
 
-def distance_increase(refinement_actions, franka, new_pose, delta):
-   refinement_actions += 1
-   print("action: DI")
-   action = "DI"
-   franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-   time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-   new_pose[0] = new_pose[0] + delta
-   return action, refinement_actions, new_pose
-
-
-def distance_decrease(refinement_actions, franka, new_pose, delta):
-   if new_pose[0] - delta > x_min:
-      refinement_actions += 1
-      print("action: DD")
-      action = "DD"
-      franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
-      time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
-      new_pose[0] = new_pose[0] - delta
-      return action, refinement_actions, new_pose
-
-
 if __name__ == '__main__':
    print(">>>>> REMEMBER TO RUN ROBOT STOPPER SCRIPTS <<<<<")
 
@@ -79,10 +58,8 @@ if __name__ == '__main__':
    elif args.Bag == "E":
       V_max = 22.0
       A_max = 550
-   max_flips = 10
-   max_refinement_actions = 20
-   flip_actions = 0
-   refinement_actions = 0
+   max_actions = 20
+   actions = 0
 
    #Import traj and duration from CSV
    traj = np.genfromtxt(datafolder+"/trajectories/"+args.Bag+"_"+args.DMP+"_"+"joint_"+args.Demo, delimiter=',')
@@ -132,7 +109,7 @@ if __name__ == '__main__':
 
 
    input("Perform dynamic primitive")
-   flip_actions += 1
+   actions += 1
    franka.move(move_type='jvt',params=vel_traj, traj_duration=tf)
    time.sleep(tf) #let motion finish before plotting and closing grippers
    action = "F"
@@ -143,21 +120,22 @@ if __name__ == '__main__':
    x_min = real_pose[-1][0]
    x_max = 0.68
 
-   print("flip actions: ", flip_actions)
+   print("actions: ", actions)
    action = "F"
    df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
    delta = 0.01 #how many cm movement in x direction
 
-   while flip_actions < max_flips:
-      terminate = input("Did bag flip over (Y/N)?").upper()
-      if (terminate == "Y"):
-         path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'full_pipeline',args.DMP, args.Bag, args.InitialState, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+args.InitialState+str(args.Run)+'.csv')
-         df.to_csv(path)
-         sys.exit(0)
+   while actions < max_actions:
+      if (args.Bag == "A" and args.DMP == "Opt_DMP"):
+         terminate = input("Did bag flip over (Y/N)?").upper()
+         if (terminate == "Y"):
+            path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'full_pipeline',args.DMP, args.Bag, args.InitialState, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+args.InitialState+str(args.Run)+'.csv')
+            df.to_csv(path)
+            sys.exit(0)
 
       if ((A_alpha_rim < 0.6*A_max) or (Vol < 0.7*V_max)):
-         flip_actions += 1
+         actions += 1
          print("action: F")
          action = "F"
          joint_ori = traj[0]
@@ -173,55 +151,64 @@ if __name__ == '__main__':
       
       A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
       print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
-      print("flip actions: ", flip_actions)
+      print("actions: ", actions)
       df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
-   while refinement_actions < max_refinement_actions:
-      if ((A_alpha_rim >= 0.6*A_max) and (Vol >= 0.7*V_max) and (abs(E_rim) < 0.8) and (E_rim >= 0)):
+   while actions < max_actions:
+      if ((A_alpha_rim >= 0.6*A_max) and (Vol >= 0.7*V_max) and (E_rim < 0.8)):
+         actions += 1
          if new_pose[0] + delta < x_max:
-            action, refinement_actions, new_pose = distance_increase(refinement_actions, franka, new_pose, delta)
+            print("action: DI")
+            action = "DI"
+            franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
+            new_pose[0] = new_pose[0] + delta
          else:
             print("MAX xdist reached")
-            break
-
+            print("pose: ", new_pose)
    
-      elif ((A_alpha_rim >= 0.6*A_max) and (Vol >= 0.7*V_max) and (abs(E_rim) < 0.8) and (E_rim < 0)):
+      elif ((A_alpha_rim >= 0.6*A_max) and (Vol >= 0.7*V_max) and (E_rim > 1.2)):
+         actions += 1
          if new_pose[0] - delta > x_min:
-               action, refinement_actions, new_pose = distance_decrease(refinement_actions, franka, new_pose, delta)
+            print("action: DD")
+            action = "DD"
+            franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
+            new_pose[0] = new_pose[0] - delta
          else:
             print("MIN xdist reached")
-            break
+            print("pose: ", new_pose)
 
       elif ((A_alpha_rim < 0.6*A_max) or (Vol < 0.7*V_max)):
+         print("undoing previous refinement action and terminating")
+         actions += 1
          if action == "DI":
-            if new_pose[0] - 2*delta > x_min: #try to step back by 2*delta for larger margin to possible bad state
-               print("undoing previous refinement action with margin")
-               action, refinement_actions, new_pose = distance_decrease(refinement_actions, franka, new_pose, 2*delta)
-            else:
-               print("undoing previous refinement action")
-               action, refinement_actions, new_pose = distance_decrease(refinement_actions, franka, new_pose, delta)
-         else:
-            if new_pose[0] + 2*delta < x_max: #try to step back by 2*delta for larger margin to possible bad state
-               print("undoing previous refinement action with margin")
-               action, refinement_actions, new_pose = distance_increase(refinement_actions, franka, new_pose, 2*delta)
-            else:
-               print("undoing previous refinement action")
-               action, refinement_actions, new_pose = distance_increase(refinement_actions, franka, new_pose, delta)
-         if refinement_actions == (max_refinement_actions - 1):
-            #terminate run here so it is not risked that the final action moves back into a bad state if this one fixes it
-            print("terminating so that the last action does not risk taking the bag to a worse state")
+            print("action: DD")
+            action = "DD"
+            franka.move_relative(params=[-delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
             A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
             print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
-            print("refinement actions: ", refinement_actions)
+            print("actions: ", actions)
+            df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
+            break
+         else:
+            print("action: DI")
+            action = "DI"
+            franka.move_relative(params=[delta, 0.00, 0.00], traj_duration=0.5) #for joint movement to origin
+            time.sleep(0.5) #NOTE: need higher sleep time if I want to test with remote bag!
+            A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
+            print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
+            print("actions: ", actions)
             df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
             break
       else:
-         print("Sufficient bag state reached in ", refinement_actions, "refinement actions. Final state: ")
+         print("Sufficient bag state reached in ", actions, "actions. Final state: ")
          break
       
       A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=False)
       print("Area %: ", A_alpha_rim/A_max, "Vol %: ", Vol/V_max, " E_rim:", E_rim)
-      print("refinement actions: ", refinement_actions)
+      print("actions: ", actions)
       df.loc[len(df.index)] = [A_CH_rim, A_alpha_rim,  Vol, E_rim, action] 
 
    A_CH_rim, A_alpha_rim, Vol, E_rim = BagMetrics.calculate_metrics(args.Bag, displayPlot=True)
@@ -229,9 +216,6 @@ if __name__ == '__main__':
 
    path = os.path.join(os.path.expanduser('~'), 'catkin_ws', 'src', 'Data', 'runs', 'full_pipeline',args.DMP, args.Bag, args.InitialState, args.Bag+'_'+args.DMP+"_"+args.Demo[:-len('.csv')]+'_'+args.InitialState+str(args.Run)+'.csv')
    df.to_csv(path)
-
-
-
 
 
    open_grippers_msg = input("Open grippers (Y/N)?").upper()
