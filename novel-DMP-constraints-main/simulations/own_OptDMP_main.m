@@ -85,8 +85,8 @@ gmp2 = gmp.deepCopy();
 unconstrained_DMP = struct('t',Time, 'pos',P_data, 'vel',dP_data, 'acc',ddP_data, 'version','UC-DMP');
 
 %output unconstrained DMP for parameter comparison
-writematrix(unconstrained_DMP.pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_UC_Opt_joint_',filename)))
-writematrix(unconstrained_DMP.vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_UC_Opt_joint_vel_',filename)))
+writematrix(unconstrained_DMP.pos',fullfile('../../Data/trajectories',strcat(bag,'_UC_Opt_joint_',filename)))
+writematrix(unconstrained_DMP.vel',fullfile('../../Data/trajectories',strcat(bag,'_UC_Opt_joint_vel_',filename)))
 
 %% --------- Optimized DMP -> VEL -----------
 %[Time, P_data, dP_data, ddP_data, w2] = offlineGMPweightsOpt(gmp, tau, y0, yg, pos_lim, vel_lim, accel_lim, 0, 1, [], qp_solver_type);
@@ -137,15 +137,15 @@ res.pos(1,:) = -res.pos(1,:);
 res.pos(3,:) = -res.pos(3,:);
 res.pos(5,:) = -res.pos(5,:);
 res.pos(7,:) = -res.pos(7,:);
-writematrix(res.pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_Opt_DMP_joint_',filename)))
+writematrix(res.pos',fullfile('../../Data/trajectories',strcat(bag,'_Opt_DMP_joint_',filename)))
 
 res.vel(1,:) = -res.vel(1,:);
 res.vel(3,:) = -res.vel(3,:);
 res.vel(5,:) = -res.vel(5,:);
 res.vel(7,:) = -res.vel(7,:);
-writematrix(res.vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_Opt_DMP_joint_vel_',filename)))
+writematrix(res.vel',fullfile('../../Data/trajectories',strcat(bag,'_Opt_DMP_joint_vel_',filename)))
 
 %run forward kinematics again after sign flips so that cartesian trajectory
 %can be plotted for comparison in control scripts
 poseDMP = ForwardKinematics(res.pos');
-writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_Opt_DMP_pose_',filename)))
+writematrix(poseDMP,fullfile('../../Data/trajectories',strcat(bag,'_Opt_DMP_pose_',filename)))

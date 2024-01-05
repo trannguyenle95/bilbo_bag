@@ -33,8 +33,8 @@ sim_params.T_max = 100; %maximum duration after slowdown due to constraints - or
 unconstrained_DMP = dmp.rollout(sim_params.dt, 1);
 
 %output unconstrained DMP for parameter comparison
-writematrix(unconstrained_DMP.pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_UC_TC_DMP_joint_',filename)))
-writematrix(unconstrained_DMP.vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_UC_TC_DMP_joint_vel_',filename)))
+writematrix(unconstrained_DMP.pos',fullfile('../Data/trajectories',strcat(bag,'_UC_TC_DMP_joint_',filename)))
+writematrix(unconstrained_DMP.vel',fullfile('../Data/trajectories',strcat(bag,'_UC_TC_DMP_joint_vel_',filename)))
 
 %limits are chosen to be worst case between Franka Panda and Franka
 %Research 3
@@ -103,15 +103,15 @@ res.pos(1,:) = -res.pos(1,:);
 res.pos(3,:) = -res.pos(3,:);
 res.pos(5,:) = -res.pos(5,:);
 res.pos(7,:) = -res.pos(7,:);
-writematrix(res.pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_TC_DMP_joint_',filename)))
+writematrix(res.pos',fullfile('../Data/trajectories',strcat(bag,'_TC_DMP_joint_',filename)))
 
 res.vel(1,:) = -res.vel(1,:);
 res.vel(3,:) = -res.vel(3,:);
 res.vel(5,:) = -res.vel(5,:);
 res.vel(7,:) = -res.vel(7,:);
-writematrix(res.vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_TC_DMP_joint_vel_',filename)))
+writematrix(res.vel',fullfile('../Data/trajectories',strcat(bag,'_TC_DMP_joint_vel_',filename)))
 
 %run forward kinematics again after sign flips so that cartesian trajectory
 %can be plotted for comparison in control scripts
 poseDMP = ForwardKinematics(res.pos');
-writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_TC_DMP_pose_',filename)))
+writematrix(poseDMP,fullfile('../Data/trajectories',strcat(bag,'_TC_DMP_pose_',filename)))

@@ -68,15 +68,15 @@ res.pos(1,:) = -res.pos(1,:);
 res.pos(3,:) = -res.pos(3,:);
 res.pos(5,:) = -res.pos(5,:);
 res.pos(7,:) = -res.pos(7,:);
-writematrix(res.pos',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_tau_DMP_joint_',filename)))
+writematrix(res.pos',fullfile('../Data/trajectories',strcat(bag,'_tau_DMP_joint_',filename)))
 
 res.vel(1,:) = -res.vel(1,:);
 res.vel(3,:) = -res.vel(3,:);
 res.vel(5,:) = -res.vel(5,:);
 res.vel(7,:) = -res.vel(7,:);
-writematrix(res.vel',fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_tau_DMP_joint_vel_',filename)))
+writematrix(res.vel',fullfile('../Data/trajectories',strcat(bag,'_tau_DMP_joint_vel_',filename)))
 
 %run forward kinematics again after sign flips so that cartesian trajectory
 %can be plotted for comparison in control scripts
 poseDMP = ForwardKinematics(res.pos');
-writematrix(poseDMP,fullfile('/home/erichannus/catkin_ws/src/Data/trajectories',strcat(bag,'_tau_DMP_pose_',filename)))
+writematrix(poseDMP,fullfile('../Data/trajectories',strcat(bag,'_tau_DMP_pose_',filename)))
