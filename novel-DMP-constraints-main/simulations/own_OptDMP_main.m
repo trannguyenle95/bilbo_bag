@@ -120,16 +120,6 @@ min_joint_acc = (max(res.acc, [], 2) < actual_accel_lim(:,1))'
 max_joint_acc = (max(res.acc, [], 2) > actual_accel_lim(:,2))'
 
 
-%% difference in joint velocity
-%Calculate the difference between joint velocities in the unconstrained DMP and
-%in the constrained DMP for the 1000 timesteps (1s total) with highest error. This way
-%demonstrations with different lenght can be compared too.
-
-d_jointVel = mean(maxk(abs(unconstrained_DMP.vel' - res.vel'), 1000), "all") %use max 1000 timesteps (total 1s time anywhere over the traj)
-
-
-res_unflipped = res %for exporting manually for joint vel comparison plots
-
 %% export
 %Flip these joint signs so that output DMP runs on Franka2 in the lab
 %wihtout sign flips, and flip signs back for Franka3 in the controller code
@@ -144,6 +134,12 @@ res.vel(3,:) = -res.vel(3,:);
 res.vel(5,:) = -res.vel(5,:);
 res.vel(7,:) = -res.vel(7,:);
 writematrix(res.vel',fullfile('../../Data/trajectories',strcat(bag,'_Opt_DMP_joint_vel_',filename)))
+
+res.acc(1,:) = -res.acc(1,:);
+res.acc(3,:) = -res.acc(3,:);
+res.acc(5,:) = -res.acc(5,:);
+res.acc(7,:) = -res.acc(7,:);
+writematrix(res.acc',fullfile('../../Data/trajectories',strcat(bag,'_Opt_DMP_joint_acc_',filename)))
 
 %run forward kinematics again after sign flips so that cartesian trajectory
 %can be plotted for comparison in control scripts

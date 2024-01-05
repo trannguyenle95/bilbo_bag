@@ -111,6 +111,12 @@ res.vel(5,:) = -res.vel(5,:);
 res.vel(7,:) = -res.vel(7,:);
 writematrix(res.vel',fullfile('../Data/trajectories',strcat(bag,'_TC_DMP_joint_vel_',filename)))
 
+res.acc(1,:) = -res.acc(1,:);
+res.acc(3,:) = -res.acc(3,:);
+res.acc(5,:) = -res.acc(5,:);
+res.acc(7,:) = -res.acc(7,:);
+writematrix(res.acc',fullfile('../Data/trajectories',strcat(bag,'_TC_DMP_joint_acc_',filename)))
+
 %run forward kinematics again after sign flips so that cartesian trajectory
 %can be plotted for comparison in control scripts
 poseDMP = ForwardKinematics(res.pos');

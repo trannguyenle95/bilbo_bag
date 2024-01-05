@@ -1,14 +1,11 @@
 function robot = createFranka()
-%https://se.mathworks.com/help/robotics/ref/rigidbodytree.html
-
+%https://mathworks.com/help/robotics/ref/rigidbodytree.html
 %https://frankaemika.github.io/docs/control_parameters.html
 
 %NOTE franka gives DH parameters in Craig's convention (modified),
 %so use "mdh" argument in https://se.mathworks.com/help/robotics/ref/rigidbodyjoint.setfixedtransform.html
 % and change order given in franka source to match [a alpha d theta] used
 % in Matlab:
-
-
 dhparams = [0           0           0.333        0;
             0	        -pi/2       0            0;
             0	        pi/2        0.316        0;
@@ -16,14 +13,10 @@ dhparams = [0           0           0.333        0;
             -0.0825     -pi/2       0.384        0;
             0           pi/2        0            0;
             0.088       pi/2        0.107+0.1    0]; %add offset to flange plus 10cm offset to get to center of hand
-
-
 %seems to be same DH params for Research 3: https://www.generationrobots.com/media/franka-emika-research-3-robot-datasheet.pdf
-
 %last row "theta" is ignored, so can be set to zero for all
 
 robot = rigidBodyTree;
-
 body1 = rigidBody('body1');
 jnt1 = rigidBodyJoint('jnt1','revolute');
 body2 = rigidBody('body2');
@@ -39,9 +32,8 @@ jnt6 = rigidBodyJoint('jnt6','revolute');
 body7 = rigidBody('body7');
 jnt7 = rigidBodyJoint('jnt7','revolute');
 
-%https://se.mathworks.com/help/robotics/ref/rigidbodyjoint.setfixedtransform.html
-%NOTE changed to use modified DH params
-%Given in order [a alpha d theta]
+%https://mathworks.com/help/robotics/ref/rigidbodyjoint.setfixedtransform.html
+%changed to use modified DH params, given in order [a alpha d theta]
 setFixedTransform(jnt1,dhparams(1,:),'mdh');
 setFixedTransform(jnt2,dhparams(2,:),'mdh');
 setFixedTransform(jnt3,dhparams(3,:),'mdh');
@@ -49,7 +41,6 @@ setFixedTransform(jnt4,dhparams(4,:),'mdh');
 setFixedTransform(jnt5,dhparams(5,:),'mdh');
 setFixedTransform(jnt6,dhparams(6,:),'mdh');
 setFixedTransform(jnt7,dhparams(7,:),'mdh');
-
 body1.Joint = jnt1;
 body2.Joint = jnt2;
 body3.Joint = jnt3;
@@ -58,14 +49,13 @@ body5.Joint = jnt5;
 body6.Joint = jnt6;
 body7.Joint = jnt7;
 
-
 %joint 4 and joint 6 should have non-zero joint home position as min and
 %max values are not symmetric
 body4.Joint.HomePosition = mean([-3.0421 -0.1518]);
 body6.Joint.HomePosition = mean([0.5445 3.7525]);
 
 %Add constraints to joints
-%https://se.mathworks.com/help/robotics/ref/rigidbodyjoint.html:
+%https://mathworks.com/help/robotics/ref/rigidbodyjoint.html:
 body1.Joint.PositionLimits = [-2.7437 2.7437];
 body2.Joint.PositionLimits = [-1.7628 1.7628];
 body3.Joint.PositionLimits = [-2.8973 2.8973];

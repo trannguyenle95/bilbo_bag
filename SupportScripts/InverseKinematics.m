@@ -15,15 +15,11 @@ function [q, jacobians] = InverseKinematics2(D)
 
     weights = [0.25 0.25 0.25 1 1 1];  
 
-    %IK only for first pose
-    %Constraints defined in RigidBodyTree
+    %Position constraints are defined in RigidBodyTree
     ik = inverseKinematics('RigidBodyTree',franka);
-
     q(1,:) = ik('body7',T(:,:,1),weights,q0);
-
     J = geometricJacobian(franka,q(1,:)',"body7");
     jacobians(:,:,1) = J;
-
     for i = 2:length(q)
         q(i,:) = ik('body7',T(:,:,i),weights,q(i-1,:)');
         J = geometricJacobian(franka,q(i,:)',"body7");

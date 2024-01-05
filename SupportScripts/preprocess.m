@@ -1,10 +1,7 @@
 function D = preprocess(filename, displayplot, dx, dy, dz, max_amplitude, gripper_ori, bag_width)
 
-%D = readmatrix(filename)';
 D = csvread(filename, 7); %offset 7 rows to skip header info
-
 D(D==0) = NaN; %csvread fills missing values with zeros, undo this so fillmissing on next row works
-
 D = fillmissing(fillmissing(D, 'next'), 'previous'); %copy values if there are gaps, so quaternions should still be valid
 
 if size(D, 2) == 9
@@ -22,12 +19,10 @@ for row = 1:length(D)
     end
 end
 
-
 %normalize around (0,0,0) add offset later
 D(:,7) = D(:,7) - D(1,7); %x
 D(:,8) = D(:,8) - D(1,8); %y
 D(:,9) = D(:,9) - D(1,9); %y
-
 
 %scale trajectory so height is within robot reach
 max_h = max(D(:,8));
@@ -38,16 +33,14 @@ if max_h > max_amplitude
 end
 D(:,7:9) = D(:,7:9) * scale;
 
-
 %assume rotation is mainly around x axis, if this is not the case the code
 %must be edited
 axis = 3;
-D(:,7) = 0; %set linear movement around x axis to zero
+D(:,7) = 0; %set linear movement around x axis to zero, calculate desired hand position later
 
 %set rotation to be only around x axis
 qx = D(:,axis); %copy qx
 qw = sqrt(1-qx.^2) .* sign(D(:,6)); %make qw and qx add to 1, let qy and qz be 0
-
 theta = 2*atan2(sqrt(qx.^2),qw); %calculate theta from new qx and qw
 
 %offset rotation by -180 deg (-pi) because zero degree rotation means that

@@ -47,12 +47,11 @@ for joint = 1:7
     hold on
 
     plot_unconstrained = plot(unconstrained_DMP.t,unconstrained_DMP.vel(joint,:),'r-','LineWidth',1.5, 'DisplayName','UC-DMP');
-    plot_tau_DMP = plot(res.t,res.vel(joint,:),'b-','LineWidth',1.5, 'DisplayName',res.version);
+    plot_constrained_DMP = plot(res.t,res.vel(joint,:),'b-','LineWidth',1.5, 'DisplayName',res.version);
     limit_plot = plot([res.t(1) res.t(end)],[v_max(joint) v_max(joint)],'r:','LineWidth',1.5, 'DisplayName', 'Limit')
     plot([res.t(1) res.t(end)],-[v_max(joint) v_max(joint)],'r:','LineWidth',1.5)
 
-    legend([plot_unconstrained, plot_tau_DMP, limit_plot], 'Location','northwest')
-    %legend([plot_tau_DMP, limit_plot], 'Location','northwest')
+    legend([plot_unconstrained, plot_constrained_DMP, limit_plot], 'Location','northwest')
 end
 
 
@@ -69,12 +68,11 @@ for joint = 1:7
     hold on
 
     plot_unconstrained = plot(unconstrained_DMP.t,unconstrained_DMP.acc(joint,:),'r-','LineWidth',1.5, 'DisplayName','UC-DMP');
-    plot_tau_DMP = plot(res.t,res.acc(joint,:),'b-','LineWidth',1.5, 'DisplayName',res.version);
+    plot_constrained_DMP = plot(res.t,res.acc(joint,:),'b-','LineWidth',1.5, 'DisplayName',res.version);
     limit_plot = plot([res.t(1) res.t(end)],[a_max(joint) a_max(joint)],'r:','LineWidth',1.5, 'DisplayName', 'Limit')
     plot([res.t(1) res.t(end)],-[a_max(joint) a_max(joint)],'r:','LineWidth',1.5)
 
-    legend([plot_unconstrained, plot_tau_DMP, limit_plot], 'Location','northwest')
-    %legend([plot_tau_DMP, limit_plot], 'Location','northwest')
+    legend([plot_unconstrained, plot_constrained_DMP, limit_plot], 'Location','northwest')
 end
 
 
