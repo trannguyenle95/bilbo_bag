@@ -8,20 +8,14 @@ T_max = params.T_max;
 dmp = dmp.init();
 t = 0;
 k = 1;
-sys.pos = dmp.ref_pos();
-sys.vel = 0*sys.pos;
-sys.acc = 0*sys.pos;
 
 while t < T_max
     % Store values
     res.t(k) = t;
     res.s(k) = dmp.s();
-    res.ref_pos(:,k) = dmp.ref_pos();
-    res.ref_vel(:,k) = dmp.ref_vel();
-    res.ref_acc(:,k) = dmp.ref_acc();
-    res.sys_pos(:,k) = sys.pos;
-    res.sys_vel(:,k) = sys.vel;
-    res.sys_acc(:,k) = sys.acc;
+    res.pos(:,k) = dmp.ref_pos();
+    res.vel(:,k) = dmp.ref_vel();
+    res.acc(:,k) = dmp.ref_acc();
     res.tau(k) = dmp.tau;
 
     if norm(dmp.ref_pos()-dmp.g) < 1e-2
@@ -35,10 +29,5 @@ while t < T_max
     % Step trajectory generator
     tau_dot = tmp_couple.tau_dot(dmp,dt);
     dmp = dmp.step(tau_dot,dt); 
-
-    %Direcly using DMP reference as system output
-    sys.acc = dmp.ref_acc();
-    sys.vel = dmp.ref_vel();
-    sys.pos = dmp.ref_pos();
 
 end

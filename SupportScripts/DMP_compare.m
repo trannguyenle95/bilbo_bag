@@ -2,9 +2,10 @@ clearvars
 clc
 close all 
 
-addpath('/home/erichannus/catkin_ws/src/Data/trajectories/')
-addpath('/home/erichannus/catkin_ws/src/SupportScripts/')
-addpath('/home/erichannus/catkin_ws/src/Data/demos/')
+
+addpath('../SupportScripts')
+addpath('../Data/demos')
+addpath('../Data/trajectories')
 
 % Create demonstration trajectory
 bag = 'A'

@@ -2,14 +2,13 @@ clearvars
 clc
 close all 
 
-addpath('/home/erichannus/catkin_ws/src/SupportScripts/')
-addpath('/home/erichannus/catkin_ws/src/Data/demos/')
-
+addpath('../SupportScripts')
+addpath('../Data/demos')
 
 % Create demonstration trajectory
-bag = 'E';
+bag = 'A';
 filename = '10l_bag_flip.csv';
-tau_scale = 3.3;
+tau_scale = 3.9;
 
 %get demo_traj from this script
 generateJointDemo
@@ -28,7 +27,7 @@ dmp = DMP(dmp_params,demo_traj);
 dt = 1/1000; %frequency of Franka robots
 
 %Unconstrained DMP
-nominalTraj = dmp.rollout(dt, 1);
+unconstrained_DMP = dmp.rollout(dt, 1);
 
 %DMP constrained by manually setting tau
 res = dmp.rollout(dt, tau_scale);
@@ -36,29 +35,32 @@ res = dmp.rollout(dt, tau_scale);
 %limits for plotting and checking if they are exceeded
 p_max = [2.7437; 1.7628; 2.8973; -0.1518; 2.8065; 3.7525; 2.8973]; %not used in sim, added for plotting
 p_min = [-2.7437; -1.7628; -2.8973; -3.0421; -2.8065; 0.5445; -2.8973]; %not used in sim, added for plotting
-sim_params.v_max = [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100];
-sim_params.a_max = [10; 7.5; 10; 10; 10; 10; 10];
+v_max = [2.1750; 2.1750; 2.1750; 2.1750; 2.6100; 2.6100; 2.6100];
+a_max = [10; 7.5; 10; 10; 10; 10; 10];
 
 %print whether limits are exceeded
 min_joint_pos = (min(res.pos, [], 2) < p_min)'
 max_joint_pos = (max(res.pos, [], 2) > p_max)'
 
-min_joint_vel = (min(res.vel, [], 2) < -sim_params.v_max)' 
-max_joint_vel = (max(res.vel, [], 2) > sim_params.v_max)'
+min_joint_vel = (min(res.vel, [], 2) < -v_max)' 
+max_joint_vel = (max(res.vel, [], 2) > v_max)'
 
-min_joint_acc = (min(res.acc, [], 2) < -sim_params.a_max)'
-max_joint_acc = (max(res.acc, [], 2) > sim_params.a_max)'
+min_joint_acc = (min(res.acc, [], 2) < -a_max)'
+max_joint_acc = (max(res.acc, [], 2) > a_max)'
 
 slowdown = (res.t(end) - demo_traj.t(end)) / demo_traj.t(end)*100; %how much longer runtime (%) does the constrained DMP have compared to the demonstrated trajectory
 disp(strcat('slowdown: ', num2str(slowdown), ' %'))
 
 
 %calculate the corresponding cartesian trajectory for plotting
-poseUnconstrainedDMP = ForwardKinematics(nominalTraj.pos');
+poseUnconstrainedDMP = ForwardKinematics(unconstrained_DMP.pos');
 poseDMP = ForwardKinematics(res.pos');
 
 % Plot result
-own_plot_tauDMP
+res.version = "tau-DMP"
+generate_plots
+
+res_unflipped = res
 
 %Flip these joint signs so that output DMP runs on Franka2 in the lab
 %wihtout sign flips, and flip signs back for Franka3 in the controller code
