@@ -7,6 +7,7 @@ import pandas as pd
 from pathlib import Path
 
 
+
 def extract_arrays(mode, dmp, bag, difficulty):
     src_dir = Path(os.path.abspath(os.path.dirname(sys.argv[0]))).parent
     if mode == "flip":
@@ -167,170 +168,86 @@ def results(df, mode, bag, difficulty, metric, ax):
     return
 
 
+def plot_three_results(df, mode, difficulty, bags_number, legend_list,
+                       target_elongation= True, flip_only_lines=False,
+                       dpi=300):
+    hspace_val = 0.22
+    wspace_val = 0.22
+
+    fig, axes = plt.subplots(nrows=3, ncols = 3,dpi=dpi)
+    fig.set_size_inches(10, 10, forward=True)
+
+    # fig.suptitle("Fling-only primitive", fontsize=26)
+    axes[0,0].set_title("Area")
+    axes[0,1].set_title("Volume")
+    axes[0,2].set_title("Distance to elongation")
+
+    if bags_number == 1:
+        axes[0,0].set_ylabel(f"BagA {difficulty}", size='large')
+        bags = ["A"]
+    elif bags_number == 2:
+        axes[0,0].set_ylabel(f"BagD {difficulty}", size='large')
+        axes[1,0].set_ylabel(f"BagE {difficulty}", size='large')
+        bags = ["D", "E"]
+    else:
+        axes[0,0].set_ylabel(f"BagA {difficulty}", size='large')
+        axes[1,0].set_ylabel(f"BagB {difficulty}", size='large')
+        axes[2,0].set_ylabel(f"BagC {difficulty}", size='large')
+        bags = ["A", "B", "C"]
+
+    axes_list = ["A", "V", "E"]
+    for i in range(bags_number):
+        for j in range(3):
+            results(df, mode, bags[i], difficulty, axes_list[i], axes[i, j]) # axes[row, col]
+
+    Ah, Al = axes[0,0].get_legend_handles_labels()
+    Eh, El = axes[0,2].get_legend_handles_labels()
+    if target_elongation:
+        Ah.append(Eh[-1]) #add graphic for target elongation
+    if flip_only_lines:
+        Ah.append(Eh[1]) #add graphic for "flip-only" lines
+
+    fig.legend(Ah, legend_list,  ncol = len(legend_list), bbox_to_anchor=(0.4, 0.05, 0.5, 0.95))
+    fig.subplots_adjust(left=0.1, bottom=0.05, right=0.98, top=0.88, 
+                        wspace=wspace_val, hspace=hspace_val)
+    # fig.supxlabel('Actions', y = 0.06)
+    bags_names = ''.join(bags)
+    plt.savefig(f'results_{mode}_{difficulty}_{bags_names}.pdf', dpi=300)
+
+
 #------------------ initialize dataframe ------------------
 df = pd.DataFrame(columns = ['A_mean_final', 'V_mean_final', 'E_mean_dist_final', 'Success_rate', 'Mean_act_successful', 'Full_success_rate'])
-hspace_val = 0.25
 # ------------------ flip-only runs ------------------
 
 # ---------- Easy only -----------------
-fig, axes = plt.subplots(nrows=3, ncols = 3)
-fig.suptitle("Fling-only primitive", fontsize=26)
-axes[0,0].set_title("Area")
-axes[0,1].set_title("Volume")
-axes[0,2].set_title("Distance to elongation 1.0")
-axes[0,0].set_ylabel("BagA Easy", size='large')
-axes[1,0].set_ylabel("BagB Easy", size='large')
-axes[2,0].set_ylabel("BagC Easy", size='large')
-
-results(df, 'flip', 'A', 'Easy', 'A', axes[0, 0]) # axes[row, col]
-results(df, 'flip', 'A', 'Easy', 'V', axes[0, 1]) # axes[row, col]
-results(df, 'flip', 'A', 'Easy', 'E', axes[0, 2]) # axes[row, col]
-
-results(df, 'flip', 'B', 'Easy', 'A', axes[1, 0]) # axes[row, col]
-results(df, 'flip', 'B', 'Easy', 'V', axes[1, 1]) # axes[row, col]
-results(df, 'flip', 'B', 'Easy', 'E', axes[1, 2]) # axes[row, col]
-
-results(df, 'flip', 'C', 'Easy', 'A', axes[2, 0]) # axes[row, col]
-results(df, 'flip', 'C', 'Easy', 'V', axes[2, 1]) # axes[row, col]
-results(df, 'flip', 'C', 'Easy', 'E', axes[2, 2]) # axes[row, col]
-
-Ah, Al = axes[0,0].get_legend_handles_labels()
-Eh, El = axes[0,2].get_legend_handles_labels()
-Ah.append(Eh[-1]) #add graphic for target elongation
-fig.legend(Ah, ['tau-DMP', 'TC-DMP', 'Opt-DMP', 'lower limit', 'upper limit'],  ncol = 5, loc='upper center',  bbox_to_anchor=(0.0, -0.06, 1.0, 1.0))
-fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=hspace_val)
-fig.supxlabel('Actions', y = 0.06)
+dpi=300
+plot_three_results(df, mode='flip', difficulty='Easy', dpi=300, bags_number=3,
+                   legend_list=['tau-DMP', 'TC-DMP', 'Opt-DMP', 'lower limit', 'upper limit'])
 
 # ---------- Hard only -----------------
-fig, axes = plt.subplots(nrows=3, ncols = 3)
-fig.suptitle("Fling-only primitive", fontsize=26)
-axes[0,0].set_title("Area")
-axes[0,1].set_title("Volume")
-axes[0,2].set_title("Distance to elongation 1.0")
-axes[0,0].set_ylabel("BagA Hard", size='large')
-axes[1,0].set_ylabel("BagB Hard", size='large')
-axes[2,0].set_ylabel("BagC Hard", size='large')
-
-results(df, 'flip', 'A', 'Hard', 'A', axes[0, 0]) # axes[row, col]
-results(df, 'flip', 'A', 'Hard', 'V', axes[0, 1]) # axes[row, col]
-results(df, 'flip', 'A', 'Hard', 'E', axes[0, 2]) # axes[row, col]
-
-results(df, 'flip', 'B', 'Hard', 'A', axes[1, 0]) # axes[row, col]
-results(df, 'flip', 'B', 'Hard', 'V', axes[1, 1]) # axes[row, col]
-results(df, 'flip', 'B', 'Hard', 'E', axes[1, 2]) # axes[row, col]
-
-results(df, 'flip', 'C', 'Hard', 'A', axes[2, 0]) # axes[row, col]
-results(df, 'flip', 'C', 'Hard', 'V', axes[2, 1]) # axes[row, col]
-results(df, 'flip', 'C', 'Hard', 'E', axes[2, 2]) # axes[row, col]
-
-Ah, Al = axes[0,0].get_legend_handles_labels()
-Eh, El = axes[0,2].get_legend_handles_labels()
-Ah.append(Eh[-1]) #add graphic for target elongation
-fig.legend(Ah, ['tau-DMP', 'TC-DMP', 'Opt-DMP', 'lower limit', 'upper limit'],  ncol = 5, loc='upper center',  bbox_to_anchor=(0.0, -0.06, 1.0, 1.0))
-fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=hspace_val)
-fig.supxlabel('Actions', y = 0.06)
-
+plot_three_results(df, mode='flip', difficulty='Hard', dpi=300, bags_number=3,
+                   legend_list=['tau-DMP', 'TC-DMP', 'Opt-DMP', 'lower limit', 'upper limit'])
 
 
 # ------------------ refinement only runs ------------------
-
-fig, axes = plt.subplots(nrows=3, ncols = 3) #NOTE: Is 3 rows height sufficient, or should plot be higher/lower?? (other tests have 6 and 5 rows)
-fig.suptitle("Refinement-only primitive", fontsize=26)
-axes[0,0].set_title("Area")
-axes[0,1].set_title("Volume")
-axes[0,2].set_title("Distance to elongation 1.0")
-axes[0,0].set_ylabel("BagA Hard", size='large')
-
-results(df, 'refine', 'A', 'Hard', 'A', axes[0, 0]) # axes[row, col]
-results(df, 'refine', 'A', 'Hard', 'V', axes[0, 1]) # axes[row, col]
-results(df, 'refine', 'A', 'Hard', 'E', axes[0, 2]) # axes[row, col]
-
-#deactivate rest of axes for shorter plot - cut figure to correct size when adding to thesis
-axes[1, 0].axis('off')
-axes[1, 1].axis('off')
-axes[1, 2].axis('off')
-axes[2, 0].axis('off')
-axes[2, 1].axis('off')
-axes[2, 2].axis('off')
-
-Ah, Al = axes[0,0].get_legend_handles_labels()
-Eh, El = axes[0,2].get_legend_handles_labels()
-Ah.append(Eh[-1]) #add graphic for target elongation
-fig.legend(Ah, ['refinement-only', 'lower limit', 'upper limit'],  ncol = 5, loc='upper center',  bbox_to_anchor=(0.0, -0.06, 1.0, 1.0))
-fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=hspace_val)
-fig.supxlabel('Actions', y = 0.61)
+plot_three_results(df, mode='refine', difficulty='Hard', dpi=300, bags_number=1,
+                   legend_list=['refinement-only', 'lower limit', 'upper limit'])
 
 # ------------------ full pipeline runs ------------------
 
 #NOTE: ---------- Bags A-C only -----------------
-
-fig, axes = plt.subplots(nrows=3, ncols = 3)
-fig.suptitle("Full pipeline", fontsize=26)
-axes[0,0].set_title("Area")
-axes[0,1].set_title("Volume")
-axes[0,2].set_title("Distance to elongation 1.0")
-axes[0,0].set_ylabel("BagA Hard", size='large')
-axes[1,0].set_ylabel("BagB Hard", size='large')
-axes[2,0].set_ylabel("BagC Hard", size='large')
-
-results(df, 'full_pipeline', 'A', 'Hard', 'A', axes[0, 0]) # axes[row, col]
-results(df, 'full_pipeline', 'A', 'Hard', 'V', axes[0, 1]) # axes[row, col]
-results(df, 'full_pipeline', 'A', 'Hard', 'E', axes[0, 2]) # axes[row, col]
-
-results(df, 'full_pipeline', 'B', 'Hard', 'A', axes[1, 0]) # axes[row, col]
-results(df, 'full_pipeline', 'B', 'Hard', 'V', axes[1, 1]) # axes[row, col]
-results(df, 'full_pipeline', 'B', 'Hard', 'E', axes[1, 2]) # axes[row, col]
-
-results(df, 'full_pipeline', 'C', 'Hard', 'A', axes[2, 0]) # axes[row, col]
-results(df, 'full_pipeline', 'C', 'Hard', 'V', axes[2, 1]) # axes[row, col]
-results(df, 'full_pipeline', 'C', 'Hard', 'E', axes[2, 2]) # axes[row, col]
-
-Ah, Al = axes[0,0].get_legend_handles_labels()
-Eh, El = axes[0,2].get_legend_handles_labels()
-Ah.append(Eh[-1]) #add graphic for target elongation
-Ah.append(Eh[1]) #add graphic for "flip-only" lines
-fig.legend(Ah, ['fling-only Opt-DMP', 'full Opt-DMP', 'lower limit', 'upper limit'],  ncol = 5, loc='upper center',  bbox_to_anchor=(0.0, -0.06, 1.0, 1.0))
-fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=hspace_val)
-fig.supxlabel('Actions', y = 0.06)
+plot_three_results(df, mode='full_pipeline', difficulty='Hard', dpi=300, bags_number=3,
+                   legend_list=['fling-only Opt-DMP', 'full Opt-DMP', 'lower limit', 'upper limit'],
+                   flip_only_lines=True)
 
 
 #NOTE: ---------- Bags D&E only -----------------
-
-fig, axes = plt.subplots(nrows=4, ncols = 3)
-fig.suptitle("Full pipeline", fontsize=26)
-axes[0,0].set_title("Area")
-axes[0,1].set_title("Volume")
-axes[0,2].set_title("Distance to elongation 1.0")
-axes[0,0].set_ylabel("BagD Hard", size='large')
-axes[1,0].set_ylabel("BagE Hard", size='large')
-
-results(df, 'full_pipeline', 'D', 'Hard', 'A', axes[0, 0]) # axes[row, col]
-results(df, 'full_pipeline', 'D', 'Hard', 'V', axes[0, 1]) # axes[row, col]
-results(df, 'full_pipeline', 'D', 'Hard', 'E', axes[0, 2]) # axes[row, col]
-
-results(df, 'full_pipeline', 'E', 'Hard', 'A', axes[1, 0]) # axes[row, col]
-results(df, 'full_pipeline', 'E', 'Hard', 'V', axes[1, 1]) # axes[row, col]
-results(df, 'full_pipeline', 'E', 'Hard', 'E', axes[1, 2]) # axes[row, col]
-
-
-#deactivate rest of axes for shorter plot - cut figure to correct size when adding to thesis
-axes[2, 0].axis('off')
-axes[2, 1].axis('off')
-axes[2, 2].axis('off')
-axes[3, 0].axis('off')
-axes[3, 1].axis('off')
-axes[3, 2].axis('off')
-
-Ah, Al = axes[0,0].get_legend_handles_labels()
-Eh, El = axes[0,2].get_legend_handles_labels()
-Ah.append(Eh[-1]) #add graphic for target elongation
-fig.legend(Ah, ['Opt-DMP', 'lower limit', 'upper limit'],  ncol = 5, loc='upper center',  bbox_to_anchor=(0.0, -0.06, 1.0, 1.0))
-fig.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=None, hspace=hspace_val)
-fig.supxlabel('Actions', y = 0.465)
+plot_three_results(df, mode='full_pipeline', difficulty='Hard', dpi=300, bags_number=2,
+                   legend_list=['Opt-DMP', 'lower limit', 'upper limit'])
 
 
 # --------------------------------------------------------
-plt.show() #show all plots generated above
-np.set_printoptions(linewidth=np.inf)
-print("df:\n", df) #show table filled out above
+# plt.show() #show all plots generated above
+# np.set_printoptions(linewidth=np.inf)
+# print("df:\n", df) #show table filled out above
 # --------------------------------------------------------
