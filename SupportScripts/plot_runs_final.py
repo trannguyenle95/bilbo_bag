@@ -198,7 +198,7 @@ def plot_three_results(df, mode, difficulty, bags_number, legend_list,
     axes_list = ["A", "V", "E"]
     for i in range(bags_number):
         for j in range(3):
-            results(df, mode, bags[i], difficulty, axes_list[i], axes[i, j]) # axes[row, col]
+            results(df, mode, bags[i], difficulty, axes_list[j], axes[i, j]) # axes[row, col]
 
     Ah, Al = axes[0,0].get_legend_handles_labels()
     Eh, El = axes[0,2].get_legend_handles_labels()
