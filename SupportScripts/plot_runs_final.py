@@ -237,7 +237,7 @@ plot_three_results(df, mode='refine', difficulty='Hard', dpi=300, bags_number=1,
 
 #NOTE: ---------- Bags A-C only -----------------
 plot_three_results(df, mode='full_pipeline', difficulty='Hard', dpi=300, bags_number=3,
-                   legend_list=['dynamic-only Opt-DMP', 'full Opt-DMP', 'lower limit', 'upper limit'],
+                   legend_list=['dynamic-only Opt-DMP', 'BILBO', 'lower limit', 'upper limit'],
                    flip_only_lines=True)
 
 
