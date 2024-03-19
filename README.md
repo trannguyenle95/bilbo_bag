@@ -1,3 +1,12 @@
+
+#TODO:
+- update this TODO with:
+- credit to Constrained DMP implementations
+- credit to natnet driver
+- description of what is found in each folder
+- move current lab-specific instructions to separate .txt file
+
+
 # dynamics_bag
 - In addition to David’s comments: change to remote_franka3 in both header files of Franka 3
 
