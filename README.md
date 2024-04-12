@@ -1,34 +1,17 @@
+# dynamics_bag
+This page contains code from the following project: https://sites.google.com/view/bilbo-bag.
+Below is a brief description of the contents of each folder:
+
+**Data** contais subfolders for human demonstrations, the recorded bag states during experiments, and robot trajectories of the most recent run (mainly used for generating plots for debugging purposes).
+**SupportScripts** contains MATLAB and Python scripts for processing human demonstrations so that they can be used in the constrained DMPs, for estimating the state of the bag from a recorded cloud of marker positions, and for generating plots.
+**TC_DMP_constrainedVelAcc** contains code adapted from https://github.com/albindgit/TC_DMP_constrainedVelAcc, which is used to implement two constrained DMP versions.
+**franka_david** WIP
+**novel-DMP-constraints-main** contains code adapted from https://github.com/Slifer64/novel-DMP-constraints, which is adapted to implement a third constrained DMP version.
+**skymul_natnet_ros_cpp** WIP FIX LINK (links to the ROS driver used to record the markers for estimating the bag state)
+
+
 
 #TODO:
-- update this TODO with:
-- credit to Constrained DMP implementations
-- credit to natnet driver
-- description of what is found in each folder
-- move current lab-specific instructions to separate .txt file
-
-
-# dynamics_bag
-- In addition to David’s comments: change to remote_franka3 in both header files of Franka 3
-
-- Enable commments in .bashrc when running dual franka to get command from franka2
-- Comment line 677 or 678 of control_remote.cpp to set name in main() function to either "remote_franka2" or "remote_franka3"
-
-For runnning single robot:
-- rosrun franka_david frankapy
-- uses control_through_python.cpp
-
-
-For running dual robots:
-- from franka2: roscore, "rosrun franka_david remotefranka"
-- enable lines in .bashrc in franka3, then "rosrun franka_david remotefranka"
-- then "python script eric_test_dual_franka.py" in franka2
-- rosrun franka_david remotefranka
-- uses control_remote.cpp
-
-
-Note: git add ".gitignore" and push it after editing ignore rules, but before they take effect
-
-For OpiTrack capture:
-- put two markers close enough and they can be seen as a single point visible from both the inside and outisde of the rim (helps with occlusions)
-    - usually seen as a single point in OptiTrack, but do additional filtering to combine monitored points that are captured too close together so that they will not
-    -   cause convex hull calculation to fail!
+- remove bagmetrics.sh as it is redundant now with the bagmetrics files in SupportScripts
+- mention "running_the_robots" or move it into franka_david
+- decide whether to include the franka_david folder for controlling robots?
