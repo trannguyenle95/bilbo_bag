@@ -1,0 +1,21 @@
+For runnning a single robot:
+    1) Run: "roscore", "rosrun franka_david frankapy"
+    2) Run Python scripts
+
+For running dual robots:
+    0) Apply the following settings:
+      - In franka2 add the following lines in .bashrc (can keep them enabled also when doing single arm control with franka2):
+          export ROS_MASTER_URI=http://neve:11311
+          export ROS_HOSTNAME=130.233.123.190
+      - In franka3 add the following lines in .bashrc in franka3 for dual-arm control (disable these lines when doing single arm control with franka3):
+          export ROS_MASTER_URI=http://130.233.123.190:11311
+          export ROS_HOSTNAME=130.233.123.182   
+      - In franka3 modify the control_remote.h file as follows:
+          bool _franka3 = true;
+    1) In franka2 run: "roscore", "rosrun franka_david remotefranka"
+    2) In franka3 run: "rosrun franka_david remotefranka"                                                                     
+    3) Run Python scripts in franka2
+
+The C++ controllers and motion generators are defined using the libfranka library in:
+      - "control_remote.cpp" when "rosrun franka_david remotefranka" is used for controlling both arms
+      - "control_through_python.cpp" when "rosrun franka_david frankapy" is used for controlling a single arm
