@@ -8,15 +8,16 @@ Below is a brief description of the contents of each folder:
 
 **TC_DMP_constrainedVelAcc** contains code adapted from https://github.com/albindgit/TC_DMP_constrainedVelAcc, which is used to implement two constrained DMP versions.
 
-**franka_david** WIP
+**franka_david** contains code for running the robots. The subfolder "scripts" contains the logic of the experiments, with the exception of "franka.py". This file and the remaining folders contain code related to implementing the controllers and motion-generators for the robots, and it builds upon code used in previous projects of the research group.
 
 **novel-DMP-constraints-main** contains code adapted from https://github.com/Slifer64/novel-DMP-constraints, which is adapted to implement a third constrained DMP version.
 
-**skymul_natnet_ros_cpp** WIP FIX LINK (links to the ROS driver used to record the markers for estimating the bag state)
+**skymul_natnet_ros_cpp** We use the following ROS driver used to record the markers on the bag https://github.com/SkyMul/skymul_natnet_ros_cpp/tree/main.
 
 
 
 #TODO:
+- move "running_the_robots" into "franka_david" + make it hidden or mention that this code is not cleaned and not the key focus of the work
 - remove bagmetrics.sh as it is redundant now with the bagmetrics files in SupportScripts
 - mention "running_the_robots" or move it into franka_david
 - decide whether to include the franka_david folder for controlling robots?
