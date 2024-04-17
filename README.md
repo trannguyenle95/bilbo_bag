@@ -13,9 +13,3 @@ Below is a brief description of the contents of each folder:
 **novel-DMP-constraints-main** contains code adapted from https://github.com/Slifer64/novel-DMP-constraints, which is adapted to implement a third constrained DMP version.
 
 **skymul_natnet_ros_cpp**: we use the following ROS driver used to record the markers on the bag https://github.com/SkyMul/skymul_natnet_ros_cpp/tree/main.
-
-
-
-#TODO:
-- move "running_the_robots" into "franka_david"
-- remove bagmetrics.sh as it is redundant now with the bagmetrics files in SupportScripts
