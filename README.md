@@ -1,4 +1,4 @@
-# dynamics_bag
+# Dynamic Manipulation of Deformable Objects using Imitation Learning with Adaptation to Hardware Constraints
 This page contains code from the following project: https://sites.google.com/view/bilbo-bag.
 Below is a brief description of the contents of each folder:
 
