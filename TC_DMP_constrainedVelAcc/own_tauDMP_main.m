@@ -5,6 +5,8 @@ close all
 addpath('../SupportScripts')
 addpath('../Data/demos')
 
+% See comments in DMP.m for updates to enable tau scaling
+
 % Create demonstration trajectory
 bag = 'A';
 filename = '10l_bag_flip.csv';
